@@ -1,8 +1,44 @@
 #!/usr/bin/env python
 
+import pdb
+
 #TraCeR - a tool to reconstruct TCR sequences from single-cell RNA-seq data#
+#                     EDIT tracer.conf BEFORE USE!                         #       
+#                                                                          #
 #Please see README and LICENCE for details of use and licence conditions.  #
 #This software was written by Mike Stubbington (mstubb@ebi.ac.uk) from the #
 #Teichmann Lab, EMBL-EBI (www.teichlab.org). Latest versions are available #
-#for download at www.github.com/teichlab/tracer.                           #
+#for download at www.github.com/teichlab/tracer.    
 
+
+import ConfigParser
+import argparse
+
+def main():
+    parser = argparse.ArgumentParser(description='TraCeR: reconstruction of TCR sequences from single-cell RNAseq data')
+    parser.add_argument('--config_file', '-c', metavar="<CONFIG_FILE>", help='config file [tracer.conf]', default = 'tracer.conf')
+    parser.add_argument('mode', metavar="<MODE>", help='tracer mode (extract, build or network)', choices = ['extract', 'build', 'network'])
+    parser.add_argument('fastq1', metavar="<FASTQ1>", help='first fastq file')
+    parser.add_argument('fastq2', metavar="<FASTQ22>", help='second fastq file')
+    parser.add_argument('cell_name', metavar="<CELL_NAME>", help='name of cell for file labels')
+    parser.add_argument('output_dir', metavar="<OUTPUT_DIR>", help='directory for output as <output_dir>/<cell_name>')
+    args = parser.parse_args()
+    
+    
+    #Read config file
+    config = ConfigParser.ConfigParser()
+    config.read(args.config_file)
+    bowtie2 = config.get('tool_locations', 'bowtie2_path')
+    igblast = config.get('tool_locations', 'igblast_path')
+    kallisto = config.get('tool_locations', 'kallisto_path')
+    
+    
+    
+
+
+def makeOutputDir(output_dir_path):
+    if not os.path.exists(output_dir_path):
+        os.mkdir(output_dir_path)
+
+if __name__ == '__main__':
+    main()
