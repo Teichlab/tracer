@@ -55,3 +55,6 @@ docs/_build/
 
 # PyBuilder
 target/
+
+# specific conf file
+specific_tracer.conf
