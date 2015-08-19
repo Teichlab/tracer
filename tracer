@@ -2,43 +2,124 @@
 
 import pdb
 
-#TraCeR - a tool to reconstruct TCR sequences from single-cell RNA-seq data#
-#                     EDIT tracer.conf BEFORE USE!                         #       
-#                                                                          #
-#Please see README and LICENCE for details of use and licence conditions.  #
-#This software was written by Mike Stubbington (mstubb@ebi.ac.uk) from the #
-#Teichmann Lab, EMBL-EBI (www.teichlab.org). Latest versions are available #
-#for download at www.github.com/teichlab/tracer.    
-
+############################################################################## 
+# TraCeR - a tool to reconstruct TCR sequences from single-cell RNA-seq data #
+#                      EDIT tracer.conf BEFORE USE!                          #       
+#                                                                            #
+# Please see README and LICENCE for details of use and licence conditions.   #
+# This software was written by Mike Stubbington (mstubb@ebi.ac.uk) from the  #
+# Teichmann Lab, EMBL-EBI (www.teichlab.org). Latest versions are available  #
+# for download at www.github.com/teichlab/tracer.                            #
+############################################################################## 
 
 import ConfigParser
 import argparse
+import sys
+import os
 
-def main():
-    parser = argparse.ArgumentParser(description='TraCeR: reconstruction of TCR sequences from single-cell RNAseq data')
-    parser.add_argument('--config_file', '-c', metavar="<CONFIG_FILE>", help='config file [tracer.conf]', default = 'tracer.conf')
-    parser.add_argument('mode', metavar="<MODE>", help='tracer mode (extract, build or network)', choices = ['extract', 'build', 'network'])
-    parser.add_argument('fastq1', metavar="<FASTQ1>", help='first fastq file')
-    parser.add_argument('fastq2', metavar="<FASTQ22>", help='second fastq file')
-    parser.add_argument('cell_name', metavar="<CELL_NAME>", help='name of cell for file labels')
-    parser.add_argument('output_dir', metavar="<OUTPUT_DIR>", help='directory for output as <output_dir>/<cell_name>')
-    args = parser.parse_args()
-    
-    
-    #Read config file
-    config = ConfigParser.ConfigParser()
-    config.read(args.config_file)
-    bowtie2 = config.get('tool_locations', 'bowtie2_path')
-    igblast = config.get('tool_locations', 'igblast_path')
-    kallisto = config.get('tool_locations', 'kallisto_path')
-    
-    
-    
+class Launcher():
+    def __init__(self):
+        parser = argparse.ArgumentParser(description='TraCeR: reconstruction of TCR sequences from single-cell RNAseq data', usage = ''' tracer <mode> [<args>]
+        
+        Modes are :
+        
+        - assemble: assemble TCR sequences from single-cell RNA-sequencing reads
+        - build: build synthetic genomes and Bowtie2 indices for read extraction
+        - network: summarise TCR sequences from set of cells, build clonotype networks
+        
+        use Tracer <mode> -h for specific help
+        ''')
+        parser.add_argument('mode', metavar="<MODE>", help='tracer mode (assemble, build or network)', choices = ['assemble', 'build', 'network'])
+        args = parser.parse_args(sys.argv[1:2])
+        
+        if not hasattr(self, args.mode):
+            print 'Unrecognised mode'
+            parser.print_help()
+            exit(1)
+        
+        
+        
+        
+        getattr(self, args.mode)()
+        
+        
+        
+        
+        
+        
+        
 
+    def assemble(self):
+        parser = argparse.ArgumentParser(description = "Reconstruct TCR sequences from RNAseq reads for a single cell")
+        parser.add_argument('--ncores', '-p', metavar="<CORES>", help='number of processor cores to use')
+        parser.add_argument('--config_file', '-c', metavar="<CONFIG_FILE>", help='config file to use [tracer.conf]', default='tracer.conf')
+        parser.add_argument('fastq1', metavar="<FASTQ1>", help='first fastq file')
+        parser.add_argument('fastq2', metavar="<FASTQ22>", help='second fastq file')
+        parser.add_argument('cell_name', metavar="<CELL_NAME>", help='name of cell for file labels')
+        parser.add_argument('output_dir', metavar="<OUTPUT_DIR>", help='directory for output as <output_dir>/<cell_name>')
+        args = parser.parse_args(sys.argv[2:])
+        
+        cell_name = args.cell_name
+        fastq1 = args.fastq1
+        fastq2 = args.fastq2
+        ncores = args.ncores
+        
+        #Read config file
+        config = ConfigParser.ConfigParser()
+        config.read(args.config_file)
+        
+        bowtie2 = config.get('tool_locations', 'bowtie2_path')
+        igblast = config.get('tool_locations', 'igblast_path')
+        kallisto = config.get('tool_locations', 'kallisto_path')
+        synthetic_genome_path = config.get('index_locations', 'synthetic_genome_index_path')
+        
+        #check that executables from config file can be used
+        not_executable = []
+        for name, x in {"bowtie2":bowtie2, "igblast":igblast, "kallisto":kallisto}.iteritems():
+            if not self.is_exe(x):
+                not_executable.append((name, x))
+        if len(not_executable) > 0:
+            print
+            print "Could not execute the following required tools. Check your configuration file."
+            for t in not_executable:
+                print t[0], t[1]
+            print
+            exit(1)
+            
+        
+        #set-up output directories
+        root_output_dir = os.path.abspath(args.output_dir)
+        self.makeOutputDir(root_output_dir)
+        output_dir = root_output_dir + "/" + cell_name
+        
+        self.makeOutputDir(output_dir)
+        
+        data_dirs = ['aligned_reads','Trinity_output', 'IgBLAST_output', 'unfiltered_TCR_seqs', 'expression_quantification', 'filtered_TCR_seqs']
+        for d in data_dirs:
+            self.makeOutputDir("{}/{}".format(output_dir, d))
+        
+        locus_names = ["TCRB", "TCRA"]
+        
+        print "##Finding TCR-derived reads##"
+        for locus in locus_names:
+            print "##{}##".format(locus)
+            sam_file = "{}/aligned_reads/{}_{}.sam".format(output_dir, cell_name, locus)
+            aligned_read_path = "{}/aligned_reads/{}_{}_%.fastq".format(output_dir, cell_name, locus)
+            command = "{bowtie2} --no-unal -p {ncores} -k 1 --np 0 --rdg 1,1 --rfg 1,1 -x {synthetic_genome_path}/{locus} -1 {fastq1} -2 {fastq2} --al-conc {aligned_read_path} -S {sam_file}".format(bowtie2=bowtie2, ncores=ncores, synthetic_genome_path=synthetic_genome_path, locus=locus, fastq1=fastq1, fastq2=fastq2, aligned_read_path=aligned_read_path, sam_file=sam_file)
 
-def makeOutputDir(output_dir_path):
-    if not os.path.exists(output_dir_path):
-        os.mkdir(output_dir_path)
+            
+            print command
+            print
+            #subprocess.check_call(command)
+        
+        
+    
+    def makeOutputDir(self, output_dir_path):
+        if not os.path.exists(output_dir_path):
+            os.mkdir(output_dir_path)
+            
+    def is_exe(self, fpath):
+            return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
 
 if __name__ == '__main__':
-    main()
+    Launcher()
