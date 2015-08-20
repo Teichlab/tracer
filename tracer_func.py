@@ -692,15 +692,13 @@ def collapse_close_sequences(recombinants, locus):
     
 def load_kallisto_counts(tsv_file):
     counts = {'A':{}, 'B':{}, 'G':{}, 'D':{}}
-    sample = os.path.split(d)[1]
     for line in open(tsv_file):
         if "TCR" in line:
             line = line.rstrip()
             line = line.split("\t")
-            locus = line[0].split("_")[-4][3]
-            name = "_".join(line[0].split("_")[-3:])
+            locus = line[0].split("|")[-1][2]
+            name = line[0].split("|")[1]
             tpm = float(line[4])
             counts[locus][name] = tpm
-    kc[sample] = counts
-    return kc 
+    return counts 
                     
