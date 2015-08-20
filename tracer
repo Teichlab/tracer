@@ -26,6 +26,7 @@ import shutil
 import re
 from collections import defaultdict, Counter
 from time import sleep
+import warnings
 
 class Launcher():
     def __init__(self):
@@ -141,9 +142,13 @@ class Launcher():
         print
         self.run_IgBlast(igblast, locus_names, output_dir, cell_name, igblast_aux_data, igblast_index_name_format, organism, igblast_seqtype, should_resume)
         print
-        cell = tracer.parse_IgBLAST(locus_names, output_dir, cell_name, expt_label, imgt_seq_location)
-        self.quantify_with_kallisto(kallisto, cell, output_dir, cell_name, kallisto_base_transcriptome, fastq1, fastq2, ncores)
-    
+        
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            cell = tracer.parse_IgBLAST(locus_names, output_dir, cell_name, expt_label, imgt_seq_location)
+
+        self.quantify_with_kallisto(kallisto, cell, output_dir, cell_name, kallisto_base_transcriptome, fastq1, fastq2, ncores, should_resume)
+        print
         
         
     def bowtie2_alignment(self, bowtie2, ncores, locus_names, output_dir, cell_name, synthetic_genome_path, fastq1, fastq2, should_resume):
@@ -277,7 +282,13 @@ class Launcher():
         
     
     
-    def quantify_with_kallisto(self, kallisto, cell, output_dir, cell_name, kallisto_base_transcriptome, fastq1, fastq2, ncores):
+    def quantify_with_kallisto(self, kallisto, cell, output_dir, cell_name, kallisto_base_transcriptome, fastq1, fastq2, ncores, should_resume):
+        print "##Running Kallisto##"
+        if should_resume:
+            if os.path.isfile("{}/expression_quantification/kallisto_output/abundance.tsv".format(output_dir)):
+                print "Resuming with existing Kallisto output"
+                return
+        
         print "##Making Kallisto indices##"
         kallisto_dirs = ['kallisto_index', 'kallisto_output']
         for d in kallisto_dirs:
@@ -297,11 +308,12 @@ class Launcher():
         idx_file = "{}/expression_quantification/kallisto_index/{}_transcriptome.idx".format(output_dir, cell_name)
         
         index_command = [kallisto, 'index', '-i', idx_file, output_transcriptome]
-        #subprocess.check_call(index_command)
+        subprocess.check_call(index_command)
         print "##Quantifying with Kallisto##"
         kallisto_command = [kallisto, 'quant', '-i', idx_file, '-t', ncores, '-o', "{}/expression_quantification/kallisto_output".format(output_dir), fastq1, fastq2]
-        #" ".join(pipes.quote(s) for s in strings)
         subprocess.check_call(kallisto_command)
+        #delete index file because it's huge and unecessary
+        os.remove(idx_file)
     
 
 
