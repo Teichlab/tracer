@@ -312,8 +312,11 @@ class Launcher():
         print "##Quantifying with Kallisto##"
         kallisto_command = [kallisto, 'quant', '-i', idx_file, '-t', ncores, '-o', "{}/expression_quantification/kallisto_output".format(output_dir), fastq1, fastq2]
         subprocess.check_call(kallisto_command)
+        
         #delete index file because it's huge and unecessary
         os.remove(idx_file)
+        
+        
     
 
 

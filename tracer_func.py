@@ -171,7 +171,7 @@ class Cell:
         for locus, recombinants in self.all_recombinants.iteritems():
             if recombinants is not None:
                 for rec in recombinants:
-                    name = ">{contig_name}|{identifier}".format(contig_name=rec.contig_name, identifier=rec.identifier)
+                    name = ">TCR|{contig_name}|{identifier}".format(contig_name=rec.contig_name, identifier=rec.identifier)
                     seq = rec.dna_seq
                     seq_string.append("\n".join([name, seq]))
         return("\n".join(seq_string + ["\n"]))    
@@ -687,5 +687,20 @@ def collapse_close_sequences(recombinants, locus):
     
                         
     
-    return(recombinants)        
+    return(recombinants)       
+    
+    
+def load_kallisto_counts(tsv_file):
+    counts = {'A':{}, 'B':{}, 'G':{}, 'D':{}}
+    sample = os.path.split(d)[1]
+    for line in open(tsv_file):
+        if "TCR" in line:
+            line = line.rstrip()
+            line = line.split("\t")
+            locus = line[0].split("_")[-4][3]
+            name = "_".join(line[0].split("_")[-3:])
+            tpm = float(line[4])
+            counts[locus][name] = tpm
+    kc[sample] = counts
+    return kc 
                     
