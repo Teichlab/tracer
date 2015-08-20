@@ -165,6 +165,16 @@ class Cell:
             
             
         return("\n".join(return_list))
+    
+    def get_fasta_string(self):
+        seq_string = []
+        for locus, recombinants in self.all_recombinants.iteritems():
+            if recombinants is not None:
+                for rec in recombinants:
+                    name = ">{contig_name}|{identifier}".format(contig_name=rec.contig_name, identifier=rec.identifier)
+                    seq = rec.dna_seq
+                    seq_string.append("\n".join([name, seq]))
+        return("\n".join(seq_string + ["\n"]))    
         
 class Recombinant:
     'Class to describe a recombined TCR locus as determined from the single-cell pipeline'
