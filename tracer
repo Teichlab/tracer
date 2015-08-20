@@ -10,6 +10,8 @@ import pdb
 # This software was written by Mike Stubbington (mstubb@ebi.ac.uk) from the  #
 # Teichmann Lab, EMBL-EBI (www.teichlab.org). Latest versions are available  #
 # for download at www.github.com/teichlab/tracer.                            #
+#                                                                            #
+#      Copyright (c) 2015 EMBL - European Bioinformatics Institute           # 
 ############################################################################## 
 
 import ConfigParser
