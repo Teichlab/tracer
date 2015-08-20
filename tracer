@@ -33,12 +33,13 @@ class Launcher():
         Modes are :
         
         - assemble: assemble TCR sequences from single-cell RNA-sequencing reads
-        - build: build synthetic genomes and Bowtie2 indices for read extraction
         - network: summarise TCR sequences from set of cells, build clonotype networks
+        - build_synth_genome: build synthetic genomes and Bowtie2 indices for read extraction
+        - build_igblast_index: build index for use with IgBlast
         
         use Tracer <mode> -h for specific help
         ''')
-        parser.add_argument('mode', metavar="<MODE>", help='tracer mode (assemble, build or network)', choices = ['assemble', 'build', 'network'])
+        parser.add_argument('mode', metavar="<MODE>", help='tracer mode (assemble, build or network)', choices = ['assemble', 'build_synth_genome', 'network', 'build_igblast_index'])
         args = parser.parse_args(sys.argv[1:2])
         
         if not hasattr(self, args.mode):
@@ -90,7 +91,12 @@ class Launcher():
         
         
         
-        synthetic_genome_path = config.get('index_locations', 'synthetic_genome_index_path')
+        synthetic_genome_path = config.get('bowtie2_options', 'synthetic_genome_index_path')
+        
+        igblast_index_name_format = config.get('IgBlast_options', 'igblast_index_name')
+        igblast_aux_data = config.get('IgBlast_options', 'igblast_aux_data')
+        organism = config.get('IgBlast_options', 'organism')
+        igblast_seqtype = config.get('IgBlast_options', 'igblast_seqtype')
         
         #check that executables from config file can be used
         not_executable = []
@@ -126,6 +132,7 @@ class Launcher():
         trinity_JM = config.get('trinity_options', 'max_jellyfish_memory')
         self.assemble_with_trinity(trinity, locus_names, output_dir, cell_name, ncores, trinity_grid_conf, trinity_JM, should_resume)
         print
+        self.run_IgBlast(igblast, locus_names, output_dir, cell_name, igblast_aux_data, igblast_index_name_format, organism, igblast_seqtype)
         
     def bowtie2_alignment(self, bowtie2, ncores, locus_names, output_dir, cell_name, synthetic_genome_path, fastq1, fastq2, should_resume):
         print "##Finding TCR-derived reads##"
@@ -230,6 +237,23 @@ class Launcher():
         success_out.close()
         fail_out.close()
         
+        
+    
+    
+    def run_IgBlast(self, igblast, locus_names, output_dir, cell_name, auxdatafile, index_name_format, organism, ig_seqtype):
+        print  "##Running IgBLAST##"
+        databases = {}
+        for segment in ['v','d','j']:
+            databases[segment] = index_name_format.replace("$segment", segment)
+             
+        for locus in locus_names:
+            print "##{}##".format(locus)
+            trinity_fasta = "{}/Trinity_output/{}_{}.Trinity.fasta".format(output_dir, cell_name, locus)
+            command = [igblast, '-germline_db_V', databases['v'], '-germline_db_D', databases['d'], '-germline_db_J', databases['j'], '-organism', organism, '-domain_system', 'imgt', '-ig_seqtype', ig_seqtype, '-auxiliary_data', auxdatafile, '-show_translation', '-num_alignments_V', '5', '-num_alignments_D', '5', '-num_alignments_J', '5', '-outfmt', '7', '-query', trinity_fasta]
+            igblast_out = "{output_dir}/IgBLAST_output/{cell_name}_{locus}.IgBLASTOut".format(output_dir=output_dir, cell_name=cell_name, locus=locus)
+            out = open(igblast_out, 'w')
+            subprocess.check_call(command, stdout=out)
+            out.close()
         
     def makeOutputDir(self, output_dir_path):
         if not os.path.exists(output_dir_path):
