@@ -19,6 +19,12 @@ import argparse
 import sys
 import os
 import subprocess
+import pipes
+import glob
+import shutil
+import re
+from collections import defaultdict, Counter
+from time import sleep
 
 class Launcher():
     def __init__(self):
@@ -75,11 +81,20 @@ class Launcher():
         bowtie2 = config.get('tool_locations', 'bowtie2_path')
         igblast = config.get('tool_locations', 'igblast_path')
         kallisto = config.get('tool_locations', 'kallisto_path')
+        trinity = config.get('tool_locations', 'trinity_path')
+        
+        if config.has_option('trinity_options', 'trinity_grid_conf'):
+            trinity_grid_conf = config.get('trinity_options', 'trinity_grid_conf')
+        else:
+            trinity_grid_conf = False
+        
+        
+        
         synthetic_genome_path = config.get('index_locations', 'synthetic_genome_index_path')
         
         #check that executables from config file can be used
         not_executable = []
-        for name, x in {"bowtie2":bowtie2, "igblast":igblast, "kallisto":kallisto}.iteritems():
+        for name, x in {"bowtie2":bowtie2, "igblast":igblast, "kallisto":kallisto, "trinity":trinity}.iteritems():
             if not self.is_exe(x):
                 not_executable.append((name, x))
         if len(not_executable) > 0:
@@ -107,15 +122,18 @@ class Launcher():
         should_resume = args.resume_with_existing_files
         
         self.bowtie2_alignment(bowtie2, ncores, locus_names, output_dir, cell_name, synthetic_genome_path, fastq1, fastq2, should_resume)
-        
+        print
+        trinity_JM = config.get('trinity_options', 'max_jellyfish_memory')
+        self.assemble_with_trinity(trinity, locus_names, output_dir, cell_name, ncores, trinity_grid_conf, trinity_JM)
         
     def bowtie2_alignment(self, bowtie2, ncores, locus_names, output_dir, cell_name, synthetic_genome_path, fastq1, fastq2, should_resume):
         print "##Finding TCR-derived reads##"
         
         if should_resume:
             for locus in locus_names:
-                fastq1_out= "{}/aligned_reads/{}_{}_1.fastq".format(output_dir, cell_name, locus)
-                fastq2_out= "{}/aligned_reads/{}_{}_2.fastq".format(output_dir, cell_name, locus)
+                aligned_read_path = "{}/aligned_reads/{}_{}_".format(output_dir, cell_name, locus)
+                fastq1_out= "{}1.fastq".format(aligned_read_path)
+                fastq2_out= "{}2.fastq".format(aligned_read_path)
                 if os.path.isfile(fastq1_out) and os.path.isfile(fastq2_out):
                     print "Resuming with existing TCRA and B reads"
                     return
@@ -126,18 +144,114 @@ class Launcher():
             aligned_read_path = "{}/aligned_reads/{}_{}_%.fastq".format(output_dir, cell_name, locus)
             command = [bowtie2, '--no-unal', '-p', ncores, '-k', '1', '--np', '0', '--rdg', '1,1', '--rfg', '1,1', '-x', "/".join([synthetic_genome_path, locus]), '-1', fastq1, '-2', fastq2, '--al-conc', aligned_read_path, '-S', sam_file]
             
-            print command
-            print
-            #subprocess.check_call(command)
+
+            subprocess.check_call(command)
         
             
     
+    
+    
+    
+    def assemble_with_trinity(self, trinity, locus_names, output_dir, cell_name, ncores, trinity_grid_conf, JM):
+        print  "##Assembling Trinity Contigs##"
+        command = [trinity]
+        if trinity_grid_conf:
+            command = command + ['--grid_conf', trinity_grid_conf]
+        
+        command = command + ['--JM', JM, '--seqType', 'fq', '--CPU', ncores, '--full_cleanup']
+        
+        for locus in locus_names:
+            print "##{}##".format(locus)
+            trinity_output = "{}/Trinity_output/{}_{}".format(output_dir, cell_name, locus)
+            aligned_read_path = "{}/aligned_reads/{}_{}_".format(output_dir, cell_name, locus)
+            file1 = "{}1.fastq".format(aligned_read_path)
+            file2 = "{}2.fastq".format(aligned_read_path)
+            command = command + ["--left", file1, "--right", file2, "--output", '{}'.format(trinity_output)]
+            #print " ".join(pipes.quote(s) for s in command)
+            #print
+            subprocess.check_call(command)
+        
+        #clean up unsuccessful assemblies
+        sleep(10) #this gives the cluster filesystem time to catch up and stops weird things happening
+        successful_files = glob.glob("{}/Trinity_output/*.fasta".format(output_dir))
+        unsuccessful_directories = os.walk("{}/Trinity_output".format(output_dir)).next()[1]
+        for directory in unsuccessful_directories:
+            shutil.rmtree(directory)
+        successful_file_summary = "{}/Trinity_output/successful_trinity_assemblies.txt".format(output_dir)
+        unsuccessful_file_summary = "{}/Trinity_output/unsuccessful_trinity_assemblies.txt".format(output_dir)
+    
+        successful_files = self.clean_file_list(successful_files)
+        unsuccessful_directories = self.clean_file_list(unsuccessful_directories)
+    
+    
+        success_out = open(successful_file_summary, "w")
+        fail_out = open(unsuccessful_file_summary, "w")
+    
+        successful = defaultdict(list)
+        unsuccessful = defaultdict(list)
+    
+        successful_ordered_files = set()
+        unsuccessful_ordered_files = set()
+    
+        for filename in successful_files:
+            #success_out.write("{}\n".format(filename))
+            parsed_name = self.get_filename_and_locus(filename)
+            successful[parsed_name[0]].append(parsed_name[1])
+            successful_ordered_files.add(parsed_name[0])
+        successful_ordered_files = sorted(list(successful_ordered_files))
+        
+    
+        for filename in unsuccessful_directories:
+            #fail_out.write("{}\n".format(filename))
+            parsed_name = self.get_filename_and_locus(filename)
+            unsuccessful[parsed_name[0]].append(parsed_name[1])
+            unsuccessful_ordered_files.add(parsed_name[0])
+        unsuccessful_ordered_files = sorted(list(unsuccessful_ordered_files))
+        
+        successful = self.sort_locus_names(successful)
+        unsuccessful = self.sort_locus_names(unsuccessful)
+    
+        for file in successful_ordered_files:
+            success_out.write("{}\t{}\n".format(file, successful[file]))
+    
+        for file in unsuccessful_ordered_files:
+            fail_out.write("{}\t{}\n".format(file, unsuccessful[file]))
+        
+        success_out.close()
+        fail_out.close()
+        
+        
     def makeOutputDir(self, output_dir_path):
         if not os.path.exists(output_dir_path):
             os.mkdir(output_dir_path)
             
     def is_exe(self, fpath):
             return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+    
+    def clean_file_list(self, file_list):
+        return_list = []
+        trinity_pattern = re.compile(r"(.+)\.Trinity\.fasta")
+        for file_name in file_list:
+            clean_name = os.path.split(file_name)[1]
+            trinity_match = trinity_pattern.search(clean_name)
+            if trinity_match:
+                clean_name = trinity_match.group(1)
+            return_list.append(clean_name)
+
+        return(sorted(return_list))
+    
+    def get_filename_and_locus(self, name):
+        pattern = re.compile(r"(.+)_TCR([ABDG])")
+        pattern_match = pattern.search(name)
+        file = pattern_match.group(1)
+        locus = pattern_match.group(2)
+        return([file, locus])
+
+    def sort_locus_names(self, dictionary_to_sort):
+        for key, value in dictionary_to_sort.iteritems():
+            sorted_value = sorted(value)
+            dictionary_to_sort[key] = sorted_value
+        return(dictionary_to_sort)
 
 if __name__ == '__main__':
     Launcher()
