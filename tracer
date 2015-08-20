@@ -124,7 +124,8 @@ class Launcher():
         self.bowtie2_alignment(bowtie2, ncores, locus_names, output_dir, cell_name, synthetic_genome_path, fastq1, fastq2, should_resume)
         print
         trinity_JM = config.get('trinity_options', 'max_jellyfish_memory')
-        self.assemble_with_trinity(trinity, locus_names, output_dir, cell_name, ncores, trinity_grid_conf, trinity_JM)
+        self.assemble_with_trinity(trinity, locus_names, output_dir, cell_name, ncores, trinity_grid_conf, trinity_JM, should_resume)
+        print
         
     def bowtie2_alignment(self, bowtie2, ncores, locus_names, output_dir, cell_name, synthetic_genome_path, fastq1, fastq2, should_resume):
         print "##Finding TCR-derived reads##"
@@ -152,8 +153,17 @@ class Launcher():
     
     
     
-    def assemble_with_trinity(self, trinity, locus_names, output_dir, cell_name, ncores, trinity_grid_conf, JM):
+    def assemble_with_trinity(self, trinity, locus_names, output_dir, cell_name, ncores, trinity_grid_conf, JM, should_resume):
         print  "##Assembling Trinity Contigs##"
+        
+        if should_resume:
+            trinity_report_successful =  "{}/Trinity_output/successful_trinity_assemblies.txt".format(output_dir)
+            trinity_report_unsuccessful = "{}/Trinity_output/unsuccessful_trinity_assemblies.txt".format(output_dir)
+            if os.path.isfile(trinity_report_successful) and os.path.isfile(trinity_report_unsuccessful):
+                print "Resuming with existing Trinity output"
+                return
+        
+        
         command = [trinity]
         if trinity_grid_conf:
             command = command + ['--grid_conf', trinity_grid_conf]
