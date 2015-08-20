@@ -14,6 +14,7 @@ import pdb
 #      Copyright (c) 2015 EMBL - European Bioinformatics Institute           # 
 ############################################################################## 
 
+import tracer_func as tracer
 import ConfigParser
 import argparse
 import sys
@@ -67,6 +68,7 @@ class Launcher():
         parser.add_argument('fastq1', metavar="<FASTQ1>", help='first fastq file')
         parser.add_argument('fastq2', metavar="<FASTQ22>", help='second fastq file')
         parser.add_argument('cell_name', metavar="<CELL_NAME>", help='name of cell for file labels')
+        parser.add_argument('expt_label', metavar="<EXPERIMENT_LABEL>", help='label for experiment to which cell belongs')
         parser.add_argument('output_dir', metavar="<OUTPUT_DIR>", help='directory for output as <output_dir>/<cell_name>')
         args = parser.parse_args(sys.argv[2:])
         
@@ -74,6 +76,7 @@ class Launcher():
         fastq1 = args.fastq1
         fastq2 = args.fastq2
         ncores = args.ncores
+        expt_label = args.expt_label
         
         #Read config file
         config = ConfigParser.ConfigParser()
@@ -97,11 +100,12 @@ class Launcher():
         igblast_aux_data = config.get('IgBlast_options', 'igblast_aux_data')
         organism = config.get('IgBlast_options', 'organism')
         igblast_seqtype = config.get('IgBlast_options', 'igblast_seqtype')
+        imgt_seq_location = config.get('IgBlast_options', 'imgt_seq_location')
         
         #check that executables from config file can be used
         not_executable = []
         for name, x in {"bowtie2":bowtie2, "igblast":igblast, "kallisto":kallisto, "trinity":trinity}.iteritems():
-            if not self.is_exe(x):
+            if not tracer.is_exe(x):
                 not_executable.append((name, x))
         if len(not_executable) > 0:
             print
@@ -114,14 +118,14 @@ class Launcher():
         
         #set-up output directories
         root_output_dir = os.path.abspath(args.output_dir)
-        self.makeOutputDir(root_output_dir)
+        tracer.makeOutputDir(root_output_dir)
         output_dir = root_output_dir + "/" + cell_name
         
-        self.makeOutputDir(output_dir)
+        tracer.makeOutputDir(output_dir)
         
         data_dirs = ['aligned_reads','Trinity_output', 'IgBLAST_output', 'unfiltered_TCR_seqs', 'expression_quantification', 'filtered_TCR_seqs']
         for d in data_dirs:
-            self.makeOutputDir("{}/{}".format(output_dir, d))
+            tracer.makeOutputDir("{}/{}".format(output_dir, d))
         
         locus_names = ["TCRB", "TCRA"]
         
@@ -133,6 +137,11 @@ class Launcher():
         self.assemble_with_trinity(trinity, locus_names, output_dir, cell_name, ncores, trinity_grid_conf, trinity_JM, should_resume)
         print
         self.run_IgBlast(igblast, locus_names, output_dir, cell_name, igblast_aux_data, igblast_index_name_format, organism, igblast_seqtype, should_resume)
+        print
+        cell = tracer.parse_IgBLAST(locus_names, output_dir, cell_name, expt_label, imgt_seq_location)
+        
+        pdb.set_trace()
+        
         
     def bowtie2_alignment(self, bowtie2, ncores, locus_names, output_dir, cell_name, synthetic_genome_path, fastq1, fastq2, should_resume):
         print "##Finding TCR-derived reads##"
@@ -197,8 +206,8 @@ class Launcher():
         successful_file_summary = "{}/Trinity_output/successful_trinity_assemblies.txt".format(output_dir)
         unsuccessful_file_summary = "{}/Trinity_output/unsuccessful_trinity_assemblies.txt".format(output_dir)
     
-        successful_files = self.clean_file_list(successful_files)
-        unsuccessful_directories = self.clean_file_list(unsuccessful_directories)
+        successful_files = tracer.clean_file_list(successful_files)
+        unsuccessful_directories = tracer.clean_file_list(unsuccessful_directories)
     
     
         success_out = open(successful_file_summary, "w")
@@ -212,7 +221,7 @@ class Launcher():
     
         for filename in successful_files:
             #success_out.write("{}\n".format(filename))
-            parsed_name = self.get_filename_and_locus(filename)
+            parsed_name = tracer.get_filename_and_locus(filename)
             successful[parsed_name[0]].append(parsed_name[1])
             successful_ordered_files.add(parsed_name[0])
         successful_ordered_files = sorted(list(successful_ordered_files))
@@ -220,13 +229,13 @@ class Launcher():
     
         for filename in unsuccessful_directories:
             #fail_out.write("{}\n".format(filename))
-            parsed_name = self.get_filename_and_locus(filename)
+            parsed_name = tracer.get_filename_and_locus(filename)
             unsuccessful[parsed_name[0]].append(parsed_name[1])
             unsuccessful_ordered_files.add(parsed_name[0])
         unsuccessful_ordered_files = sorted(list(unsuccessful_ordered_files))
         
-        successful = self.sort_locus_names(successful)
-        unsuccessful = self.sort_locus_names(unsuccessful)
+        successful = tracer.sort_locus_names(successful)
+        unsuccessful = tracer.sort_locus_names(unsuccessful)
     
         for file in successful_ordered_files:
             success_out.write("{}\t{}\n".format(file, successful[file]))
@@ -265,37 +274,15 @@ class Launcher():
             subprocess.check_call(command, stdout=out)
             out.close()
         
-    def makeOutputDir(self, output_dir_path):
-        if not os.path.exists(output_dir_path):
-            os.mkdir(output_dir_path)
-            
-    def is_exe(self, fpath):
-            return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
     
-    def clean_file_list(self, file_list):
-        return_list = []
-        trinity_pattern = re.compile(r"(.+)\.Trinity\.fasta")
-        for file_name in file_list:
-            clean_name = os.path.split(file_name)[1]
-            trinity_match = trinity_pattern.search(clean_name)
-            if trinity_match:
-                clean_name = trinity_match.group(1)
-            return_list.append(clean_name)
-
-        return(sorted(return_list))
     
-    def get_filename_and_locus(self, name):
-        pattern = re.compile(r"(.+)_TCR([ABDG])")
-        pattern_match = pattern.search(name)
-        file = pattern_match.group(1)
-        locus = pattern_match.group(2)
-        return([file, locus])
+    
+    
+    
+    
+    
 
-    def sort_locus_names(self, dictionary_to_sort):
-        for key, value in dictionary_to_sort.iteritems():
-            sorted_value = sorted(value)
-            dictionary_to_sort[key] = sorted_value
-        return(dictionary_to_sort)
+
 
 if __name__ == '__main__':
     Launcher()
