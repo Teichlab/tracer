@@ -478,7 +478,13 @@ class Launcher():
             del cells[cell_name]    
         
         
-               
+        #plot lengths of reconstructed sequences
+        ##TODO fix this so that it only uses the IgBlast-defined lengths
+        lengths = {'A':[], 'B':[]}
+        for cell in cells.values():
+            for locus in lengths.keys():
+                lengths[locus] = lengths[locus] +  cell.get_trinity_lengths(locus)
+        pdb.set_trace()    
         
         
         

@@ -218,10 +218,18 @@ class Cell:
             count = len(recs)
         return(count)
         
+    def get_trinity_lengths(self, locus):
+        recs = self.all_recombinants[locus]
+        lengths = []
+        for rec in recs:
+            lengths.append(len(rec.trinity_seq)) 
+        return(lengths)
+    
+    
         
 class Recombinant:
     'Class to describe a recombined TCR locus as determined from the single-cell pipeline'
-    def __init__(self, contig_name, locus, identifier, all_poss_identifiers, productive, stop_codon, in_frame, TPM, dna_seq, hit_table, summary, junction_details, best_VJ_names, alignment_summary):
+    def __init__(self, contig_name, locus, identifier, all_poss_identifiers, productive, stop_codon, in_frame, TPM, dna_seq, hit_table, summary, junction_details, best_VJ_names, alignment_summary, trinity_seq):
         self.contig_name = contig_name
         self.locus = locus
         self.identifier = identifier
@@ -237,6 +245,7 @@ class Recombinant:
         self.alignment_summary = alignment_summary
         self.in_frame = in_frame
         self.stop_codon = stop_codon
+        self.trinity_seq = trinity_seq
 
     def __str__(self):
         return("{} {} {} {}".format(self.identifier, self.productive, self.TPM))
@@ -338,7 +347,7 @@ def parse_IgBLAST(locus_names, output_dir, cell_name, expt_label, imgt_seq_locat
             
             all_locus_data[locus][query_name] = chunk_details
         
-    cell = find_possible_alignments(all_locus_data, locus_names, cell_name, IMGT_seqs, expt_label)    
+    cell = find_possible_alignments(all_locus_data, locus_names, cell_name, IMGT_seqs, expt_label, output_dir)    
     return(cell)
     
 
@@ -427,7 +436,7 @@ def process_chunk(chunk):
     return (query_name, return_dict)
 
 
-def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs, expt_label):
+def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs, expt_label, output_dir):
     #pdb.set_trace()
     alignment_dict = defaultdict(dict)
     recombinants = {'TCRA':[], 'TCRB':[]}
@@ -475,8 +484,20 @@ def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs, exp
                         i = V + "_" + junc_string + "_" + J
                         all_poss_identifiers.add(i)
                 
-                #pdb.set_trace()
-                rec = Recombinant(contig_name=query_name, locus=returned_locus, identifier=identifier, all_poss_identifiers=all_poss_identifiers, productive=is_productive[0], stop_codon=is_productive[1], in_frame=is_productive[2], TPM=0.0, dna_seq=fasta_line_for_contig, hit_table=good_hits, summary=rearrangement_summary, junction_details=junction_list, best_VJ_names=bestVJNames, alignment_summary=alignment_summary)
+                #get original sequence from Trinity file - needed for summary of reconstructed lengths
+                trinity_file = "{output_dir}/Trinity_output/{cell_name}_{locus}.Trinity.fasta".format(locus=locus, output_dir=output_dir, cell_name=cell_name)
+                for record in SeqIO.parse(open(trinity_file, 'rU'), 'fasta'):
+                    if query_name in record.id:
+                        trinity_seq = record
+                
+                if 'reversed' in good_hits[0][1]:
+                    trinity_seq = trinity_seq.reverse_complement().seq
+                else:
+                    trinity_seq = trinity_seq.seq
+                start_coord, end_coord = get_coords(good_hits)
+                trinity_seq = str(trinity_seq[start_coord:end_coord])
+                
+                rec = Recombinant(contig_name=query_name, locus=returned_locus, identifier=identifier, all_poss_identifiers=all_poss_identifiers, productive=is_productive[0], stop_codon=is_productive[1], in_frame=is_productive[2], TPM=0.0, dna_seq=fasta_line_for_contig, hit_table=good_hits, summary=rearrangement_summary, junction_details=junction_list, best_VJ_names=bestVJNames, alignment_summary=alignment_summary, trinity_seq=trinity_seq)
                 recombinants[locus].append(rec)
               
     #pdb.set_trace()
@@ -490,6 +511,22 @@ def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs, exp
     
     #pdb.set_trace()
     return(cell)
+
+
+def get_coords(hit_table):
+    found_V = False
+    found_J = False
+    for entry in hit_table:
+        if entry[0] == 'V':
+            if not found_V:
+                start = int(entry[8]) - 1
+                found_V = True
+        if entry[0] == 'J':
+            if not found_J:
+                end = int(entry[9])
+                found_J = True
+    return(start, end)
+
 
 def remove_NA(junc_string):
     new_string = junc_string.replace("N/A", "")
