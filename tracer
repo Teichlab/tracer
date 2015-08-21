@@ -474,9 +474,10 @@ class Launcher():
             t.add_row([label] + row)
         outfile.write(t.get_string())
     
-            
+        for cell_name in empty_cells:
+            del cells[cell_name]    
         
-        ##TODO delete empty cells for network analyses
+        
                
         
         
