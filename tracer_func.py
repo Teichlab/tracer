@@ -211,6 +211,14 @@ class Cell:
                     count += 1
         return(count)
         
+    def count_total_recombinants(self, locus):
+        recs = self.all_recombinants[locus]
+        count = 0
+        if recs is not None:
+            count = len(recs)
+        return(count)
+        
+        
 class Recombinant:
     'Class to describe a recombined TCR locus as determined from the single-cell pipeline'
     def __init__(self, contig_name, locus, identifier, all_poss_identifiers, productive, stop_codon, in_frame, TPM, dna_seq, hit_table, summary, junction_details, best_VJ_names, alignment_summary):

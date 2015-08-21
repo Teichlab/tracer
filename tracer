@@ -28,6 +28,7 @@ from collections import defaultdict, Counter
 from time import sleep
 import warnings
 import pickle
+from prettytable import PrettyTable
 
 class Launcher():
     def __init__(self):
@@ -437,9 +438,46 @@ class Launcher():
         outfile.write("TCRA reconstruction:\t{count_of_cells_with_alpha_recovered} / {total_cells} ({alpha_percent}%)\nTCRB reconstruction:\t{count_of_cells_with_beta_recovered} / {total_cells} ({beta_percent}%)\nPaired productive chains\t{count_of_cells_with_paired_recovered} / {total_cells} ({paired_percent}%)\n\n".format(paired_percent=round((count_of_cells_with_paired_recovered/float(total_cells))*100,1), total_cells=total_cells, alpha_percent=round((count_of_cells_with_alpha_recovered/float(total_cells))*100,1), beta_percent=round((count_of_cells_with_beta_recovered/float(total_cells))*100,1), count_of_cells_with_beta_recovered=count_of_cells_with_beta_recovered, count_of_cells_with_paired_recovered=count_of_cells_with_paired_recovered, count_of_cells_with_alpha_recovered=count_of_cells_with_alpha_recovered))
 
         
+        all_alpha_counter = Counter()
+        all_beta_counter = Counter()
+        prod_alpha_counter = Counter()
+        prod_beta_count = Counter()
+        
+        counters = {'all_alpha':Counter(), 'all_beta':Counter(), 'prod_alpha':Counter(), 'prod_beta':Counter()}
+        
+        for cell in cells.values():
+            counters['all_alpha'].update({cell.count_total_recombinants('A') : 1})
+            counters['all_beta'].update({cell.count_total_recombinants('B') : 1})
+            counters['prod_alpha'].update({cell.count_productive_recombinants('A') : 1})
+            counters['prod_beta'].update({cell.count_productive_recombinants('B') : 1})
+        
+        max_recombinant_count = max(counters['all_alpha'].keys() + counters['all_beta'].keys())
+        table_header = ['', '0 recombinants', '1 recombinant', '2 recombinants']
+        recomb_range = range(0,3)
+        if max_recombinant_count > 2:
+            extra_header = [str(x) + " recombinants" for x in range(3, max_recombinant_count+1)]
+            table_header = table_header + extra_header
+            recomb_range = range(0, max_recombinant_count+1)
+        
+        t = PrettyTable(table_header)
+        t.padding_width = 1
+        t.align = "l"
+        for label in ['all_alpha', 'all_beta', 'prod_alpha', 'prod_beta']:
+            counter = counters[label]
+            count_array = [counter[x] for x in recomb_range]
+            total_with_at_least_one = sum(count_array[1:])
+            percentages = ['']+[" ("+ str(round((float(x)/total_with_at_least_one)*100)) +"%)" for x in count_array[1:]]
+            row = []
+            for i in recomb_range:
+                row.append(str(count_array[i]) + percentages[i])
+            
+            t.add_row([label] + row)
+        outfile.write(t.get_string())
+    
+            
         
         ##TODO delete empty cells for network analyses
-                
+               
         
         
         
