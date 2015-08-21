@@ -175,16 +175,25 @@ class Cell:
                     seq = rec.dna_seq
                     seq_string.append("\n".join([name, seq]))
         return("\n".join(seq_string + ["\n"]))    
+    
+    def summarise_productivity(self, locus):
+        recs = self.all_recombinants[locus]
+        prod_count = 0
+        total_count = len(recs)
+        for rec in recs:
+            if rec.productive:
+                prod_count += 1
+        return("{}/{}".format(prod_count, total_count))
         
 class Recombinant:
     'Class to describe a recombined TCR locus as determined from the single-cell pipeline'
-    def __init__(self, contig_name, locus, identifier, all_poss_identifiers, productive, stop_codon, in_frame, read_count, dna_seq, hit_table, summary, junction_details, best_VJ_names, alignment_summary):
+    def __init__(self, contig_name, locus, identifier, all_poss_identifiers, productive, stop_codon, in_frame, TPM, dna_seq, hit_table, summary, junction_details, best_VJ_names, alignment_summary):
         self.contig_name = contig_name
         self.locus = locus
         self.identifier = identifier
         self.all_poss_identifiers = all_poss_identifiers
         self.productive = productive
-        self.read_count = read_count
+        self.TPM = TPM
         self.dna_seq = dna_seq
         self.cdr3 = self._get_cdr3(dna_seq)
         self.hit_table = hit_table
@@ -196,7 +205,7 @@ class Recombinant:
         self.stop_codon = stop_codon
 
     def __str__(self):
-        return("{} {} {} {}".format(self.identifier, self.productive, self.read_count, self.recovered_from_filter))
+        return("{} {} {} {}".format(self.identifier, self.productive, self.TPM, self.recovered_from_filter))
     
     def _get_cdr3(self, dna_seq):
         aaseq = Seq(str(dna_seq), generic_dna).translate()
@@ -214,7 +223,27 @@ class Recombinant:
         else:
             cdr3 = "Couldn't find either conserved boundary"
         return(cdr3)
-
+        
+    def get_summary(self):
+        summary_string = "##{contig_name}##\n".format(contig_name=self.contig_name)
+        if self.locus == 'A':
+            V_segment = self.summary[0].split(",")[0]
+            J_segment = self.summary[1].split(",")[0]
+            segments_string = "V segment:\t{V_segment}\nJ segment:\t{J_segment}\n".format(V_segment=V_segment, J_segment=J_segment)
+        elif self.locus == 'B':
+            V_segment = self.summary[0].split(",")[0]
+            D_segment = self.summary[1].split(",")[0]
+            J_segment = self.summary[2].split(",")[0]
+            segments_string = "V segment:\t{V_segment}\nD segment:\t{D_segment}\nJ segment:\t{J_segment}\n".format(V_segment=V_segment, D_segment=D_segment, J_segment=J_segment)
+        summary_string = summary_string + segments_string
+        summary_string = summary_string + "ID:\t{}\n".format(self.identifier)
+        summary_string = summary_string + "TPM:\t{TPM}\nProductive:\t{productive}\nStop codon:\t{stop_codon}\nIn frame:\t{in_frame}\n\n".format(TPM=self.TPM, productive=self.productive, stop_codon=self.stop_codon, in_frame=self.in_frame)
+        
+        
+        summary_string = summary_string + 'Segment\tquery_id\tsubject_id\t% identity\talignment length\tmismatches\tgap opens\tgaps\tq start\tq end\ts start\ts end\te value\tbit score\n'
+        for line in self.hit_table:
+            summary_string = summary_string + "\t".join(line) + "\n"
+        return(summary_string)
 
 
 ##FUNCTIONS##
@@ -413,7 +442,7 @@ def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs, exp
                         all_poss_identifiers.add(i)
                 
                 #pdb.set_trace()
-                rec = Recombinant(contig_name=query_name, locus=returned_locus, identifier=identifier, all_poss_identifiers=all_poss_identifiers, productive=is_productive[0], stop_codon=is_productive[1], in_frame=is_productive[2], read_count=0.0, dna_seq=fasta_line_for_contig, hit_table=good_hits, summary=rearrangement_summary, junction_details=junction_list, best_VJ_names=bestVJNames, alignment_summary=alignment_summary)
+                rec = Recombinant(contig_name=query_name, locus=returned_locus, identifier=identifier, all_poss_identifiers=all_poss_identifiers, productive=is_productive[0], stop_codon=is_productive[1], in_frame=is_productive[2], TPM=0.0, dna_seq=fasta_line_for_contig, hit_table=good_hits, summary=rearrangement_summary, junction_details=junction_list, best_VJ_names=bestVJNames, alignment_summary=alignment_summary)
                 recombinants[locus].append(rec)
               
     #pdb.set_trace()

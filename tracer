@@ -155,8 +155,7 @@ class Launcher():
             if recombinants is not None:
                 for rec in recombinants:
                     tpm = counts[locus][rec.contig_name]
-                    rec.read_count = tpm
-        pdb.set_trace()
+                    rec.TPM = tpm
         
         self.print_cell_summary(cell, "{output_dir}/unfiltered_TCR_seqs".format(output_dir=output_dir))
         
@@ -327,7 +326,20 @@ class Launcher():
         
         
     def print_cell_summary(self, cell, output_dir):
-        out_file = open("{}/unfiltered_TCRs.txt".format(output_dir)
+        out_file = open("{}/unfiltered_TCRs.txt".format(output_dir), 'w')
+        out_file.write('------------------\n{name}\n------------------\n'.format(name=cell.name))
+        out_file.write('TCRA recombinants: {}\n'.format(cell.summarise_productivity('A')))
+        out_file.write('TCRB recombinants: {}\n'.format(cell.summarise_productivity('B')))
+        out_file.write('\n\n')
+        out_file.write('#TCRA#\n')
+        for rec in cell.A_recombinants:
+            out_file.write(rec.get_summary())
+            out_file.write("\n\n")
+        out_file.write('#TCRB#\n')
+        for rec in cell.B_recombinants:
+            out_file.write(rec.get_summary())
+            out_file.write("\n\n")
+        out_file.close()
         #add stuff here about numbers of recombinants and then details.
 
 
