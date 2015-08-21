@@ -376,7 +376,6 @@ class Launcher():
         parser = argparse.ArgumentParser(description = "Summarise set of cells with reconstructed TCR sequences")
         parser.add_argument('--config_file', '-c', metavar="<CONFIG_FILE>", help='config file to use [tracer.conf]', default='tracer.conf')
         parser.add_argument('--use_unfiltered', '-u', help='use unfiltered recombinants', action="store_true")
-        parser.add_argument('--use_unfiltered', '-u', help='use unfiltered recombinants', action="store_true")
         parser.add_argument('--keep_inkt', '-i', help='ignore iNKT cells when constructing networks', action="store_true")
         parser.add_argument('dir', metavar="<DIR>", help='directory containing subdirectories for each cell to be summarised')
         args = parser.parse_args(sys.argv[2:])
@@ -496,6 +495,19 @@ class Launcher():
             t.add_row([label] + row)
         outfile.write(t.get_string())
      
+        
+        #Reporting iNKT cells
+        iNKT_count = len(NKT_cells)
+        if iNKT_count == 1:
+            cell_word = 'cell'
+        else:
+            cell_word = 'cells'
+        outfile.write("\n\n#iNKT cells#\nFound {iNKT_count} iNKT {cell_word}\n".format(iNKT_count=iNKT_count, cell_word=cell_word))
+        if iNKT_count >0:
+            for cell_name, ids in iNKT_cells.iteritems():
+                outfile.write("###{cell_name}###\n".format(cell_name=cell_name))
+                outfile.write("TCRA:\t{}\nTCRB\t{}\n\n".format(ids[0], ids[1]))
+
         
         
         #plot lengths of reconstructed sequences
