@@ -30,7 +30,7 @@ import Levenshtein
 class Cell:
     'Class to describe T cells containing A and B loci'
     
-    def __init__(self, cell_name, A_recombinants, B_recombinants, G_recombinants, D_recombinants, expt_label):
+    def __init__(self, cell_name, A_recombinants, B_recombinants, G_recombinants, D_recombinants, expt_label, is_empty=False):
         self.name = cell_name
         self.A_recombinants = A_recombinants
         self.B_recombinants = B_recombinants
@@ -40,6 +40,7 @@ class Cell:
         self.all_recombinants = {'A' : A_recombinants, 'B' : B_recombinants, 'G' : G_recombinants, 'D' : D_recombinants}
         self.cdr3_comparisons = {'A' : None, 'B' : None, 'mean_both' : None}
         self.expt_label = expt_label
+        self.is_empty = is_empty
     
     def reset_cdr3_comparisons(self):
             self.cdr3_comparisons = {'A' : None, 'B' : None, 'mean_both' : None}
@@ -188,17 +189,27 @@ class Cell:
     def filter_recombinants(self):
         for locus in ['A', 'B']:
             recs = self.all_recombinants[locus]
-            if len(recs) > 2:
-                TPM_ranks = Counter()
-                for rec in recs:
-                    TPM_ranks.update({rec.contig_name: rec.TPM})
-                two_most_common = [x[0] for x in TPM_ranks.most_common(2)]
-                to_remove = []
-                for rec in recs:
-                    if rec.contig_name not in two_most_common:
-                        to_remove.append(rec)
-                for rec in to_remove:
-                    self.all_recombinants[locus].remove(rec)
+            if recs is not None:
+                if len(recs) > 2:
+                    TPM_ranks = Counter()
+                    for rec in recs:
+                        TPM_ranks.update({rec.contig_name: rec.TPM})
+                    two_most_common = [x[0] for x in TPM_ranks.most_common(2)]
+                    to_remove = []
+                    for rec in recs:
+                        if rec.contig_name not in two_most_common:
+                            to_remove.append(rec)
+                    for rec in to_remove:
+                        self.all_recombinants[locus].remove(rec)
+                    
+    def count_productive_recombinants(self, locus):
+        recs = self.all_recombinants[locus]
+        count = 0
+        if recs is not None:
+            for rec in recs:
+                if rec.productive:
+                    count += 1
+        return(count)
         
 class Recombinant:
     'Class to describe a recombined TCR locus as determined from the single-cell pipeline'
@@ -220,7 +231,7 @@ class Recombinant:
         self.stop_codon = stop_codon
 
     def __str__(self):
-        return("{} {} {} {}".format(self.identifier, self.productive, self.TPM, self.recovered_from_filter))
+        return("{} {} {} {}".format(self.identifier, self.productive, self.TPM))
     
     def _get_cdr3(self, dna_seq):
         aaseq = Seq(str(dna_seq), generic_dna).translate()
