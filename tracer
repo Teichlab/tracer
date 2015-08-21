@@ -29,6 +29,10 @@ from time import sleep
 import warnings
 import pickle
 from prettytable import PrettyTable
+import matplotlib as mpl
+mpl.use('pdf')
+import seaborn as sns
+from matplotlib import pyplot as plt
 
 class Launcher():
     def __init__(self):
@@ -407,10 +411,12 @@ class Launcher():
         if args.use_unfiltered:
             pkl_dir = "unfiltered_TCR_seqs"
             outfile = open("{root_dir}/unfiltered_TCR_summary.txt".format(root_dir=root_dir), 'w')
+            length_filename_root = "{}/unfiltered_reconstructed_lengths_TCR".format(root_dir)
 
         else:
             pkl_dir = "filtered_TCR_seqs"
             outfile = open("{root_dir}/filtered_TCR_summary.txt".format(root_dir=root_dir), 'w')
+            length_filename_root = "{}/filtered_reconstructed_lengths_TCR".format(root_dir)
         
         for d in subdirectories:
             cell_pkl = "{root_dir}/{d}/{pkl_dir}/{d}.pkl".format(pkl_dir=pkl_dir, d=d, root_dir=root_dir)
@@ -479,13 +485,26 @@ class Launcher():
         
         
         #plot lengths of reconstructed sequences
-        ##TODO fix this so that it only uses the IgBlast-defined lengths
         lengths = {'A':[], 'B':[]}
         for cell in cells.values():
             for locus in lengths.keys():
                 lengths[locus] = lengths[locus] +  cell.get_trinity_lengths(locus)
-        pdb.set_trace()    
         
+        #plot TCRA length distributions
+        plt.figure()
+        plt.axvline(334, linestyle="--", color = 'k')
+        plt.axvline(344, linestyle="--",color = 'k')
+        sns.distplot(lengths['A'])
+        sns.despine()
+        plt.savefig("{}A.pdf".format(length_filename_root)) 
+        
+        #plot TCRB length distributions
+        plt.figure()
+        plt.axvline(339, linestyle="--", color = 'k')
+        plt.axvline(345, linestyle="--",color = 'k')
+        sns.distplot(lengths['B'])
+        sns.despine()
+        plt.savefig("{}B.pdf".format(length_filename_root))
         
         
         

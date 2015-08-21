@@ -484,7 +484,7 @@ def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs, exp
                         i = V + "_" + junc_string + "_" + J
                         all_poss_identifiers.add(i)
                 
-                #get original sequence from Trinity file - needed for summary of reconstructed lengths
+                #get original sequence from Trinity file - needed for summary of reconstructed lengths. Only use the VDJ portion found by IgBLAST
                 trinity_file = "{output_dir}/Trinity_output/{cell_name}_{locus}.Trinity.fasta".format(locus=locus, output_dir=output_dir, cell_name=cell_name)
                 for record in SeqIO.parse(open(trinity_file, 'rU'), 'fasta'):
                     if query_name in record.id:
