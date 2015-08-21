@@ -185,6 +185,25 @@ class Cell:
                 prod_count += 1
         return("{}/{}".format(prod_count, total_count))
         
+    def filter_recombinants(self):
+        for locus in ['A', 'B']:
+            recs = self.all_recombinants[locus]
+            if len(recs) > 2:
+                TPM_ranks = Counter()
+                for rec in recs:
+                    TPM_ranks.update({rec.contig_name: rec.TPM})
+                two_most_common = [x[0] for x in TPM_ranks.most_common(2)]
+                to_remove = []
+                for rec in recs:
+                    if rec.contig_name not in two_most_common:
+                        to_remove.append(rec)
+                for rec in to_remove:
+                    self.all_recombinants[locus].remove(rec)
+                    if locus == 'A':
+                        self.A_recombinants.remove(rec)
+                    elif locus == 'B':
+                        self.B_recombinants.remove(rec)
+        
 class Recombinant:
     'Class to describe a recombined TCR locus as determined from the single-cell pipeline'
     def __init__(self, contig_name, locus, identifier, all_poss_identifiers, productive, stop_codon, in_frame, TPM, dna_seq, hit_table, summary, junction_details, best_VJ_names, alignment_summary):
