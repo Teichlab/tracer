@@ -199,10 +199,6 @@ class Cell:
                         to_remove.append(rec)
                 for rec in to_remove:
                     self.all_recombinants[locus].remove(rec)
-                    if locus == 'A':
-                        self.A_recombinants.remove(rec)
-                    elif locus == 'B':
-                        self.B_recombinants.remove(rec)
         
 class Recombinant:
     'Class to describe a recombined TCR locus as determined from the single-cell pipeline'
@@ -246,13 +242,13 @@ class Recombinant:
     def get_summary(self):
         summary_string = "##{contig_name}##\n".format(contig_name=self.contig_name)
         if self.locus == 'A':
-            V_segment = self.summary[0].split(",")[0]
-            J_segment = self.summary[1].split(",")[0]
+            V_segment = self.summary[0]
+            J_segment = self.summary[1]
             segments_string = "V segment:\t{V_segment}\nJ segment:\t{J_segment}\n".format(V_segment=V_segment, J_segment=J_segment)
         elif self.locus == 'B':
-            V_segment = self.summary[0].split(",")[0]
-            D_segment = self.summary[1].split(",")[0]
-            J_segment = self.summary[2].split(",")[0]
+            V_segment = self.summary[0]
+            D_segment = self.summary[1]
+            J_segment = self.summary[2]
             segments_string = "V segment:\t{V_segment}\nD segment:\t{D_segment}\nJ segment:\t{J_segment}\n".format(V_segment=V_segment, D_segment=D_segment, J_segment=J_segment)
         summary_string = summary_string + segments_string
         summary_string = summary_string + "ID:\t{}\n".format(self.identifier)
