@@ -14,6 +14,11 @@ import pdb
 #      Copyright (c) 2015 EMBL - European Bioinformatics Institute           # 
 ############################################################################## 
 
+
+import matplotlib as mpl
+mpl.use('pdf')
+import seaborn as sns
+from matplotlib import pyplot as plt
 import tracer_func as tracer
 import ConfigParser
 import argparse
@@ -29,10 +34,7 @@ from time import sleep
 import warnings
 import pickle
 from prettytable import PrettyTable
-import matplotlib as mpl
-mpl.use('pdf')
-import seaborn as sns
-from matplotlib import pyplot as plt
+
 
 class Launcher():
     def __init__(self):
@@ -410,13 +412,22 @@ class Launcher():
         
         if args.use_unfiltered:
             pkl_dir = "unfiltered_TCR_seqs"
-            outfile = open("{root_dir}/unfiltered_TCR_summary.txt".format(root_dir=root_dir), 'w')
-            length_filename_root = "{}/unfiltered_reconstructed_lengths_TCR".format(root_dir)
+            outdir = "{}/unfiltered_TCR_summary".format(root_dir)
+            #outfile = open("{root_dir}/unfiltered_TCR_summary.txt".format(root_dir=root_dir), 'w')
+            #length_filename_root = "{}/unfiltered_reconstructed_lengths_TCR".format(root_dir)
 
         else:
             pkl_dir = "filtered_TCR_seqs"
-            outfile = open("{root_dir}/filtered_TCR_summary.txt".format(root_dir=root_dir), 'w')
-            length_filename_root = "{}/filtered_reconstructed_lengths_TCR".format(root_dir)
+            outdir = "{}/filtered_TCR_summary".format(root_dir)
+            #outfile = open("{root_dir}/filtered_TCR_summary.txt".format(root_dir=root_dir), 'w')
+            #length_filename_root = "{}/filtered_reconstructed_lengths_TCR".format(root_dir)
+        
+        tracer.makeOutputDir(outdir)
+        
+        
+        outfile = open("{}/TCR_summary.txt".format(outdir), 'w')
+        length_filename_root = "{}/reconstructed_lengths_TCR".format(outdir)
+        
         
         for d in subdirectories:
             cell_pkl = "{root_dir}/{d}/{pkl_dir}/{d}.pkl".format(pkl_dir=pkl_dir, d=d, root_dir=root_dir)
