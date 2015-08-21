@@ -41,6 +41,15 @@ class Cell:
         self.cdr3_comparisons = {'A' : None, 'B' : None, 'mean_both' : None}
         self.expt_label = expt_label
         self.is_empty = is_empty
+        self.is_inkt = self._check_if_inkt()
+    
+    def _check_if_inkt(self):
+        A_recombs = self.getMainRecombinantIdentifiersForLocus("A")
+        for recomb in A_recombs:
+            if "TRAV11" in recomb and "TRAJ18" in recomb:
+                return(recomb)
+            else:
+                return(False)
     
     def reset_cdr3_comparisons(self):
             self.cdr3_comparisons = {'A' : None, 'B' : None, 'mean_both' : None}
@@ -221,8 +230,9 @@ class Cell:
     def get_trinity_lengths(self, locus):
         recs = self.all_recombinants[locus]
         lengths = []
-        for rec in recs:
-            lengths.append(len(rec.trinity_seq)) 
+        if recs is not None:
+            for rec in recs:
+                lengths.append(len(rec.trinity_seq)) 
         return(lengths)
     
     

@@ -376,6 +376,8 @@ class Launcher():
         parser = argparse.ArgumentParser(description = "Summarise set of cells with reconstructed TCR sequences")
         parser.add_argument('--config_file', '-c', metavar="<CONFIG_FILE>", help='config file to use [tracer.conf]', default='tracer.conf')
         parser.add_argument('--use_unfiltered', '-u', help='use unfiltered recombinants', action="store_true")
+        parser.add_argument('--use_unfiltered', '-u', help='use unfiltered recombinants', action="store_true")
+        parser.add_argument('--keep_inkt', '-i', help='ignore iNKT cells when constructing networks', action="store_true")
         parser.add_argument('dir', metavar="<DIR>", help='directory containing subdirectories for each cell to be summarised')
         args = parser.parse_args(sys.argv[2:])
         
@@ -408,6 +410,7 @@ class Launcher():
         
         cells = {}
         empty_cells = []
+        NKT_cells = {}
         subdirectories = os.walk(root_dir).next()[1]
         
         if args.use_unfiltered:
@@ -436,6 +439,8 @@ class Launcher():
                 cells[d] = cl
                 if cl.is_empty:
                     empty_cells.append(d)
+                if cl.is_inkt:
+                    NKT_cells[d] = (cl.is_inkt, cl.getMainRecombinantIdentifiersForLocus('B'))
         
         count_of_cells_with_alpha_recovered = 0
         count_of_cells_with_beta_recovered = 0
@@ -490,9 +495,7 @@ class Launcher():
             
             t.add_row([label] + row)
         outfile.write(t.get_string())
-    
-        for cell_name in empty_cells:
-            del cells[cell_name]    
+     
         
         
         #plot lengths of reconstructed sequences
@@ -518,7 +521,12 @@ class Launcher():
         plt.savefig("{}B.pdf".format(length_filename_root))
         
         
+        for cell_name in empty_cells:
+            del cells[cell_name]
         
+        if not args.keep_inkt:
+            for cell_name in NKT_cells.keys():
+                del cells[cell_name]
     
 if __name__ == '__main__':
     Launcher()
