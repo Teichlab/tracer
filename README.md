@@ -7,6 +7,7 @@ TraCeR - reconstruction of T cell receptor sequences from single-cell RNA-seq da
 3. [Setup](#setup)
 4. [Usage](#using-tracer)
 	- [*Assemble*](#assemble-tcr-reconstruction)
+    - [*Summarise*](#summarise-summary-and-clonotype-networks)
 
 
 ##Introduction
@@ -127,25 +128,25 @@ Tracer has two modes *assemble* and *summarise*.
 
 For each cell, an `/<output_directory>/<cell_name>` directory will be created. This will contain the following subdirectories.
 
-1. `<output_directory>/<cell_name>/aligned_reads`
+1. `<output_directory>/<cell_name>/aligned_reads`  
     This contains the output from Bowtie2 with the sequences of the reads that aligned to the synthetic genomes.
 
-2. `<output_directory>/<cell_name>/Trinity_output`
+2. `<output_directory>/<cell_name>/Trinity_output`  
     Contains fasta files for each locus where contigs could be assembled. Also two text files that log successful and unsuccessful assemblies.
 
-3. `<output_directory>/<cell_name>/IgBLAST_output`
+3. `<output_directory>/<cell_name>/IgBLAST_output`  
     Files with the output from IgBLAST for the contigs from each locus. 
 
-4. `<output_directory>/<cell_name>/unfiltered_TCR_seqs`
+4. `<output_directory>/<cell_name>/unfiltered_TCR_seqs`  
     Files describing the TCR sequences that were assembled prior to filtering by expression if necessary.
     - `unfiltered_TCRs.txt` : text file containing TCR details. Begins with count of productive/total rearrangements detected for each locus. Then details of each detected recombinant.
     - `<cell_name>_TCRseqs.fa` : fasta file containing full-length, reconstructed TCR sequences.
     - `<cell_name>.pkl` : Python [pickle](https://docs.python.org/2/library/pickle.html) file containing the internal representation of the cell and its recombinants as used by TraCeR. This is used in the summarisation steps.
 
-5. `<output_directory>/<cell_name>/expression_quantification`
+5. `<output_directory>/<cell_name>/expression_quantification`  
     Contains Kallisto output with expression quantification of the entire transcriptome *including* the reconstructed TCRs.
 
-6. `<output_directory>/<cell_name>/filtered_TCR_seqs`
+6. `<output_directory>/<cell_name>/filtered_TCR_seqs`  
     Contains the same files as the unfiltered directory above but these recombinants have been filtered so that only the two most highly expressed from each locus are retained. This resolves biologically implausible situtations where more than two recombinants are detected for a locus. **This directory contains the final output with high-confidence TCR assignments**.
 
 
