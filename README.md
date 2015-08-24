@@ -160,6 +160,6 @@ For each cell, an `/<output_directory>/<cell_name>` directory will be created. T
 
 #####Options#####
 `-c/--config_file <conf_file>` : config file to use. Default = `tracer.conf`  
-`-u/--use_infiltered` : Set this flag to use unfiltered recombinants for summary and networks rather than the recombinants filtered by expression level.
-`-i/--keep_inkt` : TraCeR attempts to identify iNKT cells by their characteristic TCRA gene choice (TRAV11–TRAJ18). By default, these are removed before creation of clonotype networks. Setting this option retains the iNKT cells in all stages.
-`-g/--graph_format` : Output format for the clonotype networks. This is passed directly to Graphviz and so must be one of the options detailed at [http://www.graphviz.org/doc/info/output.html].
+`-u/--use_infiltered` : Set this flag to use unfiltered recombinants for summary and networks rather than the recombinants filtered by expression level.  
+`-i/--keep_inkt` : TraCeR attempts to identify iNKT cells by their characteristic TCRA gene choice (TRAV11–TRAJ18). By default, these are removed before creation of clonotype networks. Setting this option retains the iNKT cells in all stages.    
+`-g/--graph_format` : Output format for the clonotype networks. This is passed directly to Graphviz and so must be one of the options detailed at [http://www.graphviz.org/doc/info/output.html].  
