@@ -30,13 +30,15 @@ Tracer relies on several additional tools and Python modules that you should ins
 
 
 ##Setup##
-Once the prerequisites above are installed and working you're ready to tell TraCeR where to find them. TraCeR uses a configuration file to point it to the locations of files that it needs and a couple of other options. By default, this is `tracer.conf` in the same directory as the TraCeR executable. The `-c` option to the various tracer modules allows you to specify any other file to act as the configuration file. 
+Once the prerequisites above are installed and working you're ready to tell TraCeR where to find them.
+
+TraCeR uses a configuration file to point it to the locations of files that it needs and a couple of other options. By default, this is `tracer.conf` in the same directory as the TraCeR executable. The `-c` option to the various tracer modules allows you to specify any other file to act as the configuration file. 
 
 ###External tool locations###
 Edit `tracer.conf` (or a copy) so that the paths within the `[tool_locations]` section point to the executables for all of the required tools. 
 
 		[tool_locations]
-		#paths to tools used by TraCeR for alignment, quanitation, etc
+		#paths to tools used by TraCeR for alignment, quantitation, etc
 		bowtie2_path = /path/to/bowtie2
 		igblast_path = /path/to/igblastn
 		kallisto_path = /path/to/kallisto
@@ -56,7 +58,8 @@ Currently, organism-specific files (TCR gene sequences, synthetic genome indices
 This path specifies the directory that contains Bowtie2 indices constructed from all possible combinations of V and J segments for each locus. 
 
 ####Trinity options####
-    [trinity_options]
+		[trinity_options]
+		#line below specifies maximum memory for Trinity Jellyfish component. Set it appropriately for your environment.
 		max_jellyfish_memory = 1G
 
 Trinity needs to know the maximum memory available to it for the Jellyfish component. Specify this here. 
@@ -80,8 +83,8 @@ Path to fasta files with sequences for each V, D or J gene. Files are names `TR<
 Type of sequence to be analysed. Since TraCeR currently only works with TCR sequences, there's no need to change this. 
 
 ####Kallisto options####
-    [kallisto_options]
-		base_transcriptome = /nfs/research2/teichmann/mike/genomes/mouse/kallisto_transcriptome/Mus_musculus.GRCm38.rel79.cdna.all.fa
+		[kallisto_options]
+		base_transcriptome = /path/to/kallisto/transcriptome
 
 Location of the transcriptome fasta file to which the specific TCR sequences will be appended from each cell. Can be downloaded from http://bio.math.berkeley.edu/kallisto/transcriptomes/ and many other places.
 
