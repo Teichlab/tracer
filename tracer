@@ -83,7 +83,7 @@ class Launcher():
         cell_name = args.cell_name
         fastq1 = args.fastq1
         fastq2 = args.fastq2
-        ncores = str(args.ncores):
+        ncores = str(args.ncores)
         
         #Read config file
         config = ConfigParser.ConfigParser()
@@ -154,7 +154,9 @@ class Launcher():
             cell = tracer.parse_IgBLAST(locus_names, output_dir, cell_name, imgt_seq_location)
 
         self.quantify_with_kallisto(kallisto, cell, output_dir, cell_name, kallisto_base_transcriptome, fastq1, fastq2, ncores, should_resume)
+        
         print
+        
         counts = tracer.load_kallisto_counts("{}/expression_quantification/kallisto_output/abundance.tsv".format(output_dir))
         
         for locus, recombinants in cell.all_recombinants.iteritems():
@@ -165,7 +167,12 @@ class Launcher():
         
         self.print_cell_summary(cell, "{output_dir}/unfiltered_TCR_seqs/unfiltered_TCRs.txt".format(output_dir=output_dir))
         pickle.dump(cell, open("{output_dir}/unfiltered_TCR_seqs/{cell_name}.pkl".format(output_dir=output_dir, cell_name=cell.name), 'w'))
+        print "##Filtering by read count##"
         cell.filter_recombinants()
+        fasta_filename = "{output_dir}/filtered_TCR_seqs/{cell_name}_TCRseqs.fa".format(output_dir=output_dir, cell_name=cell_name)
+        fasta_file = open(fasta_filename, 'w')
+        fasta_file.write(cell.get_fasta_string())    
+        fasta_file.close()
         self.print_cell_summary(cell, "{output_dir}/filtered_TCR_seqs/filtered_TCRs.txt".format(output_dir=output_dir))
         pickle.dump(cell, open("{output_dir}/filtered_TCR_seqs/{cell_name}.pkl".format(output_dir=output_dir, cell_name=cell.name), 'w'))
         
@@ -201,7 +208,7 @@ class Launcher():
         if should_resume:
             trinity_report_successful =  "{}/Trinity_output/successful_trinity_assemblies.txt".format(output_dir)
             trinity_report_unsuccessful = "{}/Trinity_output/unsuccessful_trinity_assemblies.txt".format(output_dir)
-            if (os.path.isfile(trinity_report_successful) and os.path.getsize(trinity_report_successful) >0) and (os.path.isfile(trinity_report_unsuccessful and os.path.getsize(trinity_report_unsuccessful) >0)):
+            if (os.path.isfile(trinity_report_successful) and os.path.isfile(trinity_report_unsuccessful)) and (os.path.getsize(trinity_report_successful) >0 or os.path.getsize(trinity_report_unsuccessful) >0) :
                 print "Resuming with existing Trinity output"
                 return
         
@@ -232,7 +239,7 @@ class Launcher():
     
         successful_files = tracer.clean_file_list(successful_files)
         unsuccessful_directories = tracer.clean_file_list(unsuccessful_directories)
-    
+
     
         success_out = open(successful_file_summary, "w")
         fail_out = open(unsuccessful_file_summary, "w")
@@ -269,6 +276,11 @@ class Launcher():
     
         success_out.close()
         fail_out.close()
+        
+        #remove pointless .readcount files
+        readcount_files = glob.glob("{}/aligned_reads/*.readcount".format(output_dir))
+        for f in readcount_files:
+            os.remove(f)
         
         if len(unsuccessful_directories) == 2:
             print "No successful Trinity assemblies"
