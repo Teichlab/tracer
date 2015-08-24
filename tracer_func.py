@@ -918,7 +918,75 @@ def draw_network_from_cells(cells, output_dir, output_format, dot, neato):
     subprocess.check_call(command)
     
     
+def get_component_groups_sizes(cells):
+    cells = cells.values()
+    G = nx.MultiGraph()
+    #initialise all cells as nodes
+    for cell in cells:
+        G.add_node(cell)
+    #make edges:
+    for i in range(len(cells)):
+        current_cell = cells[i]
+        comparison_cells = cells[i+1:]
+        
+        
+        for locus in ['A','B','D', 'G']:
+            
+            #current_identifiers = current_cell.getMainRecombinantIdentifiersForLocus(locus)
+            for comparison_cell in comparison_cells:
+                shared_identifiers = 0
+                if current_cell.all_recombinants[locus] is not None:
+                    for current_recombinant in current_cell.all_recombinants[locus]:
+                        current_id_set = current_recombinant.all_poss_identifiers
+                        if comparison_cell.all_recombinants[locus] is not None:
+                            for comparison_recombinant in comparison_cell.all_recombinants[locus]:
+                                comparison_id_set = comparison_recombinant.all_poss_identifiers
+                                if len(current_id_set.intersection(comparison_id_set)) > 0:
+                                    shared_identifiers += 1
+                            
+                #comparison_identifiers = comparison_cell.getAllRecombinantIdentifiersForLocus(locus)
+                #common_identifiers = current_identifiers.intersection(comparison_identifiers)
+                if shared_identifiers > 0:
+                    width = shared_identifiers * 2
+                    G.add_edge(current_cell, comparison_cell, locus, penwidth=width, weight = shared_identifiers)
+                
+    deg = G.degree()
     
+    to_remove = [n for n in deg if deg[n]==0]            
+
+    #if len(to_remove) < len(G.nodes()):
+    #    G.remove_nodes_from(to_remove)
+        
+    components = nx.connected_components(G)
+    
+    component_groups = list()
+    
+    singlets = []
+    for component in components:
+        members = list()
+        if len(component) > 1:
+            for cell in component:
+                members.append(cell.name)
+            component_groups.append(members)
+        else:
+            for cell in component:
+                singlets.append(cell.name)
+    
+        
+    clonotype_size_counter = Counter([len(x) for x in component_groups])
+    clonotype_size_counter.update({1:len(singlets)})
+    
+    clonotype_sizes = []
+    max_size = max(clonotype_size_counter.keys())
+    if max_size < 5:
+        clonotype_sizes = [len(singlets)] + [0]*4
+    else:
+        for x in range(1, max_size+1):
+            clonotype_sizes.append(clonotype_size_counter[x])
+         
+    
+    
+    return(clonotype_sizes)    
     
     
     

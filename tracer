@@ -538,9 +538,17 @@ class Launcher():
             for cell_name in NKT_cells.keys():
                 del cells[cell_name]
                 
-                
+        #make clonotype networks
         tracer.draw_network_from_cells(cells, outdir, graph_format, dot, neato)         
         
-    
+        #plot clonotype sizes
+        plt.figure()
+        clonotype_sizes = tracer.get_component_groups_sizes(cells)
+        w = 0.85
+        x_range = range(1, len(clonotype_sizes) + 1)
+        plt.bar(x_range, height=clonotype_sizes, width=w, color='black', align='center')
+        plt.gca().set_xticks(x_range)
+        plt.savefig("{}/clonotype_sizes.pdf".format(outdir))
+        
 if __name__ == '__main__':
     Launcher()
