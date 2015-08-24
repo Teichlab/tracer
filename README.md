@@ -90,3 +90,28 @@ Type of sequence to be analysed. Since TraCeR currently only works with TCR sequ
 
 Location of the transcriptome fasta file to which the specific TCR sequences will be appended from each cell. Can be downloaded from http://bio.math.berkeley.edu/kallisto/transcriptomes/ and many other places.
 
+##Using TraCeR##
+Tracer has two modes *assemble* and *summarise*. 
+
+*Assemble* takes fastq files of paired-end RNA-seq reads from a single-cell and reconstructs TCR sequences.
+
+*Summarise* takes a set of directories containing output from the *assemble* phase (each directory represents a single cell) and summarises TCR recovery rates as well as generating clonotype networks. 
+
+
+###*Assemble*: TCR reconstruction##
+
+####Usage####
+
+    ./tracer assemble [options] <file_1> <file_2> <cell_name> <output_directory>
+
+#####Main arguments#####
+`<file_1>` : fastq file containing #1 mates from paired-end sequencing  
+`<file_2>` : fastq file containing #2 mates from paired-end sequencing   
+`<cell_name>` : name of the cell. This is arbitrary text that will be used for all subsequent references to the cell in filenames/labels etc.  
+`<output_directory>` : directory for output. Will be created if it doesn't exist. Cell-specific output will go into /<output_directory>/cell_name  
+
+#####Options#####
+`-p/--ncores <int>` : number of processor cores available. This is passed to Bowtie2 and Trinity. Default=1.  
+`-c/--config_file <conf_file>` : config file to use. Default = `tracer.conf`
+`-r/--resume_with_existing_files` : if this is set, TraCeR will look for existing output files and not re-run steps that already appear to have been completed. This saves time if TraCeR died partway through a step and you want to resume where it left off. 
+
