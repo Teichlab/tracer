@@ -117,7 +117,7 @@ Tracer has two modes *assemble* and *summarise*.
 `<file_1>` : fastq file containing #1 mates from paired-end sequencing  
 `<file_2>` : fastq file containing #2 mates from paired-end sequencing   
 `<cell_name>` : name of the cell. This is arbitrary text that will be used for all subsequent references to the cell in filenames/labels etc.  
-`<output_directory>` : directory for output. Will be created if it doesn't exist. Cell-specific output will go into `/<output_directory>/<cell_name>`
+`<output_directory>` : directory for output. Will be created if it doesn't exist. Cell-specific output will go into `/<output_directory>/<cell_name>`. This path should be the same for every cell that you want to summarise together.
 
 #####Options#####
 `-p/--ncores <int>` : number of processor cores available. This is passed to Bowtie2 and Trinity. Default=1.  
@@ -152,3 +152,14 @@ For each cell, an `/<output_directory>/<cell_name>` directory will be created. T
 
 ###*Summarise*: Summary and clonotype networks###
 
+####Usage####
+    ./tracer summarise [options] <input_dir>
+
+#####Main argument#####
+`<input_dir>` : directory containing subdirectories of each cell you want to summarise. 
+
+#####Options#####
+`-c/--config_file <conf_file>` : config file to use. Default = `tracer.conf`  
+`-u/--use_infiltered` : Set this flag to use unfiltered recombinants for summary and networks rather than the recombinants filtered by expression level.
+`-i/--keep_inkt` : TraCeR attempts to identify iNKT cells by their characteristic TCRA gene choice (TRAV11–TRAJ18). By default, these are removed before creation of clonotype networks. Setting this option retains the iNKT cells in all stages.
+`-g/--graph_format` : Output format for the clonotype networks. This is passed directly to Graphviz and so must be one of the options detailed at [http://www.graphviz.org/doc/info/output.html].
