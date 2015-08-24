@@ -1,6 +1,14 @@
 # TraCeR
 TraCeR - reconstruction of T cell receptor sequences from single-cell RNA-seq data.
 
+##Contents##
+1. [Introduction](#introduction)
+2. [Installation](#installation)
+3. [Setup](#setup)
+4. [Usage](#using-tracer)
+	- [*Assemble*](#assemble-tcr-reconstruction)
+
+
 ##Introduction
 This tool reconstructs the sequences of rearranged and expressed T cell receptor genes from single-cell RNA-seq data. It then uses the TCR sequences to identify cells that have the same receptor sequences and so derive from the same original clonally-expanded cell. 
 
@@ -114,4 +122,8 @@ Tracer has two modes *assemble* and *summarise*.
 `-p/--ncores <int>` : number of processor cores available. This is passed to Bowtie2 and Trinity. Default=1.  
 `-c/--config_file <conf_file>` : config file to use. Default = `tracer.conf`  
 `-r/--resume_with_existing_files` : if this is set, TraCeR will look for existing output files and not re-run steps that already appear to have been completed. This saves time if TraCeR died partway through a step and you want to resume where it left off.   
+
+####Output####
+
+###*Summarise*: Summary and clonotype networks###
 
