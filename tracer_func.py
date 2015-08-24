@@ -507,7 +507,7 @@ def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs, exp
                 trinity_seq = str(trinity_seq[start_coord:end_coord])
                 
                 
-                if len(jun_string) < 50:
+                if len(junc_string) < 50:
                     rec = Recombinant(contig_name=query_name, locus=returned_locus, identifier=identifier, all_poss_identifiers=all_poss_identifiers, productive=is_productive[0], stop_codon=is_productive[1], in_frame=is_productive[2], TPM=0.0, dna_seq=fasta_line_for_contig, hit_table=good_hits, summary=rearrangement_summary, junction_details=junction_list, best_VJ_names=bestVJNames, alignment_summary=alignment_summary, trinity_seq=trinity_seq)
                     recombinants[locus].append(rec)
               

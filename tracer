@@ -105,9 +105,9 @@ class Launcher():
         
         synthetic_genome_path = config.get('bowtie2_options', 'synthetic_genome_index_path')
         
-        igblast_index_name_format = config.get('IgBlast_options', 'igblast_index_name')
-        igblast_aux_data = config.get('IgBlast_options', 'igblast_aux_data')
-        organism = config.get('IgBlast_options', 'organism')
+        igblast_index_location = config.get('IgBlast_options', 'igblast_index_location')
+        #igblast_aux_data = config.get('IgBlast_options', 'igblast_aux_data')
+        #organism = config.get('IgBlast_options', 'igblast_organism')
         igblast_seqtype = config.get('IgBlast_options', 'igblast_seqtype')
         imgt_seq_location = config.get('IgBlast_options', 'imgt_seq_location')
         
@@ -139,7 +139,7 @@ class Launcher():
         for d in data_dirs:
             tracer.makeOutputDir("{}/{}".format(output_dir, d))
         
-        locus_names = ["TCRB", "TCRA"]
+        locus_names = ["TCRA", "TCRB"]
         
         should_resume = args.resume_with_existing_files
         
@@ -147,8 +147,8 @@ class Launcher():
         print
         trinity_JM = config.get('trinity_options', 'max_jellyfish_memory')
         self.assemble_with_trinity(trinity, locus_names, output_dir, cell_name, ncores, trinity_grid_conf, trinity_JM, should_resume)
-        print
-        self.run_IgBlast(igblast, locus_names, output_dir, cell_name, igblast_aux_data, igblast_index_name_format, organism, igblast_seqtype, should_resume)
+        print        
+        self.run_IgBlast(igblast, locus_names, output_dir, cell_name, igblast_index_location, igblast_seqtype, should_resume)
         print
         
         with warnings.catch_warnings():
@@ -278,7 +278,7 @@ class Launcher():
 
     
     
-    def run_IgBlast(self, igblast, locus_names, output_dir, cell_name, auxdatafile, index_name_format, organism, ig_seqtype, should_resume):
+    def run_IgBlast(self, igblast, locus_names, output_dir, cell_name, index_location, ig_seqtype, should_resume):
         print  "##Running IgBLAST##"
         
         if should_resume:
@@ -290,16 +290,26 @@ class Launcher():
         
         databases = {}
         for segment in ['v','d','j']:
-            databases[segment] = index_name_format.replace("$segment", segment)
+            databases[segment] = "{}/imgt_tcr_db_{}.fa".format(index_location,segment)
+        
+        #lines below suppress Igblast warning about not having an auxliary file. Taken from http://stackoverflow.com/questions/11269575/how-to-hide-output-of-subprocess-in-python-2-7
+        try:
+            from subprocess import DEVNULL # py3k
+        except ImportError:
+            DEVNULL = open(os.devnull, 'wb')
+        
              
         for locus in locus_names:
             print "##{}##".format(locus)
             trinity_fasta = "{}/Trinity_output/{}_{}.Trinity.fasta".format(output_dir, cell_name, locus)
-            command = [igblast, '-germline_db_V', databases['v'], '-germline_db_D', databases['d'], '-germline_db_J', databases['j'], '-organism', organism, '-domain_system', 'imgt', '-ig_seqtype', ig_seqtype, '-auxiliary_data', auxdatafile, '-show_translation', '-num_alignments_V', '5', '-num_alignments_D', '5', '-num_alignments_J', '5', '-outfmt', '7', '-query', trinity_fasta]
+            #command = [igblast, '-germline_db_V', databases['v'], '-germline_db_D', databases['d'], '-germline_db_J', databases['j'], '-organism', organism, '-domain_system', 'imgt', '-ig_seqtype', ig_seqtype, '-auxiliary_data', auxdatafile, '-show_translation', '-num_alignments_V', '5', '-num_alignments_D', '5', '-num_alignments_J', '5', '-outfmt', '7', '-query', trinity_fasta]
+            command = [igblast, '-germline_db_V', databases['v'], '-germline_db_D', databases['d'], '-germline_db_J', databases['j'], '-domain_system', 'imgt', '-ig_seqtype', ig_seqtype, '-show_translation', '-num_alignments_V', '5', '-num_alignments_D', '5', '-num_alignments_J', '5', '-outfmt', '7', '-query', trinity_fasta]
             igblast_out = "{output_dir}/IgBLAST_output/{cell_name}_{locus}.IgBLASTOut".format(output_dir=output_dir, cell_name=cell_name, locus=locus)
             out = open(igblast_out, 'w')
-            subprocess.check_call(command, stdout=out)
+            subprocess.check_call(command, stdout=out,stderr=DEVNULL)
             out.close()
+        
+        DEVNULL.close()
         
     
     
