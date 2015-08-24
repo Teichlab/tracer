@@ -116,7 +116,7 @@ Tracer has two modes *assemble* and *summarise*.
 `<file_1>` : fastq file containing #1 mates from paired-end sequencing  
 `<file_2>` : fastq file containing #2 mates from paired-end sequencing   
 `<cell_name>` : name of the cell. This is arbitrary text that will be used for all subsequent references to the cell in filenames/labels etc.  
-`<output_directory>` : directory for output. Will be created if it doesn't exist. Cell-specific output will go into /<output_directory>/cell_name  
+`<output_directory>` : directory for output. Will be created if it doesn't exist. Cell-specific output will go into `/<output_directory>/<cell_name>`
 
 #####Options#####
 `-p/--ncores <int>` : number of processor cores available. This is passed to Bowtie2 and Trinity. Default=1.  
@@ -124,6 +124,30 @@ Tracer has two modes *assemble* and *summarise*.
 `-r/--resume_with_existing_files` : if this is set, TraCeR will look for existing output files and not re-run steps that already appear to have been completed. This saves time if TraCeR died partway through a step and you want to resume where it left off.   
 
 ####Output####
+
+For each cell, an `/<output_directory>/<cell_name>` directory will be created. This will contain the following subdirectories.
+
+1. `<output_directory>/<cell_name>/aligned_reads`
+    This contains the output from Bowtie2 with the sequences of the reads that aligned to the synthetic genomes.
+
+2. `<output_directory>/<cell_name>/Trinity_output`
+    Contains fasta files for each locus where contigs could be assembled. Also two text files that log successful and unsuccessful assemblies.
+
+3. `<output_directory>/<cell_name>/IgBLAST_output`
+    Files with the output from IgBLAST for the contigs from each locus. 
+
+4. `<output_directory>/<cell_name>/unfiltered_TCR_seqs`
+    Files describing the TCR sequences that were assembled prior to filtering by expression if necessary.
+    - `unfiltered_TCRs.txt` : text file containing TCR details. Begins with count of productive/total rearrangements detected for each locus. Then details of each detected recombinant.
+    - `<cell_name>_TCRseqs.fa` : fasta file containing full-length, reconstructed TCR sequences.
+    - `<cell_name>.pkl` : Python [pickle](https://docs.python.org/2/library/pickle.html) file containing the internal representation of the cell and its recombinants as used by TraCeR. This is used in the summarisation steps.
+
+5. `<output_directory>/<cell_name>/expression_quantification`
+    Contains Kallisto output with expression quantification of the entire transcriptome *including* the reconstructed TCRs.
+
+6. `<output_directory>/<cell_name>/filtered_TCR_seqs`
+    Contains the same files as the unfiltered directory above but these recombinants have been filtered so that only the two most highly expressed from each locus are retained. This resolves biologically implausible situtations where more than two recombinants are detected for a locus. **This directory contains the final output with high-confidence TCR assignments**.
+
 
 ###*Summarise*: Summary and clonotype networks###
 
