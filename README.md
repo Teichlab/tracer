@@ -58,26 +58,28 @@ Currently, organism-specific files (TCR gene sequences, synthetic genome indices
 This path specifies the directory that contains Bowtie2 indices constructed from all possible combinations of V and J segments for each locus. 
 
 ####Trinity options####
+#####Jellyfish memory#####
 		[trinity_options]
 		#line below specifies maximum memory for Trinity Jellyfish component. Set it appropriately for your environment.
 		max_jellyfish_memory = 1G
 
 Trinity needs to know the maximum memory available to it for the Jellyfish component. Specify this here. 
-
+#####HPC configuration#####
     trinity_grid_conf = /nfs/research2/teichmann/mike/TCR/scripts/TCR_Trinity.conf
 
 Trinity can parallelise contig assembly by submitting jobs across a compute cluster. If you're running in such an environment you can specify an optional trinity config file here. See the Trinity documentation for more information.
 
 ####IgBLAST options####
+#####Databases path#####
 		[IgBlast_options]
 		igblast_index_location = resources/igblast_dbs/mouse
-
+#####VDJ sequences#####
 This path specifies the directory that contains IgBLAST database files for V, D and J genes. These files are named `imgt_tcr_db_<SEGMENT>.fa`.
 
     imgt_seq_location = resources/imgt_sequences/mouse
 		
 Path to fasta files with sequences for each V, D or J gene. Files are names `TR<LOCUS><SEGMENT>.fa`.
-	
+#####Receptor type#####
     igblast_seqtype = TCR
 
 Type of sequence to be analysed. Since TraCeR currently only works with TCR sequences, there's no need to change this. 
