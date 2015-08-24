@@ -25,6 +25,8 @@ from Bio.Seq import Seq
 from Bio.Alphabet import IUPAC, generic_dna
 import pdb
 import Levenshtein
+import shlex
+import networkx as nx
 
 ##CLASSES##
 class Cell:
@@ -83,9 +85,8 @@ class Cell:
         return(identifier_list)
    
     
-    def html_style_label_dna(self, both_names):
+    def html_style_label_dna(self):
         colours = {'A' : {'productive' : '#E41A1C', 'non-productive' : "#ff8c8e"}, 'B' : {'productive' : '#377eb8', 'non-productive' : "#95c1e5"}, 'G' : {'productive' : '#4daf4a', 'non-productive' : "#aee5ac"}, 'D' : {'productive' : '#984ea3', 'non-productive' : "#deace5"}}
-        styles = {'Yes' : ('<I>', '</I>'), 'No' : ('', '')}
         locus_names = ['A','B','G','D']
         recombinants = dict()
         final_string = '<<FONT POINT-SIZE="16"><B>' + self.name + "</B></FONT>"
@@ -97,10 +98,7 @@ class Cell:
                         prod = "productive"
                     else:
                         prod = "non-productive"
-                    if both_names:
-                        recombinant_set.add("<BR/>" + '<FONT COLOR = "{}">'.format(colours[locus][prod]) + styles[recombinant.recovered_from_filter][0] + "{}<BR/>{}".format(recombinant.identifier, str(recombinant.cdr3)) + styles[recombinant.recovered_from_filter][1] + '</FONT>')
-                    else:
-                        recombinant_set.add("<BR/>" + '<FONT COLOR = "{}">'.format(colours[locus][prod]) + styles[recombinant.recovered_from_filter][0] + recombinant.identifier + styles[recombinant.recovered_from_filter][1] + '</FONT>')
+                    recombinant_set.add("<BR/>" + '<FONT COLOR = "{}">'.format(colours[locus][prod])  + recombinant.identifier  + '</FONT>')
                 
                 recombinants[locus] = recombinant_set
         for locus in locus_names:
@@ -110,34 +108,35 @@ class Cell:
         final_string = final_string + ">"
         return(final_string)
         #return(self.name)
+
     
-    def html_style_label_cdr3(self, both_names):
-        colours = {'A' : {'productive' : '#E41A1C', 'non-productive' : "#ff8c8e"}, 'B' : {'productive' : '#377eb8', 'non-productive' : "#95c1e5"}, 'G' : {'productive' : '#4daf4a', 'non-productive' : "#aee5ac"}, 'D' : {'productive' : '#984ea3', 'non-productive' : "#deace5"}}
-        styles = {'Yes' : ('<I>', '</I>'), 'No' : ('', '')}
-        locus_names = ['A','B','G','D']
-        recombinants = dict()
-        final_string = '<<FONT POINT-SIZE="16"><B>' + self.name + "</B></FONT>"
-        for locus, recombinant_list in self.all_recombinants.iteritems():
-            recombinant_set = set()
-            if recombinant_list is not None:
-                for recombinant in recombinant_list:
-                    if recombinant.productive:
-                        prod = "productive"
-                    else:
-                        prod = "non-productive"
-                    if both_names:
-                        recombinant_set.add("<BR/>" + '<FONT COLOR = "{}">'.format(colours[locus][prod]) + styles[recombinant.recovered_from_filter][0] + "{}<BR/>{}".format(recombinant.identifier, str(recombinant.cdr3)) + styles[recombinant.recovered_from_filter][1] + '</FONT>')
-                    else:
-                        recombinant_set.add("<BR/>" + '<FONT COLOR = "{}">'.format(colours[locus][prod]) + styles[recombinant.recovered_from_filter][0] + str(recombinant.cdr3) + styles[recombinant.recovered_from_filter][1] + '</FONT>')
+    def html_style_label_for_circles(self):
+            colours = {'A' : {'productive' : '#E41A1C', 'non-productive' : "#ff8c8e"}, 'B' : {'productive' : '#377eb8', 'non-productive' : "#95c1e5"}, 'G' : {'productive' : '#4daf4a', 'non-productive' : "#aee5ac"}, 'D' : {'productive' : '#984ea3', 'non-productive' : "#deace5"}}
+            locus_names = ['A','B','G','D']
+            recombinants = dict()
+            final_string = '<<table cellspacing="6px" border="0" cellborder="0">'
+            #final_string = "<"
+            for locus, recombinant_list in self.all_recombinants.iteritems():
+                recombinant_set = set()
+                if recombinant_list is not None:
+                    for recombinant in recombinant_list:
+                        if recombinant.productive:
+                            prod = "productive"
+                        else:
+                            prod = "non-productive"
+                        recombinant_set.add('<tr><td height="10" width="40" bgcolor="{}"></td></tr>'.format(colours[locus][prod]))
+
+                    recombinants[locus] = recombinant_set
+            strings = []
+            for locus in locus_names:
+                if locus in recombinants.keys():
                 
-                recombinants[locus] = recombinant_set
-        for locus in locus_names:
-            if locus in recombinants.keys():
-                id_string = "".join(recombinants[locus])
-                final_string = final_string + id_string
-        final_string = final_string + ">"
-        return(final_string)
-        #return(self.name)
+                    strings.append("".join(recombinants[locus]))
+
+            id_string = "".join(strings)
+            final_string = final_string + id_string
+            final_string = final_string + "</table>>"
+            return(final_string)
     
     def __str__(self):
         return(self.name)
@@ -507,8 +506,10 @@ def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs, exp
                 start_coord, end_coord = get_coords(good_hits)
                 trinity_seq = str(trinity_seq[start_coord:end_coord])
                 
-                rec = Recombinant(contig_name=query_name, locus=returned_locus, identifier=identifier, all_poss_identifiers=all_poss_identifiers, productive=is_productive[0], stop_codon=is_productive[1], in_frame=is_productive[2], TPM=0.0, dna_seq=fasta_line_for_contig, hit_table=good_hits, summary=rearrangement_summary, junction_details=junction_list, best_VJ_names=bestVJNames, alignment_summary=alignment_summary, trinity_seq=trinity_seq)
-                recombinants[locus].append(rec)
+                
+                if len(jun_string) < 50:
+                    rec = Recombinant(contig_name=query_name, locus=returned_locus, identifier=identifier, all_poss_identifiers=all_poss_identifiers, productive=is_productive[0], stop_codon=is_productive[1], in_frame=is_productive[2], TPM=0.0, dna_seq=fasta_line_for_contig, hit_table=good_hits, summary=rearrangement_summary, junction_details=junction_list, best_VJ_names=bestVJNames, alignment_summary=alignment_summary, trinity_seq=trinity_seq)
+                    recombinants[locus].append(rec)
               
     #pdb.set_trace()
     if recombinants:
@@ -812,3 +813,117 @@ def load_kallisto_counts(tsv_file):
             counts[locus][name] = tpm
     return counts 
                     
+                    
+def make_cell_network_from_dna(cells, colorscheme, colours, keep_unlinked, shape, dot, neato):
+    
+    
+    G = nx.MultiGraph()
+    #initialise all cells as nodes
+    
+    if shape == 'circle':
+        for cell in cells:
+            G.add_node(cell, shape=shape, label=cell.html_style_label_for_circles(), sep=0.4, fontname="helvetica neue")
+    else:    
+        for cell in cells:
+            G.add_node(cell, shape=shape, label=cell.html_style_label_dna(), fontname="helvetica neue")
+    #make edges:
+    for i in range(len(cells)):
+        current_cell = cells[i]
+        comparison_cells = cells[i+1:]
+        
+        
+        for locus in ['A','B','D', 'G']:
+            col = colours[locus]
+            
+            #current_identifiers = current_cell.getMainRecombinantIdentifiersForLocus(locus)
+            for comparison_cell in comparison_cells:
+                shared_identifiers = 0
+                if current_cell.all_recombinants[locus] is not None:
+                    for current_recombinant in current_cell.all_recombinants[locus]:
+                        current_id_set = current_recombinant.all_poss_identifiers
+                        if comparison_cell.all_recombinants[locus] is not None:
+                            for comparison_recombinant in comparison_cell.all_recombinants[locus]:
+                                comparison_id_set = comparison_recombinant.all_poss_identifiers
+                                if len(current_id_set.intersection(comparison_id_set)) > 0:
+                                    shared_identifiers += 1
+                            
+                #comparison_identifiers = comparison_cell.getAllRecombinantIdentifiersForLocus(locus)
+                #common_identifiers = current_identifiers.intersection(comparison_identifiers)
+                if shared_identifiers > 0:
+                    width = shared_identifiers * 2
+                    G.add_edge(current_cell, comparison_cell, locus, penwidth=width, color=col, weight = shared_identifiers, colorscheme=colorscheme)
+                
+    
+    deg = G.degree()
+    
+    to_remove = [n for n in deg if deg[n]==0]            
+
+    if len(to_remove) < len(G.nodes()):
+        if not shape=='circle':
+            G.remove_nodes_from(to_remove)
+            drawing_tool = [dot, '-Gsplines=true', '-Goverlap=false', '-Gsep=0.4']
+        else:
+            drawing_tool = [dot, '-Gsplines=true', '-Goverlap=false']
+    else:
+        drawing_tool = [neato, '-Gsplines=true', '-Goverlap=false']
+    
+    
+    
+    
+    bgcolors = ['#8dd3c720', '#ffffb320', '#bebada20', '#fb807220', '#80b1d320', '#fdb46220', '#b3de6920', '#fccde520', '#d9d9d920', '#bc80bd20', '#ccebc520', '#ffed6f20']
+    component_counter = 0
+    component_groups = list()
+    j = 0
+    components = nx.connected_components(G)
+
+
+
+
+    for component in components:
+        members = list()
+        if len(component) > 1:
+            for cell in component:
+                members.append(cell.name)
+                G.node[cell]['style'] = 'filled'
+                G.node[cell]['fillcolor'] = bgcolors[j]
+                cell.bgcolor = bgcolors[j]
+
+            if j < 11:
+                j += 1
+            else:
+                component_counter += 1 
+                j = 0
+
+        component_groups.append(members)
+    
+
+    
+    return(G, drawing_tool)
+
+
+def draw_network_from_cells(cells, output_dir, output_format, dot, neato):
+    cells=cells.values()
+    colorscheme = 'set15'
+    colours = {'A' : '1', 'B' : '2', 'G' : '3', 'D' : '5', 'mean_both' : '#a8a8a8bf'}
+    network, draw_tool = make_cell_network_from_dna(cells, colorscheme, colours, False, "box", dot, neato)
+    network_file = "{}/cell_network_with_identifiers.dot".format(output_dir)
+    nx.write_dot(network, network_file)
+    command = draw_tool + ['-o', "{output_dir}/clonotype_network_with_identifiers.{output_format}".format(output_dir=output_dir, output_format=output_format), "-T", output_format, network_file]
+    subprocess.check_call(command)
+    
+    network, draw_tool = make_cell_network_from_dna(cells, colorscheme, colours,  False, "circle", dot, neato)
+    network_file = "{}/cell_network_without_identifiers.dot".format(output_dir)
+    nx.write_dot(network, network_file)
+    command = draw_tool + ['-o', "{output_dir}/clonotype_network_without_identifiers.{output_format}".format(output_dir=output_dir, output_format=output_format), "-T", output_format, network_file]
+    subprocess.check_call(command)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    

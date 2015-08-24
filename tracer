@@ -377,15 +377,13 @@ class Launcher():
         parser.add_argument('--config_file', '-c', metavar="<CONFIG_FILE>", help='config file to use [tracer.conf]', default='tracer.conf')
         parser.add_argument('--use_unfiltered', '-u', help='use unfiltered recombinants', action="store_true")
         parser.add_argument('--keep_inkt', '-i', help='ignore iNKT cells when constructing networks', action="store_true")
+        parser.add_argument('--graph_format', '-f', metavar="<GRAPH_FORMAT>", help='graphviz output format [pdf]', default='pdf')
         parser.add_argument('dir', metavar="<DIR>", help='directory containing subdirectories for each cell to be summarised')
         args = parser.parse_args(sys.argv[2:])
         
         root_dir = os.path.abspath(args.dir)
-        #cell_name = args.cell_name
-        #fastq1 = args.fastq1
-        #fastq2 = args.fastq2
-        #ncores = args.ncores
-        #expt_label = args.expt_label
+        graph_format = args.graph_format
+
         
         #Read config file
         config = ConfigParser.ConfigParser()
@@ -539,6 +537,10 @@ class Launcher():
         if not args.keep_inkt:
             for cell_name in NKT_cells.keys():
                 del cells[cell_name]
+                
+                
+        tracer.draw_network_from_cells(cells, outdir, graph_format, dot, neato)         
+        
     
 if __name__ == '__main__':
     Launcher()
