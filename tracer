@@ -157,7 +157,7 @@ class Launcher():
         
         print
         
-        counts = tracer.load_kallisto_counts("{}/expression_quantification/kallisto_output/abundance.tsv".format(output_dir))
+        counts = tracer.load_kallisto_counts("{}/expression_quantification/abundance.tsv".format(output_dir))
         
         for locus, recombinants in cell.all_recombinants.iteritems():
             if recombinants is not None:
@@ -351,12 +351,13 @@ class Launcher():
         index_command = [kallisto, 'index', '-i', idx_file, output_transcriptome]
         subprocess.check_call(index_command)
         print "##Quantifying with Kallisto##"
-        kallisto_command = [kallisto, 'quant', '-i', idx_file, '-t', ncores, '-o', "{}/expression_quantification/kallisto_output".format(output_dir), fastq1, fastq2]
+        kallisto_command = [kallisto, 'quant', '-i', idx_file, '-t', ncores, '-o', "{}/expression_quantification".format(output_dir), fastq1, fastq2]
         subprocess.check_call(kallisto_command)
         
-        #delete index file because it's huge and unecessary
-        os.remove(idx_file)
-        
+        #delete index file because it's huge and unecessary. Delete transcriptome file
+        #os.remove(idx_file)
+        #os.remove(output_transcriptome)
+        shutil.rmtree("{}/expression_quantification/kallisto_index/".format(output_dir))
         
     def print_cell_summary(self, cell, output_file):
         out_file = open(output_file, 'w')
