@@ -164,5 +164,21 @@ For each cell, an `/<output_directory>/<cell_name>` directory will be created. T
 #####Options#####
 `-c/--config_file <conf_file>` : config file to use. Default = `tracer.conf`  
 `-u/--use_unfiltered` : Set this flag to use unfiltered recombinants for summary and networks rather than the recombinants filtered by expression level.  
-`-i/--keep_inkt` : TraCeR attempts to identify iNKT cells by their characteristic TCRA gene choice (TRAV11–TRAJ18). By default, these are removed before creation of clonotype networks. Setting this option retains the iNKT cells in all stages.    
-`-g/--graph_format` : Output format for the clonotype networks. This is passed directly to Graphviz and so must be one of the options detailed at http://www.graphviz.org/doc/info/output.html.  
+`-i/--keep_inkt` : TraCeR attempts to identify iNKT cells by their characteristic TCRA gene segments (TRAV11–TRAJ18). By default, these are removed before creation of clonotype networks. Setting this option retains the iNKT cells in all stages.    
+`-g/--graph_format` : Output format for the clonotype networks. This is passed directly to Graphviz and so must be one of the options detailed at http://www.graphviz.org/doc/info/output.html. 
+
+####Output####
+Output is written to `<input_dir>/filtered_TCR_summary` or `<input_dir>/unfiltered_TCR_summary` depending on whether the `--use_unfiltered` option was set.
+
+The following output files are generated:
+
+1. `TCR_summary.txt`
+    Summary statistics describing successful TCR reconstruction rates and the numbers of cells with 0, 1, 2 or more recombinants for each locus.
+2. `reconstructed_lengths_TCR[A|B].pdf`
+    Distribution plots showing the lengths of the VDJ regions from assembled TCR contigs. Longer contigs give higher-confidence segment assignments.
+3. `clonotype_sizes.pdf`
+    Distribution of clonotype sizes.
+4.  `clonotype_network_[with|without]_identifiers.<graph_format>`
+    graphical representation of clonotype networks either with full recombinant identifiers or just lines indicating presence/absence of recombinants.
+5.  `clonotype_network_[with|without]_identifiers.dot`
+    files describing the clonotype networks in the [Graphviz DOT language](http://www.graphviz.org/doc/info/lang.html)
