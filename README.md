@@ -15,6 +15,8 @@ This tool reconstructs the sequences of rearranged and expressed T cell receptor
 
 For more information on TraCeR, its validation and how it can be applied to investigate T cell populations during infection, see our publication at *link to MS/publication here*.
 
+Please email questions / problems to mstubb@ebi.ac.uk
+
 ##Installation
 TraCeR is written in Python and so can just be downloaded, made executable (with `chmod u+x tracer`) and run or run with `python tracer`. Download the latest version and accompanying files from www.github.com/teichlab/tracer. 
 
