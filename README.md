@@ -27,7 +27,7 @@ Tracer relies on several additional tools and Python modules that you should ins
 ####Software####
 1. [Bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml) - required for alignment of reads to synthetic TCR genomes.
 2. [Trinity](http://trinityrnaseq.github.io) - required for assembly of reads into TCR contigs.
-3. [IgBLAST](http://www.ncbi.nlm.nih.gov/igblast/faq.html#standalone) ([FTP site](ftp://ftp.ncbi.nih.gov/blast/executables/igblast/release/)) - required for analysis of assembled contigs.
+3. [IgBLAST](http://www.ncbi.nlm.nih.gov/igblast/faq.html#standalone) - required for analysis of assembled contigs. [FTP site](ftp://ftp.ncbi.nih.gov/blast/executables/igblast/release/).
 4. [Kallisto](http://pachterlab.github.io/kallisto/) - required for quantification of TCR expression.
 5. [Graphviz](http://www.graphviz.org) - Dot and Neato drawing programs required for visualisation of clonotype graphs.
 
