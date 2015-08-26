@@ -44,8 +44,6 @@ class Launcher():
         
         - assemble: assemble TCR sequences from single-cell RNA-sequencing reads
         - summarise: summarise TCR sequences from set of cells, build clonotype networks
-        - build_synth_genome: build synthetic genomes and Bowtie2 indices for read extraction
-        - build_igblast_index: build index for use with IgBlast
         
         use tracer <mode> -h for specific help
         ''')
