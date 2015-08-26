@@ -43,6 +43,8 @@ Once the prerequisites above are installed and working you're ready to tell TraC
 
 TraCeR uses a configuration file to point it to the locations of files that it needs and a couple of other options. By default, this is `tracer.conf` in the same directory as the TraCeR executable. The `-c` option to the various tracer modules allows you to specify any other file to act as the configuration file. 
 
+**Important:** If you  specify relative paths in the config file these will be used as relative to the directory that contains the `tracer` executable.
+
 ###External tool locations###
 Edit `tracer.conf` (or a copy) so that the paths within the `[tool_locations]` section point to the executables for all of the required tools. 
 
@@ -60,7 +62,6 @@ The tools used by TraCeR need a variety of additional files to work properly and
 
 Currently, organism-specific files (TCR gene sequences, synthetic genome indices, igblast_indices) for mouse and human are distributed with the source-code in the `resources` directory. There will soon be a `build` module that constructs all of the necessary synthetic genomes and indices from any collection of V and J gene sequences. 
 
-If you use specify relative paths in the config file these will be used as relative to the directory that contains the `tracer` executable.
 
 ####Bowtie synthetic genomes path####
 		[bowtie2_options]
