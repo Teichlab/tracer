@@ -201,7 +201,8 @@ class Launcher():
 
             subprocess.check_call(command)
         
-            
+        if not os.path.isfile(sam_file):
+            die_with_empty_cell(cell_name, output_dir)
     
     
     
@@ -387,13 +388,14 @@ class Launcher():
         out_file.close()
 
     def die_with_empty_cell(self, cell_name,  output_dir):
+        print "##No TCR recombinants found##"
         cell = tracer.Cell(cell_name, None, None, None, None,  is_empty=True)
         self.print_cell_summary(cell, "{output_dir}/unfiltered_TCR_seqs/unfiltered_TCRs.txt".format(output_dir=output_dir))
         pickle.dump(cell, open("{output_dir}/unfiltered_TCR_seqs/{cell_name}.pkl".format(output_dir=output_dir, cell_name=cell.name), 'w'))
         cell.filter_recombinants()
         self.print_cell_summary(cell, "{output_dir}/filtered_TCR_seqs/filtered_TCRs.txt".format(output_dir=output_dir))
         pickle.dump(cell, open("{output_dir}/filtered_TCR_seqs/{cell_name}.pkl".format(output_dir=output_dir, cell_name=cell.name), 'w'))
-        exit(1)
+        exit(0)
 
 ##SUMMARISE
 
