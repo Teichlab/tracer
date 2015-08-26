@@ -60,6 +60,8 @@ The tools used by TraCeR need a variety of additional files to work properly and
 
 Currently, organism-specific files (TCR gene sequences, synthetic genome indices, igblast_indices) for mouse and human are distributed with the source-code in the `resources` directory. There will soon be a `build` module that constructs all of the necessary synthetic genomes and indices from any collection of V and J gene sequences. 
 
+If you use specify relative paths in the config file these will be used as relative to the directory that contains the `tracer` executable.
+
 ####Bowtie synthetic genomes path####
 		[bowtie2_options]
 		synthetic_genome_index_path = resources/synthetic_genomes/mouse
@@ -160,6 +162,6 @@ For each cell, an `/<output_directory>/<cell_name>` directory will be created. T
 
 #####Options#####
 `-c/--config_file <conf_file>` : config file to use. Default = `tracer.conf`  
-`-u/--use_infiltered` : Set this flag to use unfiltered recombinants for summary and networks rather than the recombinants filtered by expression level.  
+`-u/--use_unfiltered` : Set this flag to use unfiltered recombinants for summary and networks rather than the recombinants filtered by expression level.  
 `-i/--keep_inkt` : TraCeR attempts to identify iNKT cells by their characteristic TCRA gene choice (TRAV11–TRAJ18). By default, these are removed before creation of clonotype networks. Setting this option retains the iNKT cells in all stages.    
-`-g/--graph_format` : Output format for the clonotype networks. This is passed directly to Graphviz and so must be one of the options detailed at [http://www.graphviz.org/doc/info/output.html].  
+`-g/--graph_format` : Output format for the clonotype networks. This is passed directly to Graphviz and so must be one of the options detailed at http://www.graphviz.org/doc/info/output.html.  
