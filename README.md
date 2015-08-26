@@ -77,7 +77,7 @@ This path specifies the directory that contains Bowtie2 indices constructed from
 
 Trinity needs to know the maximum memory available to it for the Jellyfish component. Specify this here. 
 #####HPC configuration#####
-    trinity_grid_conf = /nfs/research2/teichmann/mike/TCR/scripts/TCR_Trinity.conf
+    trinity_grid_conf = /path/to/trinity/grid.conf
 
 Trinity can parallelise contig assembly by submitting jobs across a compute cluster. If you're running in such an environment you can specify an optional trinity config file here. See the Trinity documentation for more information.
 
