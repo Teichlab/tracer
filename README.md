@@ -114,7 +114,7 @@ Tracer has two modes *assemble* and *summarise*.
 
 ####Usage####
 
-    ./tracer assemble [options] <file_1> <file_2> <cell_name> <output_directory>
+    tracer assemble [options] <file_1> <file_2> <cell_name> <output_directory>
 
 #####Main arguments#####
 `<file_1>` : fastq file containing #1 mates from paired-end sequencing  
@@ -156,7 +156,7 @@ For each cell, an `/<output_directory>/<cell_name>` directory will be created. T
 ###*Summarise*: Summary and clonotype networks###
 
 ####Usage####
-    ./tracer summarise [options] <input_dir>
+    tracer summarise [options] <input_dir>
 
 #####Main argument#####
 `<input_dir>` : directory containing subdirectories of each cell you want to summarise. 
