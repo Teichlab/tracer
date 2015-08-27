@@ -330,6 +330,7 @@ class Launcher():
     def quantify_with_kallisto(self, kallisto, cell, output_dir, cell_name, kallisto_base_transcriptome, fastq1, fastq2, ncores, should_resume):
         print "##Running Kallisto##"
         if should_resume:
+            pdb.set_trace()
             if os.path.isfile("{}/expression_quantification/kallisto_output/abundance.tsv".format(output_dir)):
                 print "Resuming with existing Kallisto output"
                 return
@@ -415,8 +416,8 @@ class Launcher():
         config = ConfigParser.ConfigParser()
         config.read(args.config_file)
         
-        dot = resolve_relative_path(config.get('tool_locations', 'dot_path'))
-        neato = resolve_relative_path(config.get('tool_locations', 'neato_path'))
+        dot = self.resolve_relative_path(config.get('tool_locations', 'dot_path'))
+        neato = self.resolve_relative_path(config.get('tool_locations', 'neato_path'))
 
         #check that executables from config file can be used
         not_executable = []
@@ -464,7 +465,7 @@ class Launcher():
                     empty_cells.append(d)
                 if cl.is_inkt:
                     NKT_cells[d] = (cl.is_inkt, cl.getMainRecombinantIdentifiersForLocus('B'))
-        
+        pdb.set_trace()
         count_of_cells_with_alpha_recovered = 0
         count_of_cells_with_beta_recovered = 0
         count_of_cells_with_paired_recovered = 0

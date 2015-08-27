@@ -45,12 +45,14 @@ class Cell:
         self.is_inkt = self._check_if_inkt()
     
     def _check_if_inkt(self):
+        if self.name=='12392_58':
+            pdb.set_trace()
         A_recombs = self.getMainRecombinantIdentifiersForLocus("A")
+        inkt_ident = False
         for recomb in A_recombs:
             if "TRAV11" in recomb and "TRAJ18" in recomb:
-                return(recomb)
-            else:
-                return(False)
+                inkt_ident = recomb
+        return(inkt_ident)
     
     def reset_cdr3_comparisons(self):
             self.cdr3_comparisons = {'A' : None, 'B' : None, 'mean_both' : None}
