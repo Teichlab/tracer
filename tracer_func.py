@@ -45,8 +45,6 @@ class Cell:
         self.is_inkt = self._check_if_inkt()
     
     def _check_if_inkt(self):
-        if self.name=='12392_58':
-            pdb.set_trace()
         A_recombs = self.getMainRecombinantIdentifiersForLocus("A")
         inkt_ident = False
         for recomb in A_recombs:
