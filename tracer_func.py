@@ -185,13 +185,16 @@ class Cell:
         return("\n".join(seq_string + ["\n"]))    
     
     def summarise_productivity(self, locus):
-        recs = self.all_recombinants[locus]
-        prod_count = 0
-        total_count = len(recs)
-        for rec in recs:
-            if rec.productive:
-                prod_count += 1
-        return("{}/{}".format(prod_count, total_count))
+        if self.all_recombinants[locus] is None:
+            return("0/0")
+        else:
+            recs = self.all_recombinants[locus]
+            prod_count = 0
+            total_count = len(recs)
+            for rec in recs:
+                if rec.productive:
+                    prod_count += 1
+            return("{}/{}".format(prod_count, total_count))
         
     def filter_recombinants(self):
         for locus in ['A', 'B']:
@@ -347,13 +350,16 @@ def parse_IgBLAST(locus_names, output_dir, cell_name,  imgt_seq_location):
     for locus in locus_names:
         file = "{output_dir}/IgBLAST_output/{cell_name}_{locus}.IgBLASTOut".format(output_dir=output_dir, cell_name=cell_name, locus=locus)
         
-        igblast_result_chunks = split_igblast_file(file)
-        
-        
-        for chunk in igblast_result_chunks:
-            (query_name, chunk_details) = process_chunk(chunk)
+        if os.path.isfile(file):
+            igblast_result_chunks = split_igblast_file(file)
             
-            all_locus_data[locus][query_name] = chunk_details
+            
+            for chunk in igblast_result_chunks:
+                (query_name, chunk_details) = process_chunk(chunk)
+                
+                all_locus_data[locus][query_name] = chunk_details
+        else:
+            all_locus_data[locus] = None
         
     cell = find_possible_alignments(all_locus_data, locus_names, cell_name, IMGT_seqs,  output_dir)    
     return(cell)
@@ -450,66 +456,67 @@ def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs,  ou
     recombinants = {'TCRA':[], 'TCRB':[]}
     for locus in locus_names:
         data_for_locus = sample_dict[locus]
-        for query_name, query_data in data_for_locus.iteritems():
-            #pdb.set_trace()
-            processed_hit_table = process_hit_table(query_name, query_data, locus)
+        if data_for_locus is not None:
+            for query_name, query_data in data_for_locus.iteritems():
+                #pdb.set_trace()
+                processed_hit_table = process_hit_table(query_name, query_data, locus)
+                
+                if processed_hit_table is not None:
+                    (returned_locus, good_hits, rearrangement_summary) = processed_hit_table
+                    junction_list = query_data['junction_details']
+                    
+                    (fasta_line_for_contig, is_productive, bestVJNames) = get_fasta_line_for_contig(rearrangement_summary, junction_list, good_hits, returned_locus, IMGT_seqs, cell_name, query_name)
             
-            if processed_hit_table is not None:
-                (returned_locus, good_hits, rearrangement_summary) = processed_hit_table
-                junction_list = query_data['junction_details']
-                
-                (fasta_line_for_contig, is_productive, bestVJNames) = get_fasta_line_for_contig(rearrangement_summary, junction_list, good_hits, returned_locus, IMGT_seqs, cell_name, query_name)
-
-                
-                best_V = remove_allele_stars(rearrangement_summary[0].split(",")[0])
-                 
-                
-
-                junc_string = "".join(junction_list)
-                junc_string = remove_NA(junc_string)
-                
-                if returned_locus in "BD":
-                    best_J = remove_allele_stars(rearrangement_summary[2].split(",")[0])
-                elif returned_locus in "AG":
-                    best_J = remove_allele_stars(rearrangement_summary[1].split(",")[0])
-
-                identifier = best_V + "_" + junc_string + "_" + best_J
-                
-                
-                ##line attempting to add alignment summary to data for use with PCR comparisons
-                alignment_summary = query_data['alignment_summary']
-                
-                all_V_names = [remove_allele_stars(x) for x in rearrangement_summary[0].split(',')]
-                
-                if locus == "TCRB":
-                    all_J_names = [remove_allele_stars(x) for x in rearrangement_summary[2].split(',')]
-                elif locus == "TCRA":
-                    all_J_names = [remove_allele_stars(x) for x in rearrangement_summary[1].split(',')]
-                
-                all_poss_identifiers = set()
-                for V in all_V_names:
-                    for J in all_J_names:
-                        i = V + "_" + junc_string + "_" + J
-                        all_poss_identifiers.add(i)
-                
-                #get original sequence from Trinity file - needed for summary of reconstructed lengths. Only use the VDJ portion found by IgBLAST
-                trinity_file = "{output_dir}/Trinity_output/{cell_name}_{locus}.Trinity.fasta".format(locus=locus, output_dir=output_dir, cell_name=cell_name)
-                for record in SeqIO.parse(open(trinity_file, 'rU'), 'fasta'):
-                    if query_name in record.id:
-                        trinity_seq = record
-                
-                if 'reversed' in good_hits[0][1]:
-                    trinity_seq = trinity_seq.reverse_complement().seq
-                else:
-                    trinity_seq = trinity_seq.seq
-                start_coord, end_coord = get_coords(good_hits)
-                trinity_seq = str(trinity_seq[start_coord:end_coord])
-                
-                
-                if len(junc_string) < 50:
-                    rec = Recombinant(contig_name=query_name, locus=returned_locus, identifier=identifier, all_poss_identifiers=all_poss_identifiers, productive=is_productive[0], stop_codon=is_productive[1], in_frame=is_productive[2], TPM=0.0, dna_seq=fasta_line_for_contig, hit_table=good_hits, summary=rearrangement_summary, junction_details=junction_list, best_VJ_names=bestVJNames, alignment_summary=alignment_summary, trinity_seq=trinity_seq)
-                    recombinants[locus].append(rec)
-              
+                    
+                    best_V = remove_allele_stars(rearrangement_summary[0].split(",")[0])
+                     
+                    
+            
+                    junc_string = "".join(junction_list)
+                    junc_string = remove_NA(junc_string)
+                    
+                    if returned_locus in "BD":
+                        best_J = remove_allele_stars(rearrangement_summary[2].split(",")[0])
+                    elif returned_locus in "AG":
+                        best_J = remove_allele_stars(rearrangement_summary[1].split(",")[0])
+            
+                    identifier = best_V + "_" + junc_string + "_" + best_J
+                    
+                    
+                    ##line attempting to add alignment summary to data for use with PCR comparisons
+                    alignment_summary = query_data['alignment_summary']
+                    
+                    all_V_names = [remove_allele_stars(x) for x in rearrangement_summary[0].split(',')]
+                    
+                    if locus == "TCRB":
+                        all_J_names = [remove_allele_stars(x) for x in rearrangement_summary[2].split(',')]
+                    elif locus == "TCRA":
+                        all_J_names = [remove_allele_stars(x) for x in rearrangement_summary[1].split(',')]
+                    
+                    all_poss_identifiers = set()
+                    for V in all_V_names:
+                        for J in all_J_names:
+                            i = V + "_" + junc_string + "_" + J
+                            all_poss_identifiers.add(i)
+                    
+                    #get original sequence from Trinity file - needed for summary of reconstructed lengths. Only use the VDJ portion found by IgBLAST
+                    trinity_file = "{output_dir}/Trinity_output/{cell_name}_{locus}.Trinity.fasta".format(locus=locus, output_dir=output_dir, cell_name=cell_name)
+                    for record in SeqIO.parse(open(trinity_file, 'rU'), 'fasta'):
+                        if query_name in record.id:
+                            trinity_seq = record
+                    
+                    if 'reversed' in good_hits[0][1]:
+                        trinity_seq = trinity_seq.reverse_complement().seq
+                    else:
+                        trinity_seq = trinity_seq.seq
+                    start_coord, end_coord = get_coords(good_hits)
+                    trinity_seq = str(trinity_seq[start_coord:end_coord])
+                    
+                    
+                    if len(junc_string) < 50:
+                        rec = Recombinant(contig_name=query_name, locus=returned_locus, identifier=identifier, all_poss_identifiers=all_poss_identifiers, productive=is_productive[0], stop_codon=is_productive[1], in_frame=is_productive[2], TPM=0.0, dna_seq=fasta_line_for_contig, hit_table=good_hits, summary=rearrangement_summary, junction_details=junction_list, best_VJ_names=bestVJNames, alignment_summary=alignment_summary, trinity_seq=trinity_seq)
+                        recombinants[locus].append(rec)
+                  
     #pdb.set_trace()
     if recombinants:
         for locus, rs in recombinants.iteritems():
