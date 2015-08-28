@@ -41,8 +41,12 @@ class Cell:
         self.bgcolor = None
         self.all_recombinants = {'A' : A_recombinants, 'B' : B_recombinants, 'G' : G_recombinants, 'D' : D_recombinants}
         self.cdr3_comparisons = {'A' : None, 'B' : None, 'mean_both' : None}
-        self.is_empty = is_empty
+        self.is_empty = self._check_is_empty()
         self.is_inkt = self._check_if_inkt()
+    
+    def _check_is_empty(self):
+        if (self.A_recombinants is None or len(self.A_recombinants)==0) and (self.B_recombinants is None or len(self.B_recombinants)==0):
+            return(True)
     
     def _check_if_inkt(self):
         A_recombs = self.getMainRecombinantIdentifiersForLocus("A")
