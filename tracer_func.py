@@ -32,7 +32,7 @@ import networkx as nx
 class Cell:
     'Class to describe T cells containing A and B loci'
     
-    def __init__(self, cell_name, A_recombinants, B_recombinants, G_recombinants, D_recombinants, is_empty=False):
+    def __init__(self, cell_name, A_recombinants, B_recombinants, G_recombinants, D_recombinants, is_empty=False, species="Mmus"):
         self.name = cell_name
         self.A_recombinants = A_recombinants
         self.B_recombinants = B_recombinants
@@ -42,18 +42,22 @@ class Cell:
         self.all_recombinants = {'A' : A_recombinants, 'B' : B_recombinants, 'G' : G_recombinants, 'D' : D_recombinants}
         self.cdr3_comparisons = {'A' : None, 'B' : None, 'mean_both' : None}
         self.is_empty = self._check_is_empty()
-        self.is_inkt = self._check_if_inkt()
+        self.is_inkt = self._check_if_inkt(species)
     
     def _check_is_empty(self):
         if (self.A_recombinants is None or len(self.A_recombinants)==0) and (self.B_recombinants is None or len(self.B_recombinants)==0):
             return(True)
     
-    def _check_if_inkt(self):
+    def _check_if_inkt(self, species):
         A_recombs = self.getMainRecombinantIdentifiersForLocus("A")
         inkt_ident = False
         for recomb in A_recombs:
-            if "TRAV11" in recomb and "TRAJ18" in recomb:
-                inkt_ident = recomb
+            if species == "Mmus":
+                if "TRAV11" in recomb and "TRAJ18" in recomb:
+                    inkt_ident = recomb
+            if species == "Hsap":
+                if "TRAV10" in recomb and "TRAJ18" in recomb:
+                    inkt_ident = recomb
         return(inkt_ident)
     
     def reset_cdr3_comparisons(self):
@@ -344,7 +348,7 @@ def load_IMGT_seqs(file):
         seqs[record.id] = str(record.seq)
     return(seqs)
 
-def parse_IgBLAST(locus_names, output_dir, cell_name,  imgt_seq_location):
+def parse_IgBLAST(locus_names, output_dir, cell_name,  imgt_seq_location, species):
     segment_names = ['TRAJ', 'TRAV', 'TRBD', 'TRBJ', 'TRBV']
     IMGT_seqs = dict()
     for segment in segment_names:
@@ -365,7 +369,7 @@ def parse_IgBLAST(locus_names, output_dir, cell_name,  imgt_seq_location):
         else:
             all_locus_data[locus] = None
         
-    cell = find_possible_alignments(all_locus_data, locus_names, cell_name, IMGT_seqs,  output_dir)    
+    cell = find_possible_alignments(all_locus_data, locus_names, cell_name, IMGT_seqs,  output_dir, species)    
     return(cell)
     
 
@@ -454,7 +458,7 @@ def process_chunk(chunk):
     return (query_name, return_dict)
 
 
-def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs,  output_dir):
+def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs,  output_dir, species):
     #pdb.set_trace()
     alignment_dict = defaultdict(dict)
     recombinants = {'TCRA':[], 'TCRB':[]}
@@ -526,9 +530,11 @@ def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs,  ou
         for locus, rs in recombinants.iteritems():
                 #Adding code to collapse sequences with very low Levenshtein distances caused by confusion between TRAVxD and TRAVx segments with different alignment lengths from IgBlast.     
                 recombinants[locus] = collapse_close_sequences(rs, locus)
-        cell = Cell(cell_name, recombinants['TCRA'], recombinants['TCRB'], None, None)
+                
+        #           cell_name, A_recombinants, B_recombinants, G_recombinants, D_recombinants, is_empty=False, species="Mmus")
+        cell = Cell(cell_name, recombinants['TCRA'], recombinants['TCRB'], None, None, species=species)
     else:
-        cell = Cell(cell_name, None, None, None, None)
+        cell = Cell(cell_name, None, None, None, None, species=species)
     
     #pdb.set_trace()
     return(cell)
