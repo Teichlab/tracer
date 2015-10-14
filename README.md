@@ -26,7 +26,7 @@ Tracer relies on several additional tools and Python modules that you should ins
 
 ####Software####
 1. [Bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml) - required for alignment of reads to synthetic TCR genomes.
-2. [Trinity](http://trinityrnaseq.github.io) - required for assembly of reads into TCR contigs.
+2. [Trinity](https://github.com/trinityrnaseq/trinityrnaseq/wiki) - required for assembly of reads into TCR contigs.
 3. [IgBLAST](http://www.ncbi.nlm.nih.gov/igblast/faq.html#standalone) - required for analysis of assembled contigs. [FTP site](ftp://ftp.ncbi.nih.gov/blast/executables/igblast/release/).
 4. [Kallisto](http://pachterlab.github.io/kallisto/) - required for quantification of TCR expression.
 5. [Graphviz](http://www.graphviz.org) - Dot and Neato drawing programs required for visualisation of clonotype graphs.
@@ -127,7 +127,9 @@ Tracer has two modes *assemble* and *summarise*.
 #####Options#####
 `-p/--ncores <int>` : number of processor cores available. This is passed to Bowtie2 and Trinity. Default=1.  
 `-c/--config_file <conf_file>` : config file to use. Default = `tracer.conf`  
+`-s/--species` : Species from which the T cells were derived. Options are `Mmus` or `Hsap` for mouse or human data. This is only important for determination of iNKT cells in the `summarise` step because it defines the V segments that are indicative of iNKT cells. Default = `Mmus`.
 `-r/--resume_with_existing_files` : if this is set, TraCeR will look for existing output files and not re-run steps that already appear to have been completed. This saves time if TraCeR died partway through a step and you want to resume where it left off.   
+
 
 ####Output####
 
