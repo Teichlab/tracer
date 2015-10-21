@@ -102,7 +102,7 @@ Type of sequence to be analysed. Since TraCeR currently only works with TCR sequ
 		[kallisto_options]
 		base_transcriptome = /path/to/kallisto/transcriptome
 
-Location of the transcriptome fasta file to which the specific TCR sequences will be appended from each cell. Can be downloaded from http://bio.math.berkeley.edu/kallisto/transcriptomes/ and many other places.
+Location of the transcriptome fasta file to which the specific TCR sequences will be appended from each cell. Can be downloaded from http://bio.math.berkeley.edu/kallisto/transcriptomes/ and many other places. This must be a plain-text fasta file so decompress it if necessary (files from the Kallisto link are gzipped).
 
 ##Using TraCeR##
 Tracer has two modes *assemble* and *summarise*. 
