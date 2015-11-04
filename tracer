@@ -153,6 +153,8 @@ class Launcher():
         
         counts = tracer.load_kallisto_counts("{}/expression_quantification/abundance.tsv".format(output_dir))
         
+        pdb.set_trace()
+        
         for locus, recombinants in cell.all_recombinants.iteritems():
             if recombinants is not None:
                 for rec in recombinants:
