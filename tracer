@@ -34,6 +34,7 @@ from time import sleep
 import warnings
 import pickle
 from prettytable import PrettyTable
+import StringIO
 
 
 class Launcher():
@@ -406,6 +407,7 @@ class Launcher():
         parser.add_argument('--config_file', '-c', metavar="<CONFIG_FILE>", help='config file to use [tracer.conf]', default='tracer.conf')
         parser.add_argument('--use_unfiltered', '-u', help='use unfiltered recombinants', action="store_true")
         parser.add_argument('--keep_inkt', '-i', help='ignore iNKT cells when constructing networks', action="store_true")
+        parser.add_argument('--transgenic', '-t', help='summarise detection of expected transgenic TCRs. Ignore these when constructing networks', action="store_true")
         parser.add_argument('--graph_format', '-f', metavar="<GRAPH_FORMAT>", help='graphviz output format [pdf]', default='pdf')
         parser.add_argument('dir', metavar="<DIR>", help='directory containing subdirectories for each cell to be summarised')
         args = parser.parse_args(sys.argv[2:])
@@ -433,6 +435,24 @@ class Launcher():
                 print t[0], t[1]
             print
             exit(1)
+        
+        if args.transgenic:
+            if not (config.has_option('transgenic_sequences', 'tcra_tg') or config.has_option('transgenic_sequences', 'tcrb_tg')):
+                print
+                print "No transgenic sequences specified. Please edit the config file to include them"
+            else:
+                igblast = self.resolve_relative_path(config.get('tool_locations', 'igblast_path'))
+                igblast_index_location = self.resolve_relative_path(config.get('IgBlast_options', 'igblast_index_location'))
+                igblast_seqtype = config.get('IgBlast_options', 'igblast_seqtype')
+                if not tracer.is_exe(igblast):
+                    print
+                    print "Could not execute IgBlast. Check your configuration file."
+                
+                
+                if config.has_option('transgenic_sequences', 'tcra_tg'):
+                    trca_tg = self.get_tg_identifier(config.get('transgenic_sequences', 'tcra_tg'), igblast, igblast_index_location, igblast_seqtype)
+                if config.has_option('transgenic_sequences', 'tcra_tg'):
+                    trcb_tg = self.get_tg_identifier(config.get('transgenic_sequences', 'tcrb_tg'), igblast, igblast_index_location, igblast_seqtype)
         
         cells = {}
         empty_cells = []
@@ -576,7 +596,30 @@ class Launcher():
         plt.bar(x_range, height=clonotype_sizes, width=w, color='black', align='center')
         plt.gca().set_xticks(x_range)
         plt.savefig("{}/clonotype_sizes.pdf".format(outdir))
-
+    
+    def get_tg_identifier(self, seq, igblast, index_location, ig_seqtype):
+        databases = {}
+        for segment in ['v','d','j']:
+            databases[segment] = "{}/imgt_tcr_db_{}.fa".format(index_location,segment)
+        
+        #lines below suppress Igblast warning about not having an auxliary file. Taken from http://stackoverflow.com/questions/11269575/how-to-hide-output-of-subprocess-in-python-2-7
+        try:
+            from subprocess import DEVNULL # py3k
+        except ImportError:
+            DEVNULL = open(os.devnull, 'wb')
+        
+        ##TODO add code here to put tg sequence into STDIN and pipe into Igblast. Get STDOUT from Igblast and parse as usual to get identifier.
+        
+        cmd = [igblast, '-germline_db_V', databases['v'], '-germline_db_D', databases['d'], '-germline_db_J', databases['j'], '-domain_system', 'imgt', '-ig_seqtype', ig_seqtype, '-show_translation', '-num_alignments_V', '5', '-num_alignments_D', '5', '-num_alignments_J', '5', '-outfmt', '7']
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+        igblast_out = p.communicate(seq)[0]
+        igblast_out = StringIO.StringIO(igblast_out)
+        igblast_result_chunks = tracer.split_igblast_file(igblast_out)
+        
+        
+        DEVNULL.close()
+        
+        
     summarize = summarise
 
 if __name__ == '__main__':

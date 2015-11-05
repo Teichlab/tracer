@@ -28,6 +28,7 @@ import Levenshtein
 import shlex
 import networkx as nx
 
+
 ##CLASSES##
 class Cell:
     'Class to describe T cells containing A and B loci'
@@ -381,7 +382,12 @@ def split_igblast_file(filename):
     chunks = []
     current_chunk = []
     
-    for line in open(filename):
+    try: 
+        file = open(filename)
+    except TypeError:
+        file = filename
+    
+    for line in file:
         line=line.rstrip()
         if line.startswith(token) and current_chunk: 
            # if line starts with token and the current chunk is not empty
