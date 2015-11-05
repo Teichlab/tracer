@@ -1033,7 +1033,10 @@ def get_component_groups_sizes(cells, transgenic_ids=False):
     clonotype_sizes = []
     max_size = max(clonotype_size_counter.keys())
     if max_size < 5:
-        clonotype_sizes = [len(singlets)] + [0]*4
+        for x in range(1, max_size+1):
+            clonotype_sizes.append(clonotype_size_counter[x])
+        zero_padding = 5 - len(clonotype_sizes)
+        clonotype_sizes = clonotype_sizes + [0]*zero_padding
     else:
         for x in range(1, max_size+1):
             clonotype_sizes.append(clonotype_size_counter[x])
