@@ -635,7 +635,7 @@ class Launcher():
             clonotype_sizes = tracer.get_component_groups_sizes(cells, transgenic_ids.values())
         else:
             clonotype_sizes = tracer.get_component_groups_sizes(cells)
-        pdb.set_trace()
+        #pdb.set_trace()
         w = 0.85
         x_range = range(1, len(clonotype_sizes) + 1)
         plt.bar(x_range, height=clonotype_sizes, width=w, color='black', align='center')
