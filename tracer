@@ -597,7 +597,7 @@ class Launcher():
         plt.gca().set_xticks(x_range)
         plt.savefig("{}/clonotype_sizes.pdf".format(outdir))
     
-    def get_tg_identifier(self, seq, igblast, index_location, ig_seqtype):
+    def get_tg_identifier(self, seq, locus, igblast, index_location, ig_seqtype):
         databases = {}
         for segment in ['v','d','j']:
             databases[segment] = "{}/imgt_tcr_db_{}.fa".format(index_location,segment)
@@ -614,7 +614,12 @@ class Launcher():
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
         igblast_out = p.communicate(seq)[0]
         igblast_out = StringIO.StringIO(igblast_out)
-        igblast_result_chunks = tracer.split_igblast_file(igblast_out)
+        igblast_result_chunk = tracer.split_igblast_file(igblast_out)[0]
+        (query_name, chunk_details) = tracer.process_chunk(igblast_result_chunk)
+        pdb.set_trace()
+        data_for_cell = defaultdict(dict)
+        data_for_cell[locus][query_name] = chunk_details
+        cell = find_possible_alignments(data_for_cell, locus, 'tg', IMGT_seqs,  output_dir, species)
         
         
         DEVNULL.close()
