@@ -118,7 +118,7 @@ class Cell:
         #return(self.name)
 
     
-    def html_style_label_for_circles(self):
+    def html_style_label_for_circles(self, transgenic_ids = False):
             colours = {'A' : {'productive' : '#E41A1C', 'non-productive' : "#ff8c8e"}, 'B' : {'productive' : '#377eb8', 'non-productive' : "#95c1e5"}, 'G' : {'productive' : '#4daf4a', 'non-productive' : "#aee5ac"}, 'D' : {'productive' : '#984ea3', 'non-productive' : "#deace5"}}
             locus_names = ['A','B','G','D']
             recombinants = dict()
@@ -132,8 +132,11 @@ class Cell:
                             prod = "productive"
                         else:
                             prod = "non-productive"
-                        recombinant_set.add('<tr><td height="10" width="40" bgcolor="{}"></td></tr>'.format(colours[locus][prod]))
-
+                        if recombinant.identifier in transgenic_ids:
+                            recombinant_set.add('<tr><td height="10" width="40" border="2" color="{}"></td></tr>'.format(colours[locus][prod]))
+                        else:
+                            recombinant_set.add('<tr><td height="10" width="40" bgcolor="{}"></td></tr>'.format(colours[locus][prod]))
+                        
                     recombinants[locus] = recombinant_set
             strings = []
             for locus in locus_names:
@@ -865,7 +868,7 @@ def load_kallisto_counts(tsv_file):
     return counts 
                     
                     
-def make_cell_network_from_dna(cells, colorscheme, colours, keep_unlinked, shape, dot, neato):
+def make_cell_network_from_dna(cells, colorscheme, colours, keep_unlinked, shape, dot, neato, transgenic_ids=False):
     
     
     G = nx.MultiGraph()
@@ -873,7 +876,7 @@ def make_cell_network_from_dna(cells, colorscheme, colours, keep_unlinked, shape
     
     if shape == 'circle':
         for cell in cells:
-            G.add_node(cell, shape=shape, label=cell.html_style_label_for_circles(), sep=0.4, fontname="helvetica neue")
+            G.add_node(cell, shape=shape, label=cell.html_style_label_for_circles(transgenic_ids), sep=0.4, fontname="helvetica neue")
     else:    
         for cell in cells:
             G.add_node(cell, shape=shape, label=cell.html_style_label_dna(), fontname="helvetica neue")
@@ -891,13 +894,14 @@ def make_cell_network_from_dna(cells, colorscheme, colours, keep_unlinked, shape
                 shared_identifiers = 0
                 if current_cell.all_recombinants[locus] is not None:
                     for current_recombinant in current_cell.all_recombinants[locus]:
-                        current_id_set = current_recombinant.all_poss_identifiers
-                        if comparison_cell.all_recombinants[locus] is not None:
-                            for comparison_recombinant in comparison_cell.all_recombinants[locus]:
-                                comparison_id_set = comparison_recombinant.all_poss_identifiers
-                                if len(current_id_set.intersection(comparison_id_set)) > 0:
-                                    shared_identifiers += 1
-                            
+                        if not (transgenic_ids and current_recombinant.identifier in transgenic_ids):
+                            current_id_set = current_recombinant.all_poss_identifiers
+                            if comparison_cell.all_recombinants[locus] is not None:
+                                for comparison_recombinant in comparison_cell.all_recombinants[locus]:
+                                    comparison_id_set = comparison_recombinant.all_poss_identifiers
+                                    if len(current_id_set.intersection(comparison_id_set)) > 0:
+                                        shared_identifiers += 1
+                                
                 #comparison_identifiers = comparison_cell.getAllRecombinantIdentifiersForLocus(locus)
                 #common_identifiers = current_identifiers.intersection(comparison_identifiers)
                 if shared_identifiers > 0:
@@ -952,17 +956,17 @@ def make_cell_network_from_dna(cells, colorscheme, colours, keep_unlinked, shape
     return(G, drawing_tool)
 
 
-def draw_network_from_cells(cells, output_dir, output_format, dot, neato):
+def draw_network_from_cells(cells, output_dir, output_format, dot, neato, transgenic_ids=False):
     cells=cells.values()
     colorscheme = 'set15'
     colours = {'A' : '1', 'B' : '2', 'G' : '3', 'D' : '5', 'mean_both' : '#a8a8a8bf'}
-    network, draw_tool = make_cell_network_from_dna(cells, colorscheme, colours, False, "box", dot, neato)
+    network, draw_tool = make_cell_network_from_dna(cells, colorscheme, colours, False, "box", dot, neato, transgenic_ids)
     network_file = "{}/clonotype_network_with_identifiers.dot".format(output_dir)
     nx.write_dot(network, network_file)
     command = draw_tool + ['-o', "{output_dir}/clonotype_network_with_identifiers.{output_format}".format(output_dir=output_dir, output_format=output_format), "-T", output_format, network_file]
     subprocess.check_call(command)
     
-    network, draw_tool = make_cell_network_from_dna(cells, colorscheme, colours,  False, "circle", dot, neato)
+    network, draw_tool = make_cell_network_from_dna(cells, colorscheme, colours,  False, "circle", dot, neato, transgenic_ids)
     network_file = "{}/clonotype_network_without_identifiers.dot".format(output_dir)
     nx.write_dot(network, network_file)
     command = draw_tool + ['-o', "{output_dir}/clonotype_network_without_identifiers.{output_format}".format(output_dir=output_dir, output_format=output_format), "-T", output_format, network_file]

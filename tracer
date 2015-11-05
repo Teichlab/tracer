@@ -154,7 +154,6 @@ class Launcher():
         
         counts = tracer.load_kallisto_counts("{}/expression_quantification/abundance.tsv".format(output_dir))
         
-        pdb.set_trace()
         
         for locus, recombinants in cell.all_recombinants.iteritems():
             if recombinants is not None:
@@ -535,10 +534,13 @@ class Launcher():
                 count_of_cells_with_paired_recovered += 1
         
         total_cells = len(cells)
-        pdb.set_trace()
         outfile.write("TCRA reconstruction:\t{count_of_cells_with_alpha_recovered} / {total_cells} ({alpha_percent}%)\nTCRB reconstruction:\t{count_of_cells_with_beta_recovered} / {total_cells} ({beta_percent}%)\nPaired productive chains\t{count_of_cells_with_paired_recovered} / {total_cells} ({paired_percent}%)\n\n".format(paired_percent=round((count_of_cells_with_paired_recovered/float(total_cells))*100,1), total_cells=total_cells, alpha_percent=round((count_of_cells_with_alpha_recovered/float(total_cells))*100,1), beta_percent=round((count_of_cells_with_beta_recovered/float(total_cells))*100,1), count_of_cells_with_beta_recovered=count_of_cells_with_beta_recovered, count_of_cells_with_paired_recovered=count_of_cells_with_paired_recovered, count_of_cells_with_alpha_recovered=count_of_cells_with_alpha_recovered))
         
-        
+        if args.transgenic:
+            outfile.write("DETECTION OF TRANSGENIC SEQUENCES\nNumber of cells with transgenic sequence detected.\nUppercase letter indicates transgenic seq detected for locus, lowercase indicates a different productive recombinant.\n")
+            for comb in transgenic_combinations:
+                outfile.write("{}:\t{}\n".format(comb, count_of_cells_with_transgenic[comb]))
+            outfile.write("\n\n")
         
         all_alpha_counter = Counter()
         all_beta_counter = Counter()
@@ -619,9 +621,13 @@ class Launcher():
         if not args.keep_inkt:
             for cell_name in NKT_cells.keys():
                 del cells[cell_name]
-                
+        
+               
         #make clonotype networks
-        tracer.draw_network_from_cells(cells, outdir, graph_format, dot, neato)         
+        if args.transgenic:
+            tracer.draw_network_from_cells(cells, outdir, graph_format, dot, neato, transgenic_ids.values())
+        else:
+            tracer.draw_network_from_cells(cells, outdir, graph_format, dot, neato)
         
         #plot clonotype sizes
         plt.figure()
@@ -644,8 +650,6 @@ class Launcher():
             from subprocess import DEVNULL # py3k
         except ImportError:
             DEVNULL = open(os.devnull, 'wb')
-        
-        ##TODO add code here to put tg sequence into STDIN and pipe into Igblast. Get STDOUT from Igblast and parse as usual to get identifier.
         
     
         cmd = [igblast, '-germline_db_V', databases['v'], '-germline_db_D', databases['d'], '-germline_db_J', databases['j'], '-domain_system', 'imgt', '-ig_seqtype', ig_seqtype, '-show_translation', '-num_alignments_V', '5', '-num_alignments_D', '5', '-num_alignments_J', '5', '-outfmt', '7']
