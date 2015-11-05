@@ -973,7 +973,7 @@ def draw_network_from_cells(cells, output_dir, output_format, dot, neato, transg
     subprocess.check_call(command)
     
     
-def get_component_groups_sizes(cells):
+def get_component_groups_sizes(cells, transgenic_ids=False):
     cells = cells.values()
     G = nx.MultiGraph()
     #initialise all cells as nodes
@@ -992,12 +992,13 @@ def get_component_groups_sizes(cells):
                 shared_identifiers = 0
                 if current_cell.all_recombinants[locus] is not None:
                     for current_recombinant in current_cell.all_recombinants[locus]:
-                        current_id_set = current_recombinant.all_poss_identifiers
-                        if comparison_cell.all_recombinants[locus] is not None:
-                            for comparison_recombinant in comparison_cell.all_recombinants[locus]:
-                                comparison_id_set = comparison_recombinant.all_poss_identifiers
-                                if len(current_id_set.intersection(comparison_id_set)) > 0:
-                                    shared_identifiers += 1
+                        if not (transgenic_ids and current_recombinant.identifier in transgenic_ids):
+                            current_id_set = current_recombinant.all_poss_identifiers
+                            if comparison_cell.all_recombinants[locus] is not None:
+                                for comparison_recombinant in comparison_cell.all_recombinants[locus]:
+                                    comparison_id_set = comparison_recombinant.all_poss_identifiers
+                                    if len(current_id_set.intersection(comparison_id_set)) > 0:
+                                        shared_identifiers += 1
                             
                 #comparison_identifiers = comparison_cell.getAllRecombinantIdentifiersForLocus(locus)
                 #common_identifiers = current_identifiers.intersection(comparison_identifiers)
@@ -1015,7 +1016,6 @@ def get_component_groups_sizes(cells):
     components = nx.connected_components(G)
     
     component_groups = list()
-    
     singlets = []
     for component in components:
         members = list()
@@ -1030,7 +1030,6 @@ def get_component_groups_sizes(cells):
         
     clonotype_size_counter = Counter([len(x) for x in component_groups])
     clonotype_size_counter.update({1:len(singlets)})
-    
     clonotype_sizes = []
     max_size = max(clonotype_size_counter.keys())
     if max_size < 5:
