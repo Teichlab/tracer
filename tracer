@@ -616,14 +616,16 @@ class Launcher():
         cmd = [igblast, '-germline_db_V', databases['v'], '-germline_db_D', databases['d'], '-germline_db_J', databases['j'], '-domain_system', 'imgt', '-ig_seqtype', ig_seqtype, '-show_translation', '-num_alignments_V', '5', '-num_alignments_D', '5', '-num_alignments_J', '5', '-outfmt', '7']
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
         igblast_out = p.communicate(seq)[0]
+        DEVNULL.close()
+        
         igblast_out = StringIO.StringIO(igblast_out)
         igblast_result_chunk = tracer.split_igblast_file(igblast_out)[0]
         (query_name, chunk_details) = tracer.process_chunk(igblast_result_chunk)
         
-        ##TODO make a simpler version of find_possible_alignments to just extract the identifier from chunk_details
+        tg_identifier = tracer.extract_identifier_from_chunk(chunk_details, query_name, "TCR"+locus)
+        return(tg_identifier)
         
         
-        DEVNULL.close()
         
         
     summarize = summarise

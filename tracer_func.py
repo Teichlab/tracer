@@ -440,7 +440,7 @@ def process_chunk(chunk):
                 else:
                     return_dict['hit_table'].append(line_x)
                 
-        elif line_x.startswith('# Query'):          
+        elif line_x.startswith('# Query'):         
             query_name = line_x.split(" ")[2]
             query_length = line_x.split(" ")[3]
             return_dict['query_length'] = int(query_length.split("=")[1])
@@ -545,6 +545,35 @@ def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs,  ou
     #pdb.set_trace()
     return(cell)
 
+def extract_identifier_from_chunk(chunk_dict, query_name, locus):
+                   
+     processed_hit_table = process_hit_table(query_name, chunk_dict, locus)
+     
+     if processed_hit_table is not None:
+         (returned_locus, good_hits, rearrangement_summary) = processed_hit_table
+         junction_list = chunk_dict['junction_details']
+         
+         
+                   
+         
+         best_V = remove_allele_stars(rearrangement_summary[0].split(",")[0])
+          
+         
+                   
+         junc_string = "".join(junction_list)
+         junc_string = remove_NA(junc_string)
+         
+         if returned_locus in "BD":
+             best_J = remove_allele_stars(rearrangement_summary[2].split(",")[0])
+         elif returned_locus in "AG":
+             best_J = remove_allele_stars(rearrangement_summary[1].split(",")[0])
+                   
+         identifier = best_V + "_" + junc_string + "_" + best_J
+         
+         
+         return(identifier)
+                  
+    
 
 def get_coords(hit_table):
     found_V = False
