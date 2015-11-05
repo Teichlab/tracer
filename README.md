@@ -110,6 +110,7 @@ Location of the transcriptome fasta file to which the specific TCR sequences wil
         #tcra_tg = <sequence_of_transgenic_TCRA>
         #tcrb_tg = <sequence_of_transgenic_TCRB>
 
+**This is still pretty experimental and not fully tested. Please report any problems you find if you're looking at transgenic sequences.**  
 If you are using transgenic cells that should be expressing known TCR sequences, uncomment these lines and paste in the sequences that you're expecting to see. When [summarising the clonotypes](#summarise-summary-and-clonotype-networks) in your data, set the `-t` flag so that TraCeR will provide extra stats on the detection rates for the transgenes and will ignore them when generating clonotype networks.
 
 ##Using TraCeR##
@@ -177,7 +178,7 @@ For each cell, an `/<output_directory>/<cell_name>` directory will be created. T
 `-c/--config_file <conf_file>` : config file to use. Default = `tracer.conf`  
 `-u/--use_unfiltered` : Set this flag to use unfiltered recombinants for summary and networks rather than the recombinants filtered by expression level.  
 `-i/--keep_inkt` : TraCeR attempts to identify iNKT cells by their characteristic TCRA gene segments (TRAV11–TRAJ18). By default, these are removed before creation of clonotype networks. Setting this option retains the iNKT cells in all stages.    
-`-t/--transgenic` : If your cells are expressing known transgenic TCR sequences, set this option. TraCeR will then generate a report detailing the rates of detection of the expected sequences and will ignore them when creating clonotype networks. Set the sequences of the transgenes in the config file.
+`-t/--transgenic` : If your cells are expressing known transgenic TCR sequences, set this option. TraCeR will then generate a report detailing the rates of detection of the expected sequences and will ignore them when creating clonotype networks. Set the sequences of the transgenes in the config file. (**This is still pretty experimental and not fully tested. Please report any problems you find if you're looking at transgenic sequences.**)
 `-g/--graph_format` : Output format for the clonotype networks. This is passed directly to Graphviz and so must be one of the options detailed at http://www.graphviz.org/doc/info/output.html. 
 
 
