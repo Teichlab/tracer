@@ -436,10 +436,15 @@ class Launcher():
             print
             exit(1)
         
+        transgenic_ids = {'A':False, 'B':False}
+        
         if args.transgenic:
+            transgenic_ids
             if not (config.has_option('transgenic_sequences', 'tcra_tg') or config.has_option('transgenic_sequences', 'tcrb_tg')):
                 print
-                print "No transgenic sequences specified. Please edit the config file to include them"
+                print "No transgenic sequences specified. Please edit the config file to include them or run without -t flag."
+                print
+                exit(1)
             else:
                 igblast = self.resolve_relative_path(config.get('tool_locations', 'igblast_path'))
                 igblast_index_location = self.resolve_relative_path(config.get('IgBlast_options', 'igblast_index_location'))
@@ -450,9 +455,12 @@ class Launcher():
                 
                 
                 if config.has_option('transgenic_sequences', 'tcra_tg'):
-                    trca_tg = self.get_tg_identifier(config.get('transgenic_sequences', 'tcra_tg'), 'A', igblast, igblast_index_location, igblast_seqtype)
+                    transgenic_ids['A'] = self.get_tg_identifier(config.get('transgenic_sequences', 'tcra_tg'), 'A', igblast, igblast_index_location, igblast_seqtype)
+
                 if config.has_option('transgenic_sequences', 'tcra_tg'):
-                    trcb_tg = self.get_tg_identifier(config.get('transgenic_sequences', 'tcrb_tg'), 'B', igblast, igblast_index_location, igblast_seqtype)
+                    transgenic_ids['B'] = self.get_tg_identifier(config.get('transgenic_sequences', 'tcrb_tg'), 'B', igblast, igblast_index_location, igblast_seqtype)
+
+                
         
         cells = {}
         empty_cells = []
@@ -487,12 +495,38 @@ class Launcher():
                     empty_cells.append(d)
                 if cl.is_inkt:
                     NKT_cells[d] = (cl.is_inkt, cl.getMainRecombinantIdentifiersForLocus('B'))
+       
         count_of_cells_with_alpha_recovered = 0
         count_of_cells_with_beta_recovered = 0
         count_of_cells_with_paired_recovered = 0
+        
+        
+        if args.transgenic:
+            transgenic_combinations = ['AB', 'Ab', 'aB','ab', 'A', 'a', 'B', 'b']
+            
+            count_of_cells_with_transgenic = dict.fromkeys(transgenic_combinations, 0)
+            for locus, ident in transgenic_ids.iteritems():
+                if ident:
+                    count_of_cells_with_transgenic[locus] = 0
+        
         for cell_name, cell in cells.iteritems():
             prod_a_count = cell.count_productive_recombinants('A')
             prod_b_count = cell.count_productive_recombinants('B')
+        
+        #set up labels to summarise whether transgene was detected. Use lowercase if productive recombinant for locus but not transgenic
+            productive_counts = {'A':prod_a_count, 'B':prod_b_count}  
+            if args.transgenic:
+                transgenic_label = ""
+                for locus in ['A','B']:
+                    prod_count = productive_counts[locus]
+                    ident = transgenic_ids[locus]
+                    if ident in cell.getAllRecombinantIdentifiersForLocus(locus) and prod_count>0:
+                        transgenic_label = transgenic_label + locus
+                    elif prod_count > 0 and not ident in cell.getAllRecombinantIdentifiersForLocus(locus):
+                        transgenic_label = transgenic_label + locus.lower()
+                
+                if len(transgenic_label) > 0:
+                    count_of_cells_with_transgenic[transgenic_label] +=1
             if prod_a_count > 0:
                 count_of_cells_with_alpha_recovered += 1
             if prod_b_count > 0:
@@ -501,9 +535,10 @@ class Launcher():
                 count_of_cells_with_paired_recovered += 1
         
         total_cells = len(cells)
-        
+        pdb.set_trace()
         outfile.write("TCRA reconstruction:\t{count_of_cells_with_alpha_recovered} / {total_cells} ({alpha_percent}%)\nTCRB reconstruction:\t{count_of_cells_with_beta_recovered} / {total_cells} ({beta_percent}%)\nPaired productive chains\t{count_of_cells_with_paired_recovered} / {total_cells} ({paired_percent}%)\n\n".format(paired_percent=round((count_of_cells_with_paired_recovered/float(total_cells))*100,1), total_cells=total_cells, alpha_percent=round((count_of_cells_with_alpha_recovered/float(total_cells))*100,1), beta_percent=round((count_of_cells_with_beta_recovered/float(total_cells))*100,1), count_of_cells_with_beta_recovered=count_of_cells_with_beta_recovered, count_of_cells_with_paired_recovered=count_of_cells_with_paired_recovered, count_of_cells_with_alpha_recovered=count_of_cells_with_alpha_recovered))
-
+        
+        
         
         all_alpha_counter = Counter()
         all_beta_counter = Counter()
