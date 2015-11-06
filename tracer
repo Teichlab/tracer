@@ -499,6 +499,7 @@ class Launcher():
         count_of_cells_with_beta_recovered = 0
         count_of_cells_with_paired_recovered = 0
         
+        
         if args.transgenic:
             transgenic_combinations = ['AB', 'Ab', 'aB','ab', 'A', 'a', 'B', 'b']
             
@@ -636,6 +637,7 @@ class Launcher():
         else:
             clonotype_sizes = tracer.get_component_groups_sizes(cells)
         #pdb.set_trace()
+
         w = 0.85
         x_range = range(1, len(clonotype_sizes) + 1)
         plt.bar(x_range, height=clonotype_sizes, width=w, color='black', align='center')
