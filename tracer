@@ -312,7 +312,7 @@ class Launcher():
         
         if len(unsuccessful_directories) == 2:
             print "No successful Trinity assemblies"
-            self.die_with_empty_cell(cell_name,  output_dir)
+            self.die_with_empty_cell(cell_name,  output_dir, args)
 
     
     
@@ -410,7 +410,7 @@ class Launcher():
                 out_file.write("\n\n")
         out_file.close()
 
-    def die_with_empty_cell(self, cell_name,  output_dir):
+    def die_with_empty_cell(self, cell_name,  output_dir, args):
         print "##No TCR recombinants found##"
         cell = tracer.Cell(cell_name, None, None, None, None,  is_empty=True, species=args.species)
         self.print_cell_summary(cell, "{output_dir}/unfiltered_TCR_seqs/unfiltered_TCRs.txt".format(output_dir=output_dir))

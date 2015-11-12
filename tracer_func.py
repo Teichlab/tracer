@@ -48,6 +48,8 @@ class Cell:
     def _check_is_empty(self):
         if (self.A_recombinants is None or len(self.A_recombinants)==0) and (self.B_recombinants is None or len(self.B_recombinants)==0):
             return(True)
+        else:
+            return(False)
     
     def _check_if_inkt(self, species):
         A_recombs = self.getMainRecombinantIdentifiersForLocus("A")
