@@ -165,7 +165,9 @@ class Launcher():
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             cell = tracer.parse_IgBLAST(locus_names, output_dir, cell_name, imgt_seq_location, args.species)
-
+            if cell.is_empty:
+                self.die_with_empty_cell(cell_name,  output_dir, args)
+                
         self.quantify_with_kallisto(kallisto, cell, output_dir, cell_name, kallisto_base_transcriptome, fastq1, fastq2, ncores, should_resume)
         
         print
