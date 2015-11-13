@@ -834,8 +834,18 @@ def is_rearrangement_productive(seq):
     
     return(productive, contains_stop, in_frame)
     
+def get_segment_name(name, pattern):
+    match = pattern.search(name)
+    number = match.group(1)
+    if match.group(3):
+        sub_number = match.group(3)
+    else:
+        sub_number = ""
+    return(number)
+
+
 def collapse_close_sequences(recombinants, locus):
-    
+    #pdb.set_trace()
     contig_names = [r.contig_name for r in recombinants]
     filtered_contig_names = [r.contig_name for r in recombinants]
     uncollapsible_contigs = []
@@ -844,25 +854,30 @@ def collapse_close_sequences(recombinants, locus):
             base_name = recombinants[i].contig_name
             base_seq = recombinants[i].dna_seq
             base_V_segment = recombinants[i].best_VJ_names[0]
+            base_J_segment = recombinants[i].best_VJ_names[1]
+            
             base_id = recombinants[i].identifier
+            base_junc = base_id.split("_")[1]
             base_e_value = float(recombinants[i].hit_table[0][-2])
             
             for j in range(i+1, len(recombinants)):
                 comp_name = recombinants[j].contig_name
                 comp_seq = recombinants[j].dna_seq
                 comp_V_segment = recombinants[j].best_VJ_names[0]
+                comp_J_segment = recombinants[j].best_VJ_names[1]
                 comp_id = recombinants[j].identifier
+                comp_junc = comp_id.split("_")[1]
                 comp_e_value = float(recombinants[j].hit_table[0][-2])
                 lev_dist = Levenshtein.distance(base_seq, comp_seq)
                 #print("{}\t{}\t{}".format(base_id, comp_id, lev_dist))
                 if lev_dist < 35 and not base_id == comp_id and base_name in filtered_contig_names and comp_name in filtered_contig_names:   
                     #pdb.set_trace()             
                     #define re pattern here to find TRAVx[DN] or TRDVx[DN] depending on locus
-                    if locus == "A":
+                    if locus == "TCRA":
                         duplicate_pattern = re.compile(r"TRAV\d+[DN]")
                         segment_pattern = re.compile(r"TRAV(\d+)([DN])?(-\d)?.+")
                         attempt_collapse = True
-                    elif locus == "D":
+                    elif locus == "TCRD":
                         duplicate_pattern = re.compile(r"DV\d+[DN]")
                         segment_pattern = re.compile(r"DV(\d+)([DN])?(-\d)?.+")
                         attempt_collapse = True
@@ -880,9 +895,34 @@ def collapse_close_sequences(recombinants, locus):
                                 filtered_contig_names.remove(base_name) 
                         else:
                             uncollapsible_contigs.append("{}_vs_{}".format(base_name, comp_name))
-                        
+   
                     else:
                         uncollapsible_contigs.append("{}_vs_{}".format(base_name, comp_name))
+                
+                
+                elif lev_dist < 75 and not base_id == comp_id and base_name in filtered_contig_names and comp_name in filtered_contig_names:
+                    if locus == "TCRA":
+                        duplicate_pattern = re.compile(r"TRAV\d+[DN]")
+                        segment_pattern = re.compile(r"TRAV(\d+)([DN])?(-\d)?.+")
+                        attempt_collapse = True
+                    elif locus == "TCRD":
+                        duplicate_pattern = re.compile(r"DV\d+[DN]")
+                        segment_pattern = re.compile(r"DV(\d+)([DN])?(-\d)?.+")
+                        attempt_collapse = True
+                    else:
+                        uncollapsible_contigs.append("{}_vs_{}".format(base_name, comp_name))
+                        attempt_collapse = False
+                    if attempt_collapse and (duplicate_pattern.search(base_V_segment) or duplicate_pattern.search(comp_V_segment)):
+                        base_segment = get_segment_name(base_V_segment, segment_pattern)
+                        comp_segment = get_segment_name(comp_V_segment, segment_pattern)
+                        if (base_segment == comp_segment) and (base_junc == comp_junc) and (base_J_segment == comp_J_segment):
+                            #find alignment with lowest E value for V match
+                            if base_e_value <= comp_e_value:
+                                filtered_contig_names.remove(comp_name)
+                            else:
+                                filtered_contig_names.remove(base_name) 
+                        else:
+                            uncollapsible_contigs.append("{}_vs_{}".format(base_name, comp_name))
                 
                 elif base_id == comp_id and base_name in filtered_contig_names and comp_name in filtered_contig_names:
                     if base_e_value <= comp_e_value:
