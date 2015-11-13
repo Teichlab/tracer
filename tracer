@@ -34,6 +34,7 @@ from time import sleep
 import warnings
 import pickle
 from prettytable import PrettyTable
+from Bio import SeqIO
 
 
 class Launcher():
@@ -197,15 +198,36 @@ class Launcher():
         for locus in locus_names:
             print "##{}##".format(locus)
             sam_file = "{}/aligned_reads/{}_{}.sam".format(output_dir, cell_name, locus)
-            aligned_read_path = "{}/aligned_reads/{}_{}_%.fastq".format(output_dir, cell_name, locus)
-            command = [bowtie2, '--no-unal', '-p', ncores, '-k', '1', '--np', '0', '--rdg', '1,1', '--rfg', '1,1', '-x', "/".join([synthetic_genome_path, locus]), '-1', fastq1, '-2', fastq2, '--al-conc', aligned_read_path, '-S', sam_file]
+            aligned_paired_read_path = "{}/aligned_reads/{}_{}_%.fastq".format(output_dir, cell_name, locus)
+            aligned_singleton_read_path = "{}/aligned_reads/{}_{}_singletons.fastq".format(output_dir, cell_name, locus)
+            #made maxins larger to see if I can maximise informative reads
+            command = [bowtie2, '--maxins', '800', '--no-discordant', '--no-unal', '-p', ncores, '-k', '1', '--np', '0', '--rdg', '1,1', '--rfg', '1,1', '-x', "/".join([synthetic_genome_path, locus]), '-1', fastq1, '-2', fastq2, '--al-conc', aligned_paired_read_path, '--al', aligned_singleton_read_path, '-S', sam_file]
             
 
             subprocess.check_call(command)
+            
+            #now need to concatenate the paired reads with the singletons for trinity. Trinity docs (http://trinityrnaseq.sourceforge.net/trinity_faq.html#ques_mult_seq_libraries)
+            #say that you can just append the single ends from the appropriate direction to the paired end file.
+            
         
-    
-    
-    
+            singleton_reads = {'1':[], '2':[]}
+            
+            for seq_record in SeqIO.parse(aligned_singleton_read_path, 'fastq'):
+                if str(seq_record.id).endswith("/1"):
+                    singleton_reads['1'].append(seq_record)
+                elif str(seq_record.id).endswith("/2"):
+                    singleton_reads['2'].append(seq_record)
+            
+            for i in ["1", "2"]:
+                paired_file = "{}/aligned_reads/{}_{}_{}.fastq".format(output_dir, cell_name, locus, i)
+                with open(paired_file, "a") as outfile:
+                    outfile.write("\n")
+                    SeqIO.write(singleton_reads[i], outfile, 'fastq')
+                
+                
+                
+               
+                
     
     def assemble_with_trinity(self, trinity, locus_names, output_dir, cell_name, ncores, trinity_grid_conf, JM, should_resume):
         print  "##Assembling Trinity Contigs##"
