@@ -746,8 +746,18 @@ def is_rearrangement_productive(seq):
     
     return(productive, contains_stop, in_frame)
     
+def get_segment_name(name, pattern):
+    match = pattern.search(name)
+    number = match.group(1)
+    if match.group(3):
+        sub_number = match.group(3)
+    else:
+        sub_number = ""
+    return(number)
+
+
 def collapse_close_sequences(recombinants, locus):
-    
+    #pdb.set_trace()
     contig_names = [r.contig_name for r in recombinants]
     filtered_contig_names = [r.contig_name for r in recombinants]
     uncollapsible_contigs = []
@@ -770,11 +780,11 @@ def collapse_close_sequences(recombinants, locus):
                 if lev_dist < 35 and not base_id == comp_id and base_name in filtered_contig_names and comp_name in filtered_contig_names:   
                     #pdb.set_trace()             
                     #define re pattern here to find TRAVx[DN] or TRDVx[DN] depending on locus
-                    if locus == "A":
+                    if locus == "TCRA":
                         duplicate_pattern = re.compile(r"TRAV\d+[DN]")
                         segment_pattern = re.compile(r"TRAV(\d+)([DN])?(-\d)?.+")
                         attempt_collapse = True
-                    elif locus == "D":
+                    elif locus == "TCRD":
                         duplicate_pattern = re.compile(r"DV\d+[DN]")
                         segment_pattern = re.compile(r"DV(\d+)([DN])?(-\d)?.+")
                         attempt_collapse = True
