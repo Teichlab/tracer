@@ -139,7 +139,7 @@ class Launcher():
         self.bowtie2_alignment(bowtie2, ncores, locus_names, output_dir, cell_name, synthetic_genome_path, fastq1, fastq2, should_resume)
         print
         trinity_JM = config.get('trinity_options', 'max_jellyfish_memory')
-        self.assemble_with_trinity(trinity, locus_names, output_dir, cell_name, ncores, trinity_grid_conf, trinity_JM, should_resume)
+        self.assemble_with_trinity(trinity, locus_names, output_dir, cell_name, ncores, trinity_grid_conf, trinity_JM, should_resume, args)
         print        
         self.run_IgBlast(igblast, locus_names, output_dir, cell_name, igblast_index_location, igblast_seqtype, should_resume)
         print
@@ -229,7 +229,7 @@ class Launcher():
                
                 
     
-    def assemble_with_trinity(self, trinity, locus_names, output_dir, cell_name, ncores, trinity_grid_conf, JM, should_resume):
+    def assemble_with_trinity(self, trinity, locus_names, output_dir, cell_name, ncores, trinity_grid_conf, JM, should_resume, args):
         print  "##Assembling Trinity Contigs##"
         
         if should_resume:
