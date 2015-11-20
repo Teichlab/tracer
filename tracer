@@ -75,15 +75,39 @@ class Launcher():
         parser.add_argument('--config_file', '-c', metavar="<CONFIG_FILE>", help='config file to use [tracer.conf]', default='tracer.conf')
         parser.add_argument('--resume_with_existing_files', '-r', help='look for existing intermediate files and use those instead of starting from scratch', action="store_true")
         parser.add_argument('--species', '-s', help='species from which T cells were isolated - important to determination of iNKT cells', choices=['Mmus', 'Hsap'], default='Mmus')
+        parser.add_argument('--single_end', help='set this if your sequencing data are single-end reads', action="store_true")
+        parser.add_argument('--fragment_length', help='Estimated average fragment length in the sequencing library. Used for Kallisto quantification. REQUIRED for single-end data.', default=False)
+        parser.add_argument('--fragment_sd',  help='Estimated standard deviation of average fragment length in the sequencing library. Used for Kallisto quantification. REQUIRED for single-end data.', default=False)
         parser.add_argument('fastq1', metavar="<FASTQ1>", help='first fastq file')
-        parser.add_argument('fastq2', metavar="<FASTQ2>", help='second fastq file')
+        parser.add_argument('fastq2', metavar="<FASTQ2>", help='second fastq file', nargs='?') 
         parser.add_argument('cell_name', metavar="<CELL_NAME>", help='name of cell for file labels')
         parser.add_argument('output_dir', metavar="<OUTPUT_DIR>", help='directory for output as <output_dir>/<cell_name>')
+        
         args = parser.parse_args(sys.argv[2:])
         
         cell_name = args.cell_name
         fastq1 = args.fastq1
-        fastq2 = args.fastq2
+        single_end = args.single_end
+        if not single_end:
+            if not args.fastq2:
+                print "Only one fastq file specified. Either set --single_end or provide second fastq."
+                exit(1)
+            else:
+                fastq2 = args.fastq2
+        else:
+            fastq2 = None
+            if args.fastq2:
+                print "Two fastq files given with --single-end option. Ignoring second file."
+            if not args.fragment_length and not args.fragment_sd:
+                print 'Must specify estimated average fragment length (--fragment_length) and standard deviation (--fragment_sd) for use with single-end data'
+                exit(1)
+            elif not args.fragment_length:
+                print 'Must specify estimated average fragment length (--fragment_length) for use with single-end data'
+                exit(1)
+            elif not args.fragment_sd:
+                print 'Must specify estimated fragment length standard deviation (--fragment_sd) for use with single-end data'
+                exit(1)
+                
         ncores = str(args.ncores)
         
         #Read config file
@@ -137,7 +161,7 @@ class Launcher():
         
         should_resume = args.resume_with_existing_files
         
-        self.bowtie2_alignment(bowtie2, ncores, locus_names, output_dir, cell_name, synthetic_genome_path, fastq1, fastq2, should_resume)
+        self.bowtie2_alignment(bowtie2, ncores, locus_names, output_dir, cell_name, synthetic_genome_path, fastq1, fastq2, should_resume, single_end)
         print
         trinity_JM = config.get('trinity_options', 'max_jellyfish_memory')
         self.assemble_with_trinity(trinity, locus_names, output_dir, cell_name, ncores, trinity_grid_conf, trinity_JM, should_resume, args)
@@ -151,13 +175,13 @@ class Launcher():
             if cell.is_empty:
                 self.die_with_empty_cell(cell_name,  output_dir, args)
                 
-        self.quantify_with_kallisto(kallisto, cell, output_dir, cell_name, kallisto_base_transcriptome, fastq1, fastq2, ncores, should_resume)
+        self.quantify_with_kallisto(kallisto, cell, output_dir, cell_name, kallisto_base_transcriptome, fastq1, fastq2, ncores, should_resume, single_end, args.fragment_length, args.fragment_sd)
         
         print
         
         counts = tracer.load_kallisto_counts("{}/expression_quantification/abundance.tsv".format(output_dir))
         
-        
+        #pdb.set_trace():
         for locus, recombinants in cell.all_recombinants.iteritems():
             if recombinants is not None:
                 for rec in recombinants:
@@ -184,7 +208,7 @@ class Launcher():
             full_path = path
         return full_path
         
-    def bowtie2_alignment(self, bowtie2, ncores, locus_names, output_dir, cell_name, synthetic_genome_path, fastq1, fastq2, should_resume):
+    def bowtie2_alignment(self, bowtie2, ncores, locus_names, output_dir, cell_name, synthetic_genome_path, fastq1, fastq2, should_resume, single_end):
         print "##Finding TCR-derived reads##"
         
         if should_resume:
@@ -199,54 +223,83 @@ class Launcher():
         for locus in locus_names:
             print "##{}##".format(locus)
             sam_file = "{}/aligned_reads/{}_{}.sam".format(output_dir, cell_name, locus)
-            fastq_out_1 = open("{}/aligned_reads/{}_{}_1.fastq".format(output_dir, cell_name, locus), 'w')
-            fastq_lines_1 = []
-            fastq_out_2 = open("{}/aligned_reads/{}_{}_2.fastq".format(output_dir, cell_name, locus), 'w')
-            fastq_lines_2 = []
-
-            command = [bowtie2, '--no-unal', '-p', ncores, '-k', '1', '--np', '0', '--rdg', '1,1', '--rfg', '1,1', '-x', "/".join([synthetic_genome_path, locus]), '-1', fastq1, '-2', fastq2, '-S', sam_file]
+            if not single_end:
+                fastq_out_1 = open("{}/aligned_reads/{}_{}_1.fastq".format(output_dir, cell_name, locus), 'w')
+                fastq_lines_1 = []
+                fastq_out_2 = open("{}/aligned_reads/{}_{}_2.fastq".format(output_dir, cell_name, locus), 'w')
+                fastq_lines_2 = []
+                
+                command = [bowtie2, '--no-unal', '-p', ncores, '-k', '1', '--np', '0', '--rdg', '1,1', '--rfg', '1,1', '-x', "/".join([synthetic_genome_path, locus]), '-1', fastq1, '-2', fastq2, '-S', sam_file]
+                
+                
+                subprocess.check_call(command)
             
-
-            subprocess.check_call(command)
+                
             
             #now to split the sam file for Trinity. 
             
-            with open(sam_file) as sam_in:
-                for line in sam_in:
-                    if not line.startswith("@"):
-
-                        line = line.rstrip()
-                        line = line.split("\t")
-                        name = line[0]
-                        seq = line[9]
-                        qual = line[10]
-                        flag = int(line[1])
-                        mate_flag = "{0:b}".format(flag)[-7]
-                        mate_mapped_flag = "{0:b}".format(flag)[-4]
-                        revcomp_flag = "{0:b}".format(flag)[-5]
-                        
-                        if revcomp_flag == "1":
-                            seq = str(Seq(seq).reverse_complement())
-                            qual = qual[::-1] #this slice notation is the fastest way to reverse a string (http://stackoverflow.com/questions/931092/reverse-a-string-in-python)
-                        if mate_mapped_flag == "0":
-                            if mate_flag == "1":
-                                name_ending = "/1"
-                                fastq_lines_1.append("@{name}{name_ending}\n{seq}\n+\n{qual}\n".format(name=name, seq=seq, name_ending=name_ending, qual=qual))
+                with open(sam_file) as sam_in:
+                    for line in sam_in:
+                        if not line.startswith("@"):
+                
+                            line = line.rstrip()
+                            line = line.split("\t")
+                            name = line[0]
+                            seq = line[9]
+                            qual = line[10]
+                            flag = int(line[1])
+                            mate_flag = "{0:b}".format(flag)[-7]
+                            mate_mapped_flag = "{0:b}".format(flag)[-4]
+                            revcomp_flag = "{0:b}".format(flag)[-5]
+                            
+                            if revcomp_flag == "1":
+                                seq = str(Seq(seq).reverse_complement())
+                                qual = qual[::-1] #this slice notation is the fastest way to reverse a string (http://stackoverflow.com/questions/931092/reverse-a-string-in-python)
+                            if mate_mapped_flag == "0":
+                                if mate_flag == "1":
+                                    name_ending = "/1"
+                                    fastq_lines_1.append("@{name}{name_ending}\n{seq}\n+\n{qual}\n".format(name=name, seq=seq, name_ending=name_ending, qual=qual))
+                                else:
+                                    name_ending = "/2"
+                                    fastq_lines_2.append("@{name}{name_ending}\n{seq}\n+\n{qual}\n".format(name=name, seq=seq, name_ending=name_ending, qual=qual))
+                            
+                            
+                for line in fastq_lines_1:
+                    fastq_out_1.write(line)
+                for line in fastq_lines_2:
+                    fastq_out_2.write(line)
+                    
+              
+                    
+                fastq_out_1.close()
+                fastq_out_2.close()
+            else:
+                fastq_out = open("{}/aligned_reads/{}_{}.fastq".format(output_dir, cell_name, locus), 'w')
+                command = [bowtie2, '--no-unal', '-p', ncores, '-k', '1', '--np', '0', '--rdg', '1,1', '--rfg', '1,1', '-x', "/".join([synthetic_genome_path, locus]), '-U', fastq1, '-S', sam_file]
+                
+                
+                subprocess.check_call(command)
+                
+                with open(sam_file) as sam_in:
+                    for line in sam_in:
+                        if not line.startswith("@"):
+                
+                            line = line.rstrip()
+                            line = line.split("\t")
+                            name = line[0]
+                            seq = line[9]
+                            qual = line[10]
+                            flag = int(line[1])
+                            if not flag == 0:
+                                revcomp_flag = "{0:b}".format(flag)[-5]
                             else:
-                                name_ending = "/2"
-                                fastq_lines_2.append("@{name}{name_ending}\n{seq}\n+\n{qual}\n".format(name=name, seq=seq, name_ending=name_ending, qual=qual))
-                        
-                        
-            for line in fastq_lines_1:
-                fastq_out_1.write(line)
-            for line in fastq_lines_2:
-                fastq_out_2.write(line)
-                
-  
-                
-            fastq_out_1.close()
-            fastq_out_2.close()
-           
+                                revcomp_flag = "0"
+                            
+                            if revcomp_flag == "1":
+                                seq = str(Seq(seq).reverse_complement())
+                                qual = qual[::-1] #this slice notation is the fastest way to reverse a string (http://stackoverflow.com/questions/931092/reverse-a-string-in-python)
+                            fastq_out.write("@{name}\n{seq}\n+\n{qual}\n".format(name=name, seq=seq, qual=qual))
+                    fastq_out.close()
                 
                 
                 
@@ -268,15 +321,19 @@ class Launcher():
         if trinity_grid_conf:
             command = command + ['--grid_conf', trinity_grid_conf]
         
-        command = command + ['--JM', JM, '--seqType', 'fq', '--CPU', ncores, '--full_cleanup']
+        command = command + ['--seqType', 'fq', '--JM', JM, '--CPU', ncores, '--full_cleanup']
         
         for locus in locus_names:
             print "##{}##".format(locus)
             trinity_output = "{}/Trinity_output/{}_{}".format(output_dir, cell_name, locus)
-            aligned_read_path = "{}/aligned_reads/{}_{}_".format(output_dir, cell_name, locus)
-            file1 = "{}1.fastq".format(aligned_read_path)
-            file2 = "{}2.fastq".format(aligned_read_path)
-            command = command + ["--left", file1, "--right", file2, "--output", '{}'.format(trinity_output)]
+            aligned_read_path = "{}/aligned_reads/{}_{}".format(output_dir, cell_name, locus)
+            if not args.single_end:
+                file1 = "{}_1.fastq".format(aligned_read_path)
+                file2 = "{}_2.fastq".format(aligned_read_path)
+                command = command + ["--left", file1, "--right", file2, "--output", '{}'.format(trinity_output)]
+            else:
+                file = "{}.fastq".format(aligned_read_path)
+                command = command + ["--single", file, "--output", '{}'.format(trinity_output)]
             try:
                 subprocess.check_call(command)
             except subprocess.CalledProcessError:
@@ -377,7 +434,7 @@ class Launcher():
         
     
     
-    def quantify_with_kallisto(self, kallisto, cell, output_dir, cell_name, kallisto_base_transcriptome, fastq1, fastq2, ncores, should_resume):
+    def quantify_with_kallisto(self, kallisto, cell, output_dir, cell_name, kallisto_base_transcriptome, fastq1, fastq2, ncores, should_resume, single_end, fragment_length, fragment_sd):
         print "##Running Kallisto##"
         if should_resume:
             if os.path.isfile("{}/expression_quantification/abundance.tsv".format(output_dir)):
@@ -405,7 +462,14 @@ class Launcher():
         index_command = [kallisto, 'index', '-i', idx_file, output_transcriptome]
         subprocess.check_call(index_command)
         print "##Quantifying with Kallisto##"
-        kallisto_command = [kallisto, 'quant', '-i', idx_file, '-t', ncores, '-o', "{}/expression_quantification".format(output_dir), fastq1, fastq2]
+        
+        if not single_end:
+            if not fragment_length:
+                kallisto_command = [kallisto, 'quant', '-i', idx_file, '-t', ncores, '-o', "{}/expression_quantification".format(output_dir), fastq1, fastq2]
+            else:
+                kallisto_command = [kallisto, 'quant', '-i', idx_file, '-t', ncores, '-l', fragment_length, '-o', "{}/expression_quantification".format(output_dir), fastq1, fastq2]
+        else:
+            kallisto_command = [kallisto, 'quant', '-i', idx_file, '-t', ncores, '--single', '-l', fragment_length, '-s', fragment_sd, '-o', "{}/expression_quantification".format(output_dir), fastq1]
         subprocess.check_call(kallisto_command)
         
         #delete index file because it's huge and unecessary. Delete transcriptome file

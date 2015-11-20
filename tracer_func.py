@@ -863,7 +863,7 @@ def load_kallisto_counts(tsv_file):
         if "TCR" in line:
             line = line.rstrip()
             line = line.split("\t")
-            locus = line[0].split("|")[-1].split("_")[2][2]
+            locus = line[0].split("|")[-1].split("_")[-1][2]
             name = line[0].split("|")[1]
             tpm = float(line[4])
             counts[locus][name] = tpm
