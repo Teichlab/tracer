@@ -75,6 +75,7 @@ class Launcher():
         parser.add_argument('--config_file', '-c', metavar="<CONFIG_FILE>", help='config file to use [tracer.conf]', default='tracer.conf')
         parser.add_argument('--resume_with_existing_files', '-r', help='look for existing intermediate files and use those instead of starting from scratch', action="store_true")
         parser.add_argument('--species', '-s', help='species from which T cells were isolated - important to determination of iNKT cells', choices=['Mmus', 'Hsap'], default='Mmus')
+        parser.add_argument('--seq_method', '-m', help='Method for constructing sequence to assess productivity, quantify expression and for output reporting. See README for details.', choices=['imgt', 'assembly'], default='imgt')
         parser.add_argument('--single_end', help='set this if your sequencing data are single-end reads', action="store_true")
         parser.add_argument('--fragment_length', help='Estimated average fragment length in the sequencing library. Used for Kallisto quantification. REQUIRED for single-end data.', default=False)
         parser.add_argument('--fragment_sd',  help='Estimated standard deviation of average fragment length in the sequencing library. Used for Kallisto quantification. REQUIRED for single-end data.', default=False)
@@ -171,7 +172,7 @@ class Launcher():
         
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            cell = tracer.parse_IgBLAST(locus_names, output_dir, cell_name, imgt_seq_location, args.species)
+            cell = tracer.parse_IgBLAST(locus_names, output_dir, cell_name, imgt_seq_location, args.species, args.seq_method)
             if cell.is_empty:
                 self.die_with_empty_cell(cell_name,  output_dir, args)
                 

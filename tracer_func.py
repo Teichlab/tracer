@@ -348,7 +348,7 @@ def load_IMGT_seqs(file):
         seqs[record.id] = str(record.seq)
     return(seqs)
 
-def parse_IgBLAST(locus_names, output_dir, cell_name,  imgt_seq_location, species):
+def parse_IgBLAST(locus_names, output_dir, cell_name,  imgt_seq_location, species, seq_method):
     segment_names = ['TRAJ', 'TRAV', 'TRBD', 'TRBJ', 'TRBV']
     IMGT_seqs = dict()
     for segment in segment_names:
@@ -369,7 +369,7 @@ def parse_IgBLAST(locus_names, output_dir, cell_name,  imgt_seq_location, specie
         else:
             all_locus_data[locus] = None
         
-    cell = find_possible_alignments(all_locus_data, locus_names, cell_name, IMGT_seqs,  output_dir, species)    
+    cell = find_possible_alignments(all_locus_data, locus_names, cell_name, IMGT_seqs,  output_dir, species, seq_method)    
     return(cell)
     
 
@@ -458,7 +458,7 @@ def process_chunk(chunk):
     return (query_name, return_dict)
 
 
-def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs,  output_dir, species):
+def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs,  output_dir, species, seq_method):
     #pdb.set_trace()
     alignment_dict = defaultdict(dict)
     recombinants = {'TCRA':[], 'TCRB':[]}
@@ -473,7 +473,7 @@ def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs,  ou
                     (returned_locus, good_hits, rearrangement_summary) = processed_hit_table
                     junction_list = query_data['junction_details']
                     
-                    (fasta_line_for_contig, is_productive, bestVJNames) = get_fasta_line_for_contig(rearrangement_summary, junction_list, good_hits, returned_locus, IMGT_seqs, cell_name, query_name)
+                    
             
                     
                     best_V = remove_allele_stars(rearrangement_summary[0].split(",")[0])
@@ -519,6 +519,14 @@ def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs,  ou
                         trinity_seq = trinity_seq.seq
                     start_coord, end_coord = get_coords(good_hits)
                     trinity_seq = str(trinity_seq[start_coord:end_coord])
+                    
+                    if seq_method == 'imgt':
+                        (fasta_line_for_contig, is_productive, bestVJNames) = get_fasta_line_for_contig_imgt(rearrangement_summary, junction_list, good_hits, returned_locus, IMGT_seqs, cell_name, query_name)
+                    
+                    elif seq_method == 'assembly':
+                        fasta_line_for_contig = trinity_seq
+                        (is_productive, bestVJNames) = get_fasta_line_for_contig_assembly(trinity_seq, good_hits, returned_locus, IMGT_seqs, cell_name, query_name)
+ 
                     
                     
                     if len(junc_string) < 50:
@@ -633,7 +641,7 @@ def process_hit_table(query_name, query_data, locus):
     #    else:
     #        return(None)
 
-def get_fasta_line_for_contig(rearrangement_summary, junction_details, hit_table, locus, IMGT_seqs, sample_name, query_name):
+def get_fasta_line_for_contig_imgt(rearrangement_summary, junction_details, hit_table, locus, IMGT_seqs, sample_name, query_name):
     constant_seqs = dict()
     constant_seqs["A"] = "ACATCCAGAACCCAGAACCTGCTGTGTACCAGTTAAAAGATCCTCGGTCTCAGGACAGCACCCTCTGCCTGTTCACCGACTTTGACTCCCAAATCAATGTGCCGAAAACCATGGAATCTGGAACGTTCATCACTGACAAAACTGTGCTGGACATGAAAGCTATGGATTCCAAGAGCAATGGGGCCATTGCCTGGAGCAACCAGACAAGCTTCACCTGCCAAGATATCTTCAAAGAGACCAACGCCACCTACCCCAGTTCAGACGTTCCCTGTGATGCCACGTTGACTGAGAAAAGCTTTGAAACAGATATGAACCTAAACTTTCAAAACCTGTCAGTTATGGGACTCCGAATCCTCCTGCTGAAAGTAGCCGGATTTAACCTGCTCATGACGCTGAGGCTGTGGTCCAGTTGA"
     #use first 258 bases of TRBC because they're the same between C1 and C2
@@ -754,6 +762,85 @@ def get_segment_name(name, pattern):
     else:
         sub_number = ""
     return(number)
+
+def get_fasta_line_for_contig_assembly(trinity_seq, hit_table, locus, IMGT_seqs, sample_name, query_name):
+    found_best_V = False
+    found_best_D = False
+    found_best_J = False
+    
+
+    V_pattern = re.compile(r"TR[ABGD]V\d")
+    D_pattern = re.compile(r"TR[BD]D\d")
+    J_pattern = re.compile(r"TR[ABGD]J\d")
+    
+
+    for hit in hit_table:
+        segment = hit[2]
+        if V_pattern.search(segment) and not found_best_V:
+            V_locus_key = "TR{}V".format(segment[2])
+            best_V_name = segment
+            segment = segment.replace("/", "_") #remove forward slashes from shared A/D gene names to be the same as in the IMGT files.
+            ref_V_seq = IMGT_seqs[V_locus_key][segment]
+
+            #hit[11] is the end of the V sequence
+            #best_V_seq = best_V_seq[0:int(hit[11])]
+            found_best_V = True
+        elif J_pattern.search(segment) and not found_best_J:
+            J_locus_key = "TR{}J".format(segment[2])
+            best_J_name = segment
+            ref_J_seq = IMGT_seqs[J_locus_key][segment]
+            #hit 10 is the start of the J sequence
+            #best_J_seq = best_J_seq[int(hit[10])-1 :]
+            found_best_J = True
+
+    
+    
+    #work out if sequence that exists is in frame
+    
+    found_V = False
+    found_J = False
+    for entry in hit_table:
+        if entry[0] == 'V':
+            if not found_V:
+                ref_V_start = int(entry[10])
+                found_V = True
+        if entry[0] == 'J':
+            if not found_J:
+                ref_J_end = int(entry[11])
+                found_J = True
+    start_padding = ref_V_start - 1
+    
+    ref_J_length = len(ref_J_seq)
+    end_padding = (ref_J_length - ref_J_end) 
+    
+    full_effective_length = start_padding + len(trinity_seq) + end_padding + 2 # add two because need first two bases of constant region to put in frame
+   
+    if full_effective_length % 3 == 0:
+        in_frame = True
+    else:
+        in_frame = False
+    
+    
+    #remove the minimal nucleotides from the trinity sequence to check for stop codons
+    start_base_removal_count = (3-(ref_V_start-1)) % 3
+    end_base_removal_count = (1-end_padding) % 3
+    
+    seq = trinity_seq[start_base_removal_count:-(end_base_removal_count)]
+    seq = Seq(seq, IUPAC.unambiguous_dna)
+    aa_seq = seq.translate()
+    contains_stop = "*" in aa_seq
+    
+    if in_frame and not contains_stop:
+        productive = True
+    else:
+        productive = False
+    
+    productive_rearrangement = (productive, contains_stop, in_frame)    
+        
+    
+    bestVJ = [best_V_name, best_J_name]
+    
+    return(productive_rearrangement, bestVJ)
 
 
 def collapse_close_sequences(recombinants, locus):
