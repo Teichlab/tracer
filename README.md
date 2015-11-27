@@ -116,11 +116,11 @@ Tracer has two modes *assemble* and *summarise*.
 
 ####Usage####
 
-    tracer assemble [options] <file_1> <file_2> <cell_name> <output_directory>
+    tracer assemble [options] <file_1> [<file_2>] <cell_name> <output_directory>
 
 #####Main arguments#####
-`<file_1>` : fastq file containing #1 mates from paired-end sequencing  
-`<file_2>` : fastq file containing #2 mates from paired-end sequencing   
+`<file_1>` : fastq file containing #1 mates from paired-end sequencing or all reads from single-end sequencing. 
+`<file_2>` : fastq file containing #2 mates from paired-end sequencing. Do not use if your data are from single-end sequencing.
 `<cell_name>` : name of the cell. This is arbitrary text that will be used for all subsequent references to the cell in filenames/labels etc.  
 `<output_directory>` : directory for output. Will be created if it doesn't exist. Cell-specific output will go into `/<output_directory>/<cell_name>`. This path should be the same for every cell that you want to summarise together.
 
@@ -129,7 +129,10 @@ Tracer has two modes *assemble* and *summarise*.
 `-c/--config_file <conf_file>` : config file to use. Default = `tracer.conf`  
 `-s/--species` : Species from which the T cells were derived. Options are `Mmus` or `Hsap` for mouse or human data. This is only important for determination of iNKT cells in the `summarise` step because it defines the V segments that are indicative of iNKT cells. Default = `Mmus`.  
 `-r/--resume_with_existing_files` : if this is set, TraCeR will look for existing output files and not re-run steps that already appear to have been completed. This saves time if TraCeR died partway through a step and you want to resume where it left off.   
-
+`-m/--seq_method` : method by which to generate sequences for assessment of recombinant productivity. By default (`-m imgt`), TraCeR replaces all but the junctional sequence of each detected recombinant with the reference sequence from IMGT prior to assessing productivity of the sequence. This makes the assumption that sequence changes outside the junctional region are due to PCR/sequencing errors rather than being genuine polymorphisms. This is likely to be true for well-characterised mouse sequences but may be less so for human and other outbred populations. To determine productivity from only the assembled contig sequence for each recombinant set `-m assembly`. See the Methods section in the [manuscript](http://biorxiv.org/content/early/2015/08/28/025676) for more information on this.  
+`--single_end` : use this option if your data are single-end reads. If this option is set you must specify fragment length and fragment sd as below.  
+`--fragment_length` : Estimated average fragment length in the sequencing library. Used for Kallisto quantification. Required for single-end data. Can also be set for paired-end data if you don't want Kallisto to estimate it directly.  
+`--fragment_sd` : Estimated standard deviation of average fragment length in the sequencing library. Used for Kallisto quantification. Required for single-end data. Can also be set for paired-end data if you don't want Kallisto to estimate it directly.  
 
 ####Output####
 
