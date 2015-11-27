@@ -49,7 +49,7 @@ class Launcher():
         
         use tracer <mode> -h for specific help
         ''')
-        parser.add_argument('mode', metavar="<MODE>", help='tracer mode (assemble, build or summarise)', choices = ['assemble', 'build_synth_genome', 'summarise', 'summarize', 'build_igblast_index'])
+        parser.add_argument('mode', metavar="<MODE>", help='tracer mode (assemble, or summarise)', choices = ['assemble', 'summarise', 'summarize'])
         args = parser.parse_args(sys.argv[1:2])
         
         if not hasattr(self, args.mode):
