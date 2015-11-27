@@ -632,7 +632,18 @@ class Launcher():
             
             t.add_row([label] + row)
         outfile.write(t.get_string())
-     
+        
+        #If using unfiltered, name cells with more than two recombinants#
+        if args.use_unfiltered:
+            outfile.write("\n\n#Cells with more than two recombinants for a locus#\n")
+            found_multi = False
+            for cell in cells.values():
+                if cell.count_total_recombinants('A') > 2 or cell.count_total_recombinants('B')>2:
+                    outfile.write("###{}###\n".format(cell.name))
+                    outfile.write("TCRA:\t{}\nTCRB:\t{}\n\n".format(cell.count_total_recombinants('A'), cell.count_total_recombinants('B')))
+                    found_multi = True
+            if not found_multi:
+                outfile.write("None\n\n")
         
         #Reporting iNKT cells
         iNKT_count = len(NKT_cells)

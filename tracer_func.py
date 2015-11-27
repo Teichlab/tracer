@@ -248,7 +248,7 @@ class Cell:
         
 class Recombinant:
     'Class to describe a recombined TCR locus as determined from the single-cell pipeline'
-    def __init__(self, contig_name, locus, identifier, all_poss_identifiers, productive, stop_codon, in_frame, TPM, dna_seq, hit_table, summary, junction_details, best_VJ_names, alignment_summary, trinity_seq):
+    def __init__(self, contig_name, locus, identifier, all_poss_identifiers, productive, stop_codon, in_frame, TPM, dna_seq, hit_table, summary, junction_details, best_VJ_names, alignment_summary, trinity_seq, imgt_reconstructed_seq):
         self.contig_name = contig_name
         self.locus = locus
         self.identifier = identifier
@@ -265,6 +265,7 @@ class Recombinant:
         self.in_frame = in_frame
         self.stop_codon = stop_codon
         self.trinity_seq = trinity_seq
+        self.imgt_reconstructed_seq = imgt_reconstructed_seq
 
     def __str__(self):
         return("{} {} {} {}".format(self.identifier, self.productive, self.TPM))
@@ -520,6 +521,10 @@ def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs,  ou
                     start_coord, end_coord = get_coords(good_hits)
                     trinity_seq = str(trinity_seq[start_coord:end_coord])
                     
+                    (imgt_reconstructed_seq, is_productive, bestVJNames) = get_fasta_line_for_contig_imgt(rearrangement_summary, junction_list, good_hits, returned_locus, IMGT_seqs, cell_name, query_name)
+                    del(is_productive)
+                    del(bestVJNames)
+                    
                     if seq_method == 'imgt':
                         (fasta_line_for_contig, is_productive, bestVJNames) = get_fasta_line_for_contig_imgt(rearrangement_summary, junction_list, good_hits, returned_locus, IMGT_seqs, cell_name, query_name)
                     
@@ -530,7 +535,7 @@ def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs,  ou
                     
                     
                     if len(junc_string) < 50:
-                        rec = Recombinant(contig_name=query_name, locus=returned_locus, identifier=identifier, all_poss_identifiers=all_poss_identifiers, productive=is_productive[0], stop_codon=is_productive[1], in_frame=is_productive[2], TPM=0.0, dna_seq=fasta_line_for_contig, hit_table=good_hits, summary=rearrangement_summary, junction_details=junction_list, best_VJ_names=bestVJNames, alignment_summary=alignment_summary, trinity_seq=trinity_seq)
+                        rec = Recombinant(contig_name=query_name, locus=returned_locus, identifier=identifier, all_poss_identifiers=all_poss_identifiers, productive=is_productive[0], stop_codon=is_productive[1], in_frame=is_productive[2], TPM=0.0, dna_seq=fasta_line_for_contig, hit_table=good_hits, summary=rearrangement_summary, junction_details=junction_list, best_VJ_names=bestVJNames, alignment_summary=alignment_summary, trinity_seq=trinity_seq, imgt_reconstructed_seq=imgt_reconstructed_seq)
                         recombinants[locus].append(rec)
                   
     #pdb.set_trace()
@@ -851,7 +856,7 @@ def collapse_close_sequences(recombinants, locus):
     if len(recombinants)>1:
         for i in range(len(recombinants)-1):
             base_name = recombinants[i].contig_name
-            base_seq = recombinants[i].dna_seq
+            base_seq = recombinants[i].imgt_reconstructed_seq
             base_V_segment = recombinants[i].best_VJ_names[0]
             base_J_segment = recombinants[i].best_VJ_names[1]
             
@@ -861,7 +866,7 @@ def collapse_close_sequences(recombinants, locus):
             
             for j in range(i+1, len(recombinants)):
                 comp_name = recombinants[j].contig_name
-                comp_seq = recombinants[j].dna_seq
+                comp_seq = recombinants[j].imgt_reconstructed_seq
                 comp_V_segment = recombinants[j].best_VJ_names[0]
                 comp_J_segment = recombinants[j].best_VJ_names[1]
                 comp_id = recombinants[j].identifier
