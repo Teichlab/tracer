@@ -95,7 +95,7 @@ class Cell:
         return(identifier_list)
    
     
-    def html_style_label_dna(self):
+    def html_style_label_dna(self, transgenic_ids = False):
         colours = {'A' : {'productive' : '#E41A1C', 'non-productive' : "#ff8c8e"}, 'B' : {'productive' : '#377eb8', 'non-productive' : "#95c1e5"}, 'G' : {'productive' : '#4daf4a', 'non-productive' : "#aee5ac"}, 'D' : {'productive' : '#984ea3', 'non-productive' : "#deace5"}}
         locus_names = ['A','B','G','D']
         recombinants = dict()
@@ -108,7 +108,14 @@ class Cell:
                         prod = "productive"
                     else:
                         prod = "non-productive"
-                    recombinant_set.add("<BR/>" + '<FONT COLOR = "{}">'.format(colours[locus][prod])  + recombinant.identifier  + '</FONT>')
+                    
+                    if transgenic_ids and recombinant.identifier in transgenic_ids:
+                        recombinant_set.add("<BR/>" + '<FONT COLOR = "#999999">'.format(colours[locus][prod])  + recombinant.identifier  + '</FONT>')
+                        
+                        
+                        
+                    else:    
+                        recombinant_set.add("<BR/>" + '<FONT COLOR = "{}">'.format(colours[locus][prod])  + recombinant.identifier  + '</FONT>')
                 
                 recombinants[locus] = recombinant_set
         for locus in locus_names:
@@ -969,7 +976,7 @@ def make_cell_network_from_dna(cells, colorscheme, colours, keep_unlinked, shape
             G.add_node(cell, shape=shape, label=cell.html_style_label_for_circles(transgenic_ids), sep=0.4, fontname="helvetica neue")
     else:    
         for cell in cells:
-            G.add_node(cell, shape=shape, label=cell.html_style_label_dna(), fontname="helvetica neue")
+            G.add_node(cell, shape=shape, label=cell.html_style_label_dna(transgenic_ids), fontname="helvetica neue")
     #make edges:
     for i in range(len(cells)):
         current_cell = cells[i]
