@@ -58,3 +58,4 @@ target/
 
 # specific conf file
 specific_tracer.conf
+carbajo.conf
