@@ -32,7 +32,7 @@ Tracer relies on several additional tools and Python modules that you should ins
 5. [Graphviz](http://www.graphviz.org) - Dot and Neato drawing programs required for visualisation of clonotype graphs.
 
 #####Installing IgBlast#####
-Downloading the exectuable files from `ftp://ftp.ncbi.nih.gov/blast/executables/igblast/release/<version_number>` is not sufficient for a working IgBlast installation. You must also download the internal_data directory ([`ftp://ftp.ncbi.nih.gov/blast/executables/igblast/release/internal_data`]((ftp://ftp.ncbi.nih.gov/blast/executables/igblast/release/internal_data)) and put it into the same directory as the igblast executable. This is also described in the igblast README file.
+Downloading the exectuable files from `ftp://ftp.ncbi.nih.gov/blast/executables/igblast/release/<version_number>` is not sufficient for a working IgBlast installation. You must also download the internal_data directory ([`ftp://ftp.ncbi.nih.gov/blast/executables/igblast/release/internal_data`](ftp://ftp.ncbi.nih.gov/blast/executables/igblast/release/internal_data)) and put it into the same directory as the igblast executable. This is also described in the igblast README file.
 
 ####Python modules####
 1. [Matplotlib](http://matplotlib.org)
