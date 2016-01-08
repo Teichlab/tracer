@@ -27,12 +27,12 @@ Tracer relies on several additional tools and Python modules that you should ins
 ####Software####
 1. [Bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml) - required for alignment of reads to synthetic TCR genomes.
 2. [Trinity](http://sourceforge.net/projects/trinityrnaseq/files/PREV_CONTENTS/previous_releases/) - required for assembly of reads into TCR contigs. **Currently TraCeR uses Trinity parameters intended for use with [Trinity v1](http://sourceforge.net/projects/trinityrnaseq/files/PREV_CONTENTS/previous_releases/). Updates for use with [Trinity v2](https://github.com/trinityrnaseq/trinityrnaseq/wiki) are coming soon.**
-3. [IgBLAST](http://www.ncbi.nlm.nih.gov/igblast/faq.html#standalone) - required for analysis of assembled contigs. [FTP site](ftp://ftp.ncbi.nih.gov/blast/executables/igblast/release/).
+3. [IgBLAST](http://www.ncbi.nlm.nih.gov/igblast/faq.html#standalone) - required for analysis of assembled contigs. (ftp://ftp.ncbi.nih.gov/blast/executables/igblast/release/).
 4. [Kallisto](http://pachterlab.github.io/kallisto/) - required for quantification of TCR expression.
 5. [Graphviz](http://www.graphviz.org) - Dot and Neato drawing programs required for visualisation of clonotype graphs.
 
 #####Installing IgBlast#####
-Downloading the exectuable files from `ftp://ftp.ncbi.nih.gov/blast/executables/igblast/release/<version_number>` is not sufficient for a working IgBlast installation. You must also download the internal_data directory ([`ftp://ftp.ncbi.nih.gov/blast/executables/igblast/release/internal_data`](ftp://ftp.ncbi.nih.gov/blast/executables/igblast/release/internal_data)) and put it into the same directory as the igblast executable. This is also described in the igblast README file.
+Downloading the executable files from ftp://ftp.ncbi.nih.gov/blast/executables/igblast/release/<version_number> is not sufficient for a working IgBlast installation. You must also download the `internal_data` directory (ftp://ftp.ncbi.nih.gov/blast/executables/igblast/release/internal_data) and put it into the same directory as the igblast executable. This is also described in the igblast README file.
 
 ####Python modules####
 1. [Matplotlib](http://matplotlib.org)
