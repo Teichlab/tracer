@@ -167,7 +167,7 @@ class Launcher():
         trinity_JM = config.get('trinity_options', 'max_jellyfish_memory')
         self.assemble_with_trinity(trinity, locus_names, output_dir, cell_name, ncores, trinity_grid_conf, trinity_JM, should_resume, args)
         print        
-        self.run_IgBlast(igblast, locus_names, output_dir, cell_name, igblast_index_location, igblast_seqtype, should_resume)
+        self.run_IgBlast(igblast, locus_names, output_dir, cell_name, igblast_index_location, igblast_seqtype, args.species, should_resume)
         print
         
         with warnings.catch_warnings():
@@ -400,8 +400,11 @@ class Launcher():
 
     
     
-    def run_IgBlast(self, igblast, locus_names, output_dir, cell_name, index_location, ig_seqtype, should_resume):
+    def run_IgBlast(self, igblast, locus_names, output_dir, cell_name, index_location, ig_seqtype, species, should_resume):
         print  "##Running IgBLAST##"
+        
+        igblast_species_lookup = {'Hsap':'human', 'Mmus':'mouse'}
+        igblast_species = igblast_species_lookup[species]
         
         if should_resume:
             igblast_out_A = "{output_dir}/IgBLAST_output/{cell_name}_TCRA.IgBLASTOut".format(output_dir=output_dir, cell_name=cell_name)
@@ -425,9 +428,10 @@ class Launcher():
             print "##{}##".format(locus)
             trinity_fasta = "{}/Trinity_output/{}_{}.Trinity.fasta".format(output_dir, cell_name, locus)
             if os.path.isfile(trinity_fasta):
-                command = [igblast, '-germline_db_V', databases['v'], '-germline_db_D', databases['d'], '-germline_db_J', databases['j'], '-domain_system', 'imgt', '-ig_seqtype', ig_seqtype, '-show_translation', '-num_alignments_V', '5', '-num_alignments_D', '5', '-num_alignments_J', '5', '-outfmt', '7', '-query', trinity_fasta]
+                command = [igblast, '-germline_db_V', databases['v'], '-germline_db_D', databases['d'], '-germline_db_J', databases['j'], '-domain_system', 'imgt', '-organism', igblast_species, '-ig_seqtype', ig_seqtype, '-show_translation', '-num_alignments_V', '5', '-num_alignments_D', '5', '-num_alignments_J', '5', '-outfmt', '7', '-query', trinity_fasta]
                 igblast_out = "{output_dir}/IgBLAST_output/{cell_name}_{locus}.IgBLASTOut".format(output_dir=output_dir, cell_name=cell_name, locus=locus)
                 out = open(igblast_out, 'w')
+                #print " ".join(pipes.quote(s) for s in command)
                 subprocess.check_call(command, stdout=out,stderr=DEVNULL)
                 out.close()
         
