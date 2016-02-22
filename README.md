@@ -42,6 +42,7 @@ Downloading the executable files from `ftp://ftp.ncbi.nih.gov/blast/executables/
 4. [Prettytable](https://code.google.com/p/prettytable/)
 5. [Levenshtein](https://pypi.python.org/pypi/python-Levenshtein/)
 6. [Networkx](https://networkx.github.io)
+7. It seems that v1.11 of Networkx behaves differently when writing dot files for use with Graphviz. If you have this (or later versions) you also need to install [PyDotPlus](http://pydotplus.readthedocs.org).
 
 
 ##Setup##
