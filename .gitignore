@@ -57,5 +57,5 @@ docs/_build/
 target/
 
 # specific conf file
-specific_tracer.conf
+specific_tracer*.conf
 carbajo.conf
