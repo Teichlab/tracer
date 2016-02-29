@@ -629,7 +629,10 @@ class Launcher():
             counter = counters[label]
             count_array = [counter[x] for x in recomb_range]
             total_with_at_least_one = sum(count_array[1:])
-            percentages = ['']+[" ("+ str(round((float(x)/total_with_at_least_one)*100)) +"%)" for x in count_array[1:]]
+            if total_with_at_least_one > 0:
+                percentages = ['']+[" ("+ str(round((float(x)/total_with_at_least_one)*100)) +"%)" for x in count_array[1:]]
+            else:
+                percentages = ['']+[" (N/A%)" for x in count_array[1:]]
             row = []
             for i in recomb_range:
                 row.append(str(count_array[i]) + percentages[i])
@@ -670,20 +673,22 @@ class Launcher():
                 lengths[locus] = lengths[locus] +  cell.get_trinity_lengths(locus)
         
         #plot TCRA length distributions
-        plt.figure()
-        plt.axvline(334, linestyle="--", color = 'k')
-        plt.axvline(344, linestyle="--",color = 'k')
-        sns.distplot(lengths['A'])
-        sns.despine()
-        plt.savefig("{}A.pdf".format(length_filename_root)) 
+        if len(lengths['A']) > 1:
+            plt.figure()
+            plt.axvline(334, linestyle="--", color = 'k')
+            plt.axvline(344, linestyle="--",color = 'k')
+            sns.distplot(lengths['A'])
+            sns.despine()
+            plt.savefig("{}A.pdf".format(length_filename_root)) 
         
         #plot TCRB length distributions
-        plt.figure()
-        plt.axvline(339, linestyle="--", color = 'k')
-        plt.axvline(345, linestyle="--",color = 'k')
-        sns.distplot(lengths['B'])
-        sns.despine()
-        plt.savefig("{}B.pdf".format(length_filename_root))
+        if len(lengths['B']) > 1:
+            plt.figure()
+            plt.axvline(339, linestyle="--", color = 'k')
+            plt.axvline(345, linestyle="--",color = 'k')
+            sns.distplot(lengths['B'])
+            sns.despine()
+            plt.savefig("{}B.pdf".format(length_filename_root))
         
         for cell_name in empty_cells:
             del cells[cell_name]
