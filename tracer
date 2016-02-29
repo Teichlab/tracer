@@ -698,7 +698,14 @@ class Launcher():
                 del cells[cell_name]
                 
         #make clonotype networks
-        tracer.draw_network_from_cells(cells, outdir, graph_format, dot, neato)         
+        component_groups = tracer.draw_network_from_cells(cells, outdir, graph_format, dot, neato)         
+        
+        #Print component groups to the summary#
+        outfile.write("\n###Clonotype groups###\nThis is a text representation of the groups shown in clonotype_network_with_identifiers.pdf. It does not exclude cells that only share alpha and not beta.\n")
+        for g in component_groups:
+            outfile.write(", ".join(g))
+            outfile.write("\n\n")
+        
         
         #plot clonotype sizes
         plt.figure()
