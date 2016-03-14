@@ -720,6 +720,11 @@ class Launcher():
             plt.xlabel("TCRa reconstructed length (bp)")
             plt.ylabel("Density")
             plt.savefig("{}A.pdf".format(length_filename_root)) 
+        if len(lengths['A']) > 0:
+            with open("{}A.txt".format(length_filename_root), 'w') as f:
+                for l in sorted(lengths['A']):
+                    f.write("{}\n".format(l))
+
         
         #plot TCRB length distributions
         if len(lengths['B']) > 1:
@@ -731,6 +736,10 @@ class Launcher():
             plt.xlabel("TCRb reconstructed length (bp)")
             plt.ylabel("Density")
             plt.savefig("{}B.pdf".format(length_filename_root))
+        if len(lengths['B']) > 0:
+            with open("{}B.txt".format(length_filename_root), 'w') as f:
+                for l in sorted(lengths['B']):
+                    f.write("{}\n".format(l))
         
         for cell_name in empty_cells:
             del cells[cell_name]
