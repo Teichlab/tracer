@@ -775,7 +775,24 @@ class Launcher():
             f.write("clonotype_size\tclonotype_count\n")
             for t in data:
                 f.write("{}\t{}\n".format(t[0],t[1]))
-
+        
+        #Write out recombinant details for each cell
+        with open("{}/recombinants.txt".format(outdir), 'w') as f:
+            f.write("cell_name\tlocus\trecombinant_id\tproductive\treconstructed_length\n")
+            sorted_cell_names = sorted(cells.keys())
+            for cell_name in sorted_cell_names:
+                cell = cells[cell_name]
+                for locus in "AB":
+                    recombinants = cell.all_recombinants[locus]
+                    if recombinants is not None:
+                        for r in recombinants:
+                            f.write("{name}\t{locus}\t{ident}\t{productive}\t{length}\n".format(name=cell_name, locus=locus, ident=r.identifier, productive=r.productive, length=len(r.trinity_seq)))
+                f.write("\n")
+            f.write("\n\n")
+            for cell_name in empty_cells:
+                f.write("{}\tNo TCRs found\n".format(cell_name))
+                
+        
     summarize = summarise
     
     def test(self):
