@@ -112,11 +112,11 @@ Location of the transcriptome fasta file to which the specific TCR sequences wil
 
 
 ## Testing TraCeR ##
-TraCeR comes with a small dataset (containing only TCRA or TCRB reads for a single cell) that you can use to test your installation and confirm that all the prerequisites are working. Run it as:
+TraCeR comes with a small dataset in `test_data/` (containing only TCRA or TCRB reads for a single cell) that you can use to test your installation and confirm that all the prerequisites are working. Run it as:
 
     tracer test -p <ncores> -c <config_file>
     
-This will peform the [`asssemble`](#assemble-tcr-reconstruction) step using the small test dataset. It will then perform [`summarise`](#summarise-summary-and-clonotype-networks) using the assemblies that are generated along with pre-calculated output for two other cells.
+This will peform the [`asssemble`](#assemble-tcr-reconstruction) step using the small test dataset. It will then perform [`summarise`](#summarise-summary-and-clonotype-networks) using the assemblies that are generated along with pre-calculated output for two other cells (in `test_data/results`).
 
 Compare the output in `test_data/results/filtered_TCR_summary` with the expected results in `test_data/expected_summary`. There should be three cells, each with one productive alpha, one productive beta, one non-productive alpha and one non-productive beta. Cells 1 and 2 should be in a clonotype.
 
@@ -200,7 +200,7 @@ The following output files are generated:
     Summary statistics describing successful TCR reconstruction rates and the numbers of cells with 0, 1, 2 or more recombinants for each locus.
 2. `recombinants.txt`
     List of TCR identifiers, lengths and productivities for each cell. 
-3. `reconstructed_lengths_TCR[A|B].pdf` and  `reconstructed_lengths_TCR[A|B].txt
+3. `reconstructed_lengths_TCR[A|B].pdf` and  `reconstructed_lengths_TCR[A|B].txt`
     Distribution plots (and text files with underlying data) showing the lengths of the VDJ regions from assembled TCR contigs. Longer contigs give higher-confidence segment assignments. Text files are only generated if at least one TCR is found for a locus. Plots are only generated if at least two TCRs are found for a locus. 
 4. `clonotype_sizes.pdf` and `clonotype_sizes.txt`
     Distribution of clonotype sizes as bar graph and text file.
