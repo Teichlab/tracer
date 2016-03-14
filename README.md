@@ -136,9 +136,9 @@ Tracer has two modes *assemble* and *summarise*.
     tracer assemble [options] <file_1> [<file_2>] <cell_name> <output_directory>
 
 #####Main arguments#####
-`<file_1>` : fastq file containing #1 mates from paired-end sequencing or all reads from single-end sequencing. 
-`<file_2>` : fastq file containing #2 mates from paired-end sequencing. Do not use if your data are from single-end sequencing.
-`<cell_name>` : name of the cell. This is arbitrary text that will be used for all subsequent references to the cell in filenames/labels etc.  
+`<file_1>` : fastq file containing #1 mates from paired-end sequencing or all reads from single-end sequencing.   
+`<file_2>` : fastq file containing #2 mates from paired-end sequencing. Do not use if your data are from single-end sequencing.  
+`<cell_name>` : name of the cell. This is arbitrary text that will be used for all subsequent references to the cell in filenames/labels etc.     
 `<output_directory>` : directory for output. Will be created if it doesn't exist. Cell-specific output will go into `/<output_directory>/<cell_name>`. This path should be the same for every cell that you want to summarise together.
 
 #####Options#####
