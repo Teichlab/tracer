@@ -768,6 +768,13 @@ class Launcher():
         plt.xlabel("Clonotype size")
         plt.ylabel("Clonotype count")
         plt.savefig("{}/clonotype_sizes.pdf".format(outdir))
+        
+        #write clonotype sizes to text file
+        with open("{}/clonotype_sizes.txt".format(outdir), 'w') as f:
+            data = zip(x_range, clonotype_sizes)
+            f.write("clonotype_size\tclonotype_count\n")
+            for t in data:
+                f.write("{}\t{}\n".format(t[0],t[1]))
 
     summarize = summarise
     
