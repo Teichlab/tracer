@@ -191,7 +191,7 @@ class Launcher():
         self.bowtie2_alignment(bowtie2, ncores, locus_names, output_dir, cell_name, synthetic_genome_path, fastq1, fastq2, should_resume, single_end)
         print
         trinity_JM = config.get('trinity_options', 'max_jellyfish_memory')
-        self.assemble_with_trinity(trinity, locus_names, output_dir, cell_name, ncores, trinity_grid_conf, trinity_JM, should_resume, single_end)
+        self.assemble_with_trinity(trinity, locus_names, output_dir, cell_name, ncores, trinity_grid_conf, trinity_JM, should_resume, single_end, species)
         print        
         self.run_IgBlast(igblast, locus_names, output_dir, cell_name, igblast_index_location, igblast_seqtype, species, should_resume)
         print
@@ -333,7 +333,7 @@ class Launcher():
                
                 
     
-    def assemble_with_trinity(self, trinity, locus_names, output_dir, cell_name, ncores, trinity_grid_conf, JM, should_resume, single_end):
+    def assemble_with_trinity(self, trinity, locus_names, output_dir, cell_name, ncores, trinity_grid_conf, JM, should_resume, single_end, species):
         print  "##Assembling Trinity Contigs##"
         
         if should_resume:
@@ -717,6 +717,8 @@ class Launcher():
             plt.axvline(344, linestyle="--",color = 'k')
             sns.distplot(lengths['A'])
             sns.despine()
+            plt.xlabel("TCRa reconstructed length (bp)")
+            plt.ylabel("Density")
             plt.savefig("{}A.pdf".format(length_filename_root)) 
         
         #plot TCRB length distributions
@@ -726,6 +728,8 @@ class Launcher():
             plt.axvline(345, linestyle="--",color = 'k')
             sns.distplot(lengths['B'])
             sns.despine()
+            plt.xlabel("TCRb reconstructed length (bp)")
+            plt.ylabel("Density")
             plt.savefig("{}B.pdf".format(length_filename_root))
         
         for cell_name in empty_cells:
@@ -752,6 +756,8 @@ class Launcher():
         x_range = range(1, len(clonotype_sizes) + 1)
         plt.bar(x_range, height=clonotype_sizes, width=w, color='black', align='center')
         plt.gca().set_xticks(x_range)
+        plt.xlabel("Clonotype size")
+        plt.ylabel("Clonotype count")
         plt.savefig("{}/clonotype_sizes.pdf".format(outdir))
 
     summarize = summarise
