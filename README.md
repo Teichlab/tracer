@@ -198,11 +198,13 @@ The following output files are generated:
 
 1. `TCR_summary.txt`
     Summary statistics describing successful TCR reconstruction rates and the numbers of cells with 0, 1, 2 or more recombinants for each locus.
-2. `reconstructed_lengths_TCR[A|B].pdf`
-    Distribution plots showing the lengths of the VDJ regions from assembled TCR contigs. Longer contigs give higher-confidence segment assignments.
-3. `clonotype_sizes.pdf`
-    Distribution of clonotype sizes.
-4.  `clonotype_network_[with|without]_identifiers.<graph_format>`
+2. `recombinants.txt`
+    List of TCR identifiers, lengths and productivities for each cell. 
+3. `reconstructed_lengths_TCR[A|B].pdf` and  `reconstructed_lengths_TCR[A|B].txt
+    Distribution plots (and text files with underlying data) showing the lengths of the VDJ regions from assembled TCR contigs. Longer contigs give higher-confidence segment assignments. Text files are only generated if at least one TCR is found for a locus. Plots are only generated if at least two TCRs are found for a locus. 
+4. `clonotype_sizes.pdf` and `clonotype_sizes.txt`
+    Distribution of clonotype sizes as bar graph and text file.
+5.  `clonotype_network_[with|without]_identifiers.<graph_format>`
     graphical representation of clonotype networks either with full recombinant identifiers or just lines indicating presence/absence of recombinants.
-5.  `clonotype_network_[with|without]_identifiers.dot`
+6.  `clonotype_network_[with|without]_identifiers.dot`
     files describing the clonotype networks in the [Graphviz DOT language](http://www.graphviz.org/doc/info/lang.html)
