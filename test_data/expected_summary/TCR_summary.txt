@@ -15,7 +15,7 @@ Paired productive chains	3 / 3 (100.0%)
 Found 0 iNKT cells
 
 ###Clonotype groups###
-This is a text representation of the groups shown in clonotype_network_with_identifiers.pdf. It does not exclude cells that only share alpha and not beta.
+This is a text representation of the groups shown in clonotype_network_with_identifiers.pdf. It does not exclude cells that only share beta and not alpha.
 
 cell2, cell1
 
