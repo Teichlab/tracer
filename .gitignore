@@ -59,3 +59,7 @@ target/
 # specific conf file
 specific_tracer*.conf
 carbajo.conf
+
+# test files
+cell1/
+filtered_TCR_summary

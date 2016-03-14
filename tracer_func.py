@@ -4,11 +4,13 @@
 # TraCeR - a tool to reconstruct TCR sequences from single-cell RNA-seq data #    
 #                                                                            #
 # Please see README and LICENCE for details of use and licence conditions.   #
-# This software was written by Mike Stubbington (mstubb@ebi.ac.uk) from the  #
-# Teichmann Lab, EMBL-EBI (www.teichlab.org). Latest versions are available  #
-# for download at www.github.com/teichlab/tracer.                            #
+# This software was written by Mike Stubbington (ms31@sanger.ac.uk) from the #
+# Teichmann Lab, EMBL-EBI and WTSI (www.teichlab.org). Latest versions are   #
+# available for download at www.github.com/teichlab/tracer.                  #
 #                                                                            #
-#      Copyright (c) 2015 EMBL - European Bioinformatics Institute           # 
+#      Copyright (c) 2015, 2016 EMBL - European Bioinformatics Institute     #
+#      Copyright (c) 2016 Genome Research Ltd.                               #
+#      Author: M.J.T. Stubbington ms31@sanger.ac.uk                          #
 ############################################################################## 
 
 import sys
@@ -1145,7 +1147,15 @@ def get_component_groups_sizes(cells):
          
     
     
-    return(clonotype_sizes)    
+    return(clonotype_sizes)   
+
+def check_config_file(file):
+    if not os.path.isfile(file):
+        print
+        print "Couldn't find config file: {}".format(file)
+        print
+        exit(1)
+         
     
     
     
