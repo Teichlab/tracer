@@ -1,0 +1,6 @@
+graph "" {
+cell2 [fillcolor="#8dd3c720", fontname="helvetica neue", label=<<FONT POINT-SIZE="16"><B>cell2</B></FONT><BR/><FONT COLOR = "#E41A1C">TRAV4-2_TTGAGAATAA_TRAJ43</FONT><BR/><FONT COLOR = "#ff8c8e">TRAV9D-4_GTGAGGGGGAAGGAGAGGCA_TRAJ37</FONT><BR/><FONT COLOR = "#377eb8">TRBV4_AGCTACAACTCCT_TRBJ2-7</FONT><BR/><FONT COLOR = "#95c1e5">TRBV12-1_GCTCTACAACAGGGGGGGCACCG_TRBJ2-2</FONT>>, shape=box, style=filled];
+cell1 [fillcolor="#8dd3c720", fontname="helvetica neue", label=<<FONT POINT-SIZE="16"><B>cell1</B></FONT><BR/><FONT COLOR = "#ff8c8e">TRAV9D-4_GTGAGGGGGAAGGAGAGGCA_TRAJ37</FONT><BR/><FONT COLOR = "#E41A1C">TRAV4-2_TTGAGAATAA_TRAJ43</FONT><BR/><FONT COLOR = "#377eb8">TRBV4_AGCTACAACTCCT_TRBJ2-7</FONT><BR/><FONT COLOR = "#95c1e5">TRBV12-1_GCTCTACAACAGGGGGGGCACCG_TRBJ2-2</FONT>>, shape=box, style=filled];
+cell2 -- cell1  [color=1, colorscheme=set15, key=A, penwidth=4, weight=2];
+cell2 -- cell1  [color=2, colorscheme=set15, key=B, penwidth=4, weight=2];
+}

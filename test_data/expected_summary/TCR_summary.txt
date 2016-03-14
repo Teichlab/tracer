@@ -1,0 +1,21 @@
+TCRA reconstruction:	3 / 3 (100.0%)
+TCRB reconstruction:	3 / 3 (100.0%)
+Paired productive chains	3 / 3 (100.0%)
+
++------------+----------------+---------------+----------------+
+|            | 0 recombinants | 1 recombinant | 2 recombinants |
++------------+----------------+---------------+----------------+
+| all_alpha  | 0              | 0 (0.0%)      | 3 (100.0%)     |
+| all_beta   | 0              | 0 (0.0%)      | 3 (100.0%)     |
+| prod_alpha | 0              | 3 (100.0%)    | 0 (0.0%)       |
+| prod_beta  | 0              | 3 (100.0%)    | 0 (0.0%)       |
++------------+----------------+---------------+----------------+
+
+#iNKT cells#
+Found 0 iNKT cells
+
+###Clonotype groups###
+This is a text representation of the groups shown in clonotype_network_with_identifiers.pdf. It does not exclude cells that only share alpha and not beta.
+
+cell2, cell1
+

@@ -1,0 +1,7 @@
+graph "" {
+cell2 [fillcolor="#8dd3c720", fontname="helvetica neue", label=<<table cellspacing="6px" border="0" cellborder="0"><tr><td height="10" width="40" bgcolor="#E41A1C"></td></tr><tr><td height="10" width="40" bgcolor="#ff8c8e"></td></tr><tr><td height="10" width="40" bgcolor="#377eb8"></td></tr><tr><td height="10" width="40" bgcolor="#95c1e5"></td></tr></table>>, sep="0.4", shape=circle, style=filled];
+cell1 [fillcolor="#8dd3c720", fontname="helvetica neue", label=<<table cellspacing="6px" border="0" cellborder="0"><tr><td height="10" width="40" bgcolor="#E41A1C"></td></tr><tr><td height="10" width="40" bgcolor="#ff8c8e"></td></tr><tr><td height="10" width="40" bgcolor="#377eb8"></td></tr><tr><td height="10" width="40" bgcolor="#95c1e5"></td></tr></table>>, sep="0.4", shape=circle, style=filled];
+cell3 [fontname="helvetica neue", label=<<table cellspacing="6px" border="0" cellborder="0"><tr><td height="10" width="40" bgcolor="#E41A1C"></td></tr><tr><td height="10" width="40" bgcolor="#ff8c8e"></td></tr><tr><td height="10" width="40" bgcolor="#377eb8"></td></tr><tr><td height="10" width="40" bgcolor="#95c1e5"></td></tr></table>>, sep="0.4", shape=circle];
+cell2 -- cell1  [color=1, colorscheme=set15, key=A, penwidth=4, weight=2];
+cell2 -- cell1  [color=2, colorscheme=set15, key=B, penwidth=4, weight=2];
+}
