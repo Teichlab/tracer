@@ -112,7 +112,7 @@ Location of the transcriptome fasta file to which the specific TCR sequences wil
 
 
 ## Testing TraCeR ##
-TraCeR comes with a small dataset in `test_data/` (containing only TCRA or TCRB reads for a single cell) that you can use to test your installation and confirm that all the prerequisites are working. Run it as:
+TraCeR comes with a small dataset in `test_data/` (containing only TCRA or TCRB reads for a single cell) that you can use to test your installation and config file and confirm that all the prerequisites are working. Run it as:
 
     tracer test -p <ncores> -c <config_file>
     
