@@ -5,7 +5,8 @@ TraCeR - reconstruction of T cell receptor sequences from single-cell RNA-seq da
 1. [Introduction](#introduction)
 2. [Installation](#installation)
 3. [Setup](#setup)
-4. [Usage](#using-tracer)
+4. [Testing](#testing-tracer)
+5. [Usage](#using-tracer)
 	- [*Assemble*](#assemble-tcr-reconstruction)
     - [*Summarise*](#summarise-summary-and-clonotype-networks)
 
@@ -108,6 +109,17 @@ Type of sequence to be analysed. Since TraCeR currently only works with TCR sequ
 		base_transcriptome = /path/to/kallisto/transcriptome
 
 Location of the transcriptome fasta file to which the specific TCR sequences will be appended from each cell. Can be downloaded from http://bio.math.berkeley.edu/kallisto/transcriptomes/ and many other places. This must be a plain-text fasta file so decompress it if necessary (files from the Kallisto link are gzipped).
+
+
+## Testing TraCeR ##
+TraCeR comes with a small dataset (containing only TCRA or TCRB reads for a single cell) that you can use to test your installation and confirm that all the prerequisites are working. Run it as:
+
+    tracer test -p <ncores> -c <config_file>
+    
+This will peform the [`asssemble`](#assemble-tcr-reconstruction) step using the small test dataset. It will then perform [`summarise`](#summarise-summary-and-clonotype-networks) using the assemblies that are generated along with pre-calculated output for two other cells.
+
+Compare the output in `test_data/results/filtered_TCR_summary` with the expected results in `test_data/expected_summary`. There should be three cells, each with one productive alpha, one productive beta, one non-productive alpha and one non-productive beta. Cells 1 and 2 should be in a clonotype.
+
 
 ##Using TraCeR##
 Tracer has two modes *assemble* and *summarise*. 
