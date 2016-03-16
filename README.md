@@ -36,6 +36,8 @@ Tracer relies on several additional tools and Python modules that you should ins
 #####Installing IgBlast#####
 Downloading the executable files from `ftp://ftp.ncbi.nih.gov/blast/executables/igblast/release/<version_number>` is not sufficient for a working IgBlast installation. You must also download the `internal_data` directory (ftp://ftp.ncbi.nih.gov/blast/executables/igblast/release/internal_data) and put it into the same directory as the igblast executable. This is also described in the igblast README file.
 
+You should also ensure to set the `$IGDATA` environment variable to point to the location of the IgBlast executable. For example run `export IGDATA=/<path_to_igblast>/igblast/1.4.0/bin`.
+
 ####Python modules####
 1. [Matplotlib](http://matplotlib.org)
 2. [Seaborn](http://stanford.edu/~mwaskom/software/seaborn/)
