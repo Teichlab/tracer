@@ -49,6 +49,14 @@ You should also ensure to set the `$IGDATA` environment variable to point to the
 
 
 ##Setup##
+The python modules can be installed by running the setup script:
+
+    python setup.py install
+
+Or using pip from the requirements.txt file:
+
+    pip install -r requirements.txt
+
 Once the prerequisites above are installed and working you're ready to tell TraCeR where to find them.
 
 TraCeR uses a configuration file to point it to the locations of files that it needs and a couple of other options. By default, this is `tracer.conf` in the same directory as the TraCeR executable. The `-c` option to the various tracer modules allows you to specify any other file to act as the configuration file. 
