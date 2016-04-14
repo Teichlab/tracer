@@ -63,3 +63,6 @@ carbajo.conf
 # test files
 cell1/
 filtered_TCR_summary
+
+# IDE settings
+.idea
