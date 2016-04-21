@@ -244,7 +244,7 @@ class Launcher():
                     aligned_read_path = "{}/aligned_reads/{}_{}".format(output_dir, cell_name, locus)
                     fastq_out = "{}.fastq".format(aligned_read_path)
                     if os.path.isfile(fastq_out):
-                        print "Resume with existing TCRA and B reads"
+                        print "Resuming with existing TCRA and B reads"
                         return
                 else:
                     aligned_read_path = "{}/aligned_reads/{}_{}_".format(output_dir, cell_name, locus)
