@@ -150,7 +150,16 @@ class Launcher():
             trinity_grid_conf = self.resolve_relative_path(config.get('trinity_options', 'trinity_grid_conf'))
         else:
             trinity_grid_conf = False
-        
+
+        # Get Trinity version
+        if not config.has_option('trinity_options', 'trinity_version'):
+            try:
+                subprocess.check_output([trinity, '--version'])
+            except subprocess.CalledProcessError as err:
+                if re.search('v2', err.output):
+                    config.set('trinity_options', 'trinity_version', '2')
+                else:
+                    config.set('trinity_options', 'trinity_version', '1')
         
         synthetic_genome_path = self.resolve_relative_path(config.get('bowtie2_options', 'synthetic_genome_index_path'))
         igblast_index_location = self.resolve_relative_path(config.get('IgBlast_options', 'igblast_index_location'))
@@ -191,7 +200,8 @@ class Launcher():
         self.bowtie2_alignment(bowtie2, ncores, locus_names, output_dir, cell_name, synthetic_genome_path, fastq1, fastq2, should_resume, single_end)
         print
         trinity_JM = config.get('trinity_options', 'max_jellyfish_memory')
-        self.assemble_with_trinity(trinity, locus_names, output_dir, cell_name, ncores, trinity_grid_conf, trinity_JM, should_resume, single_end, species)
+        trinity_version = config.get('trinity_options', 'trinity_version')
+        self.assemble_with_trinity(trinity, locus_names, output_dir, cell_name, ncores, trinity_grid_conf, trinity_JM, trinity_version, should_resume, single_end, species)
         print        
         self.run_IgBlast(igblast, locus_names, output_dir, cell_name, igblast_index_location, igblast_seqtype, species, should_resume)
         print
@@ -340,7 +350,7 @@ class Launcher():
                
                 
     
-    def assemble_with_trinity(self, trinity, locus_names, output_dir, cell_name, ncores, trinity_grid_conf, JM, should_resume, single_end, species):
+    def assemble_with_trinity(self, trinity, locus_names, output_dir, cell_name, ncores, trinity_grid_conf, JM, version, should_resume, single_end, species):
         print  "##Assembling Trinity Contigs##"
         
         if should_resume:
@@ -355,7 +365,8 @@ class Launcher():
         if trinity_grid_conf:
             command = command + ['--grid_conf', trinity_grid_conf]
         
-        command = command + ['--seqType', 'fq', '--JM', JM, '--CPU', ncores, '--full_cleanup']
+        memory_string = '--max_memory' if (version == '2') else '--JM'
+        command = command + ['--seqType', 'fq', memory_string, JM, '--CPU', ncores, '--full_cleanup']
         
         for locus in locus_names:
             print "##{}##".format(locus)
