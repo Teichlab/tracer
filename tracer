@@ -364,13 +364,15 @@ class Launcher():
             if not single_end:
                 file1 = "{}_1.fastq".format(aligned_read_path)
                 file2 = "{}_2.fastq".format(aligned_read_path)
-                command = command + ["--left", file1, "--right", file2, "--output", '{}'.format(trinity_output)]
+                command = command + ["--left", file1, "--right", file2, "--output", '{}/Trinity_output/Trinity_{}_{}'.format(output_dir, cell_name, locus)]
             else:
                 file = "{}.fastq".format(aligned_read_path)
-                command = command + ["--single", file, "--output", '{}'.format(trinity_output)]
+                command = command + ["--single", file, "--output", '{}/Trinity_output/Trinity_{}_{}'.format(output_dir, cell_name, locus)]
             try:
                 subprocess.check_call(command)
-            except subprocess.CalledProcessError:
+                shutil.move('{}/Trinity_output/Trinity_{}_{}.Trinity.fasta'.format(output_dir, cell_name, locus),
+                            '{}/Trinity_output/{}_{}.Trinity.fasta'.format(output_dir, cell_name, locus))
+            except (subprocess.CalledProcessError, IOError):
                 print "Trinity failed for locus"
         
         #clean up unsuccessful assemblies
