@@ -13,408 +13,20 @@
 ##############################################################################
 
 from __future__ import print_function
-import six
 
-import sys
 import os
-import subprocess
-import pipes
-import glob
-import shutil
 import re
+import subprocess
 from collections import defaultdict, Counter
-from time import sleep
-from Bio import SeqIO
-from Bio.Seq import Seq
-from Bio.Alphabet import IUPAC, generic_dna
-import pdb
+
 import Levenshtein
-import shlex
 import networkx as nx
+import six
+from Bio import SeqIO
+from Bio.Alphabet import IUPAC
+from Bio.Seq import Seq
 
-
-##CLASSES##
-class Cell(object):
-
-    """Class to describe T cells containing A and B loci"""
-
-    def __init__(self, cell_name, A_recombinants, B_recombinants, G_recombinants, D_recombinants, is_empty=False,
-                 species="Mmus"):
-        self.name = cell_name
-        self.A_recombinants = A_recombinants
-        self.B_recombinants = B_recombinants
-        self.G_recombinants = G_recombinants
-        self.D_recombinants = D_recombinants
-        self.bgcolor = None
-        self.all_recombinants = {'A': A_recombinants, 'B': B_recombinants, 'G': G_recombinants, 'D': D_recombinants}
-        self.cdr3_comparisons = {'A': None, 'B': None, 'mean_both': None}
-        self.is_empty = self._check_is_empty()
-        self.is_inkt = self._check_if_inkt(species)
-
-    def _check_is_empty(self):
-        if (self.A_recombinants is None or len(self.A_recombinants) == 0) and (
-                self.B_recombinants is None or len(self.B_recombinants) == 0):
-            return (True)
-
-    def _check_if_inkt(self, species):
-        A_recombs = self.getMainRecombinantIdentifiersForLocus("A")
-        inkt_ident = False
-        for recomb in A_recombs:
-            if species == "Mmus":
-                if "TRAV11" in recomb and "TRAJ18" in recomb:
-                    inkt_ident = recomb
-            if species == "Hsap":
-                if "TRAV10" in recomb and "TRAJ18" in recomb:
-                    inkt_ident = recomb
-        return (inkt_ident)
-
-    def reset_cdr3_comparisons(self):
-        self.cdr3_comparisons = {'A': None, 'B': None, 'mean_both': None}
-
-    def getAllRecombinantIdentifiersForLocus(self, locus):
-        recombinants = self.all_recombinants[locus]
-        identifier_list = set()
-        if recombinants is not None:
-            for recombinant in recombinants:
-                all_possible_recombinant_identifiers = recombinant.all_poss_identifiers
-                for identifier in all_possible_recombinant_identifiers:
-                    identifier_list.add(identifier)
-        return (identifier_list)
-
-    def getMainRecombinantIdentifiersForLocus(self, locus):
-        recombinants = self.all_recombinants[locus]
-        identifier_list = set()
-        if recombinants is not None:
-            for recombinant in recombinants:
-                identifier_list.add(recombinant.identifier)
-        return (identifier_list)
-
-    def getAllRecombinantCDR3ForLocus(self, locus):
-        recombinants = self.all_recombinants[locus]
-        identifier_list = set()
-        if recombinants is not None:
-            for recombinant in recombinants:
-                cdr3 = str(recombinant.cdr3)
-                if "Couldn't" not in cdr3:
-                    identifier_list.add(cdr3)
-        return (identifier_list)
-
-    def html_style_label_dna(self):
-        colours = {'A': {'productive': '#E41A1C', 'non-productive': "#ff8c8e"},
-                   'B': {'productive': '#377eb8', 'non-productive': "#95c1e5"},
-                   'G': {'productive': '#4daf4a', 'non-productive': "#aee5ac"},
-                   'D': {'productive': '#984ea3', 'non-productive': "#deace5"}}
-        locus_names = ['A', 'B', 'G', 'D']
-        recombinants = dict()
-        final_string = '<<FONT POINT-SIZE="16"><B>' + self.name + "</B></FONT>"
-        for locus, recombinant_list in six.iteritems(self.all_recombinants):
-            recombinant_set = set()
-            if recombinant_list is not None:
-                for recombinant in recombinant_list:
-                    if recombinant.productive:
-                        prod = "productive"
-                    else:
-                        prod = "non-productive"
-                    recombinant_set.add("<BR/>" + '<FONT COLOR = "{}">'.format(
-                        colours[locus][prod]) + recombinant.identifier + '</FONT>')
-
-                recombinants[locus] = recombinant_set
-        for locus in locus_names:
-            if locus in recombinants.keys():
-                id_string = "".join(recombinants[locus])
-                final_string = final_string + id_string
-        final_string = final_string + ">"
-        return (final_string)
-        # return(self.name)
-
-    def html_style_label_for_circles(self):
-        colours = {'A': {'productive': '#E41A1C', 'non-productive': "#ff8c8e"},
-                   'B': {'productive': '#377eb8', 'non-productive': "#95c1e5"},
-                   'G': {'productive': '#4daf4a', 'non-productive': "#aee5ac"},
-                   'D': {'productive': '#984ea3', 'non-productive': "#deace5"}}
-        locus_names = ['A', 'B', 'G', 'D']
-        recombinants = dict()
-        final_string = '<<table cellspacing="6px" border="0" cellborder="0">'
-        # final_string = "<"
-        for locus, recombinant_list in six.iteritems(self.all_recombinants):
-            recombinant_set = set()
-            if recombinant_list is not None:
-                for recombinant in recombinant_list:
-                    if recombinant.productive:
-                        prod = "productive"
-                    else:
-                        prod = "non-productive"
-                    recombinant_set.add(
-                        '<tr><td height="10" width="40" bgcolor="{}"></td></tr>'.format(colours[locus][prod]))
-
-                recombinants[locus] = recombinant_set
-        strings = []
-        for locus in locus_names:
-            if locus in recombinants.keys():
-                strings.append("".join(recombinants[locus]))
-
-        id_string = "".join(strings)
-        final_string = final_string + id_string
-        final_string = final_string + "</table>>"
-        return (final_string)
-
-    def __str__(self):
-        return (self.name)
-
-    def full_description(self):
-        # pdb.set_trace()
-        return_list = [self.name, '#TCRA#']
-
-        if not self.A_recombinants is None:
-            for recombinant in self.A_recombinants:
-                return_list.append(str(recombinant))
-        else:
-            return_list.append("No TCRA recombinants")
-
-        return_list.append('\n#TCRB#')
-        if not self.B_recombinants is None:
-            for recombinant in self.B_recombinants:
-                return_list.append(str(recombinant))
-        else:
-            return_list.append("No TCRB recombinants")
-
-        return_list.append('\n#TCRG#')
-        if not self.G_recombinants is None:
-            for recombinant in self.G_recombinants:
-                return_list.append(str(recombinant))
-        else:
-            return_list.append("No TCRG recombinants")
-
-        return_list.append('\n#TCRD#')
-        if not self.D_recombinants is None:
-            for recombinant in self.D_recombinants:
-                return_list.append(str(recombinant))
-        else:
-            return_list.append("No TCRD recombinants")
-
-        return ("\n".join(return_list))
-
-    def get_fasta_string(self):
-        seq_string = []
-        for locus, recombinants in six.iteritems(self.all_recombinants):
-            if recombinants is not None:
-                for rec in recombinants:
-                    name = ">TCR|{contig_name}|{identifier}".format(contig_name=rec.contig_name,
-                                                                    identifier=rec.identifier)
-                    seq = rec.dna_seq
-                    seq_string.append("\n".join([name, seq]))
-        return ("\n".join(seq_string + ["\n"]))
-
-    def summarise_productivity(self, locus):
-        if self.all_recombinants[locus] is None:
-            return ("0/0")
-        else:
-            recs = self.all_recombinants[locus]
-            prod_count = 0
-            total_count = len(recs)
-            for rec in recs:
-                if rec.productive:
-                    prod_count += 1
-            return ("{}/{}".format(prod_count, total_count))
-
-    def filter_recombinants(self):
-        for locus in ['A', 'B']:
-            recs = self.all_recombinants[locus]
-            if recs is not None:
-                if len(recs) > 2:
-                    TPM_ranks = Counter()
-                    for rec in recs:
-                        TPM_ranks.update({rec.contig_name: rec.TPM})
-                    two_most_common = [x[0] for x in TPM_ranks.most_common(2)]
-                    to_remove = []
-                    for rec in recs:
-                        if rec.contig_name not in two_most_common:
-                            to_remove.append(rec)
-                    for rec in to_remove:
-                        self.all_recombinants[locus].remove(rec)
-
-    def count_productive_recombinants(self, locus):
-        recs = self.all_recombinants[locus]
-        count = 0
-        if recs is not None:
-            for rec in recs:
-                if rec.productive:
-                    count += 1
-        return (count)
-
-    def count_total_recombinants(self, locus):
-        recs = self.all_recombinants[locus]
-        count = 0
-        if recs is not None:
-            count = len(recs)
-        return (count)
-
-    def get_trinity_lengths(self, locus):
-        recs = self.all_recombinants[locus]
-        lengths = []
-        if recs is not None:
-            for rec in recs:
-                lengths.append(len(rec.trinity_seq))
-        return (lengths)
-
-
-class Recombinant(object):
-
-    """Class to describe a recombined TCR locus as determined from the single-cell pipeline"""
-
-    def __init__(self, contig_name, locus, identifier, all_poss_identifiers, productive, stop_codon, in_frame, TPM,
-                 dna_seq, hit_table, summary, junction_details, best_VJ_names, alignment_summary, trinity_seq,
-                 imgt_reconstructed_seq):
-        self.contig_name = contig_name
-        self.locus = locus
-        self.identifier = identifier
-        self.all_poss_identifiers = all_poss_identifiers
-        self.productive = productive
-        self.TPM = TPM
-        self.dna_seq = dna_seq
-        self.cdr3 = self._get_cdr3(dna_seq)
-        self.hit_table = hit_table
-        self.summary = summary
-        self.junction_details = junction_details
-        self.best_VJ_names = best_VJ_names
-        self.alignment_summary = alignment_summary
-        self.in_frame = in_frame
-        self.stop_codon = stop_codon
-        self.trinity_seq = trinity_seq
-        self.imgt_reconstructed_seq = imgt_reconstructed_seq
-
-    def __str__(self):
-        return ("{} {} {} {}".format(self.identifier, self.productive, self.TPM))
-
-    def _get_cdr3(self, dna_seq):
-        aaseq = Seq(str(dna_seq), generic_dna).translate()
-        if re.findall('FG.G', str(aaseq)) and re.findall('C', str(aaseq)):
-            indices = [i for i, x in enumerate(aaseq) if x == 'C']
-            upper = str(aaseq).find(re.findall('FG.G', str(aaseq))[0])
-            for i in indices:
-                if i < upper:
-                    lower = i
-            cdr3 = aaseq[lower:upper + 4]
-        elif re.findall('FG.G', str(aaseq)):
-            cdr3 = "Couldn't find conserved cysteine"
-        elif re.findall('C', str(aaseq)):
-            cdr3 = "Couldn't find FGXG"
-        else:
-            cdr3 = "Couldn't find either conserved boundary"
-        return (cdr3)
-
-    def get_summary(self):
-        summary_string = "##{contig_name}##\n".format(contig_name=self.contig_name)
-        if self.locus == 'A':
-            V_segment = self.summary[0]
-            J_segment = self.summary[1]
-            segments_string = "V segment:\t{V_segment}\nJ segment:\t{J_segment}\n".format(V_segment=V_segment,
-                                                                                          J_segment=J_segment)
-        elif self.locus == 'B':
-            V_segment = self.summary[0]
-            D_segment = self.summary[1]
-            J_segment = self.summary[2]
-            segments_string = "V segment:\t{V_segment}\nD segment:\t{D_segment}\nJ segment:\t{J_segment}\n".format(
-                V_segment=V_segment, D_segment=D_segment, J_segment=J_segment)
-        summary_string += segments_string
-        summary_string += "ID:\t{}\n".format(self.identifier)
-        summary_string += "TPM:\t{TPM}\nProductive:\t{productive}\nStop codon:\t{stop_codon}\nIn frame:\t{in_frame}\n\n".format(
-            TPM=self.TPM, productive=self.productive, stop_codon=self.stop_codon, in_frame=self.in_frame)
-
-        summary_string += 'Segment\tquery_id\tsubject_id\t% identity\talignment length\tmismatches\tgap opens\tgaps\tq start\tq end\ts start\ts end\te value\tbit score\n'
-        for line in self.hit_table:
-            summary_string = summary_string + "\t".join(line) + "\n"
-        return (summary_string)
-
-
-##FUNCTIONS##
-
-def makeOutputDir(output_dir_path):
-    if not os.path.exists(output_dir_path):
-        os.mkdir(output_dir_path)
-
-
-def is_exe(fpath):
-    return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
-
-
-def clean_file_list(file_list):
-    return_list = []
-    trinity_pattern = re.compile(r"(.+)\.Trinity\.fasta")
-    for file_name in file_list:
-        clean_name = os.path.split(file_name)[1]
-        trinity_match = trinity_pattern.search(clean_name)
-        if trinity_match:
-            clean_name = trinity_match.group(1)
-        return_list.append(clean_name)
-
-    return (sorted(return_list))
-
-
-def get_filename_and_locus(name):
-    pattern = re.compile(r"(.+)_TCR([ABDG])")
-    pattern_match = pattern.search(name)
-    file = pattern_match.group(1)
-    locus = pattern_match.group(2)
-    return ([file, locus])
-
-
-def sort_locus_names(dictionary_to_sort):
-    for key, value in six.iteritems(dictionary_to_sort):
-        sorted_value = sorted(value)
-        dictionary_to_sort[key] = sorted_value
-    return (dictionary_to_sort)
-
-
-def load_IMGT_seqs(file):
-    seqs = {}
-    for record in SeqIO.parse(open(file, 'rU'), 'fasta'):
-        seqs[record.id] = str(record.seq)
-    return (seqs)
-
-
-def parse_IgBLAST(locus_names, output_dir, cell_name, imgt_seq_location, species, seq_method):
-    segment_names = ['TRAJ', 'TRAV', 'TRBD', 'TRBJ', 'TRBV']
-    IMGT_seqs = dict()
-    for segment in segment_names:
-        IMGT_seqs[segment] = load_IMGT_seqs("{}/{}.fa".format(imgt_seq_location, segment))
-
-    all_locus_data = defaultdict(dict)
-    for locus in locus_names:
-        file = "{output_dir}/IgBLAST_output/{cell_name}_{locus}.IgBLASTOut".format(output_dir=output_dir,
-                                                                                   cell_name=cell_name, locus=locus)
-
-        if os.path.isfile(file):
-            igblast_result_chunks = split_igblast_file(file)
-
-            for chunk in igblast_result_chunks:
-                (query_name, chunk_details) = process_chunk(chunk)
-
-                all_locus_data[locus][query_name] = chunk_details
-        else:
-            all_locus_data[locus] = None
-
-    cell = find_possible_alignments(all_locus_data, locus_names, cell_name, IMGT_seqs, output_dir, species, seq_method)
-    return (cell)
-
-
-def split_igblast_file(filename):
-    # code adapted from http://stackoverflow.com/questions/19575702/pythonhow-to-split-file-into-chunks-by-the-occurrence-of-the-header-word
-    token = '# IGBLASTN'
-    chunks = []
-    current_chunk = []
-
-    for line in open(filename):
-        line = line.rstrip()
-        if line.startswith(token) and current_chunk:
-            # if line starts with token and the current chunk is not empty
-            chunks.append(current_chunk[:])  # add not empty chunk to chunks
-            current_chunk = []  # make current chunk blank
-        # just append a line to the current chunk on each iteration
-        current_chunk.append(line)
-
-    chunks.append(current_chunk)  # append the last chunk outside the loop
-    return (chunks)
+from tracer.tracerlib.core import Cell, Recombinant
 
 
 def process_chunk(chunk):
@@ -1062,7 +674,7 @@ def make_cell_network_from_dna(cells, colorscheme, colours, keep_unlinked, shape
 
 
 def draw_network_from_cells(cells, output_dir, output_format, dot, neato):
-    cells = cells.values()
+    cells = list(cells.values())
     colorscheme = 'set15'
     colours = {'A': '1', 'B': '2', 'G': '3', 'D': '5', 'mean_both': '#a8a8a8bf'}
     network, draw_tool, component_groups = make_cell_network_from_dna(cells, colorscheme, colours, False, "box", dot,
@@ -1091,7 +703,7 @@ def draw_network_from_cells(cells, output_dir, output_format, dot, neato):
 
 
 def get_component_groups_sizes(cells):
-    cells = cells.values()
+    cells = list(cells.values())
     G = nx.MultiGraph()
     # initialise all cells as nodes
     for cell in cells:
@@ -1147,7 +759,7 @@ def get_component_groups_sizes(cells):
     clonotype_size_counter.update({1: len(singlets)})
 
     clonotype_sizes = []
-    max_size = max(clonotype_size_counter.keys())
+    max_size = max(list(clonotype_size_counter.keys()))
     if max_size < 5:
         for x in range(1, max_size + 1):
             clonotype_sizes.append(clonotype_size_counter[x])

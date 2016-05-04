@@ -2,12 +2,15 @@ from __future__ import print_function
 import six
 import matplotlib as mpl
 
+from tracer.tracerlib import io, core
+
 mpl.use('pdf')
+import re
 import seaborn as sns
 from matplotlib import pyplot as plt
-from tracer.tracerlib import tracer_func as tracer
 from tracer import base_dir
-import ConfigParser
+from tracer.tracerlib import tracer_func
+from configparser import ConfigParser
 import argparse
 import sys
 import os
@@ -129,8 +132,8 @@ class Launcher(object):
             fragment_sd = kwargs['fragment_sd']
 
         # Read config file
-        tracer.check_config_file(config_file)
-        config = ConfigParser.ConfigParser()
+        tracer_func.check_config_file(config_file)
+        config = ConfigParser()
         config.read(config_file)
 
         bowtie2 = self.resolve_relative_path(config.get('tool_locations', 'bowtie2_path'))
@@ -143,6 +146,16 @@ class Launcher(object):
         else:
             trinity_grid_conf = False
 
+        # Trinity version
+        if not config.has_option('trinity_options', 'trinity_version'):
+            try:
+                subprocess.check_output([trinity, '--version'])
+            except subprocess.CalledProcessError as err:
+                if re.search('v2', err.output.decode('utf-8')):
+                    config.set('trinity_options', 'trinity_version', '2')
+                else:
+                    config.set('trinity_options', 'trinity_version', '1')
+
         synthetic_genome_path = self.resolve_relative_path(config.get('bowtie2_options', 'synthetic_genome_index_path'))
         igblast_index_location = self.resolve_relative_path(config.get('IgBlast_options', 'igblast_index_location'))
         igblast_seqtype = config.get('IgBlast_options', 'igblast_seqtype')
@@ -153,7 +166,7 @@ class Launcher(object):
         # check that executables from config file can be used
         not_executable = []
         for name, x in six.iteritems({"bowtie2": bowtie2, "igblast": igblast, "kallisto": kallisto, "trinity": trinity}):
-            if not tracer.is_exe(x):
+            if not io.is_exe(x):
                 not_executable.append((name, x))
         if len(not_executable) > 0:
             print()
@@ -165,15 +178,15 @@ class Launcher(object):
 
         # set-up output directories
         root_output_dir = os.path.abspath(output_dir)
-        tracer.makeOutputDir(root_output_dir)
+        io.makeOutputDir(root_output_dir)
         output_dir = root_output_dir + "/" + cell_name
 
-        tracer.makeOutputDir(output_dir)
+        io.makeOutputDir(output_dir)
 
         data_dirs = ['aligned_reads', 'Trinity_output', 'IgBLAST_output', 'unfiltered_TCR_seqs',
                      'expression_quantification', 'filtered_TCR_seqs']
         for d in data_dirs:
-            tracer.makeOutputDir("{}/{}".format(output_dir, d))
+            io.makeOutputDir("{}/{}".format(output_dir, d))
 
         locus_names = ["TCRA", "TCRB"]
 
@@ -183,8 +196,9 @@ class Launcher(object):
                                fastq2, should_resume, single_end)
         print()
         trinity_JM = config.get('trinity_options', 'max_jellyfish_memory')
+        trinity_version = config.get('trinity_options', 'trinity_version')
         self.assemble_with_trinity(trinity, locus_names, output_dir, cell_name, ncores, trinity_grid_conf, trinity_JM,
-                                   should_resume, single_end, species)
+                                   trinity_version, should_resume, single_end, species)
         print()
         self.run_IgBlast(igblast, locus_names, output_dir, cell_name, igblast_index_location, igblast_seqtype, species,
                          should_resume)
@@ -192,7 +206,7 @@ class Launcher(object):
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            cell = tracer.parse_IgBLAST(locus_names, output_dir, cell_name, imgt_seq_location, species, seq_method)
+            cell = io.parse_IgBLAST(locus_names, output_dir, cell_name, imgt_seq_location, species, seq_method)
             if cell.is_empty:
                 self.die_with_empty_cell(cell_name, output_dir, species)
 
@@ -201,7 +215,7 @@ class Launcher(object):
 
         print()
 
-        counts = tracer.load_kallisto_counts("{}/expression_quantification/abundance.tsv".format(output_dir))
+        counts = tracer_func.load_kallisto_counts("{}/expression_quantification/abundance.tsv".format(output_dir))
 
         # pdb.set_trace():
         for locus, recombinants in six.iteritems(cell.all_recombinants):
@@ -212,8 +226,9 @@ class Launcher(object):
 
         self.print_cell_summary(cell,
                                 "{output_dir}/unfiltered_TCR_seqs/unfiltered_TCRs.txt".format(output_dir=output_dir))
-        pickle.dump(cell, open(
-            "{output_dir}/unfiltered_TCR_seqs/{cell_name}.pkl".format(output_dir=output_dir, cell_name=cell.name), 'w'))
+        with open("{output_dir}/unfiltered_TCR_seqs/{cell_name}.pkl".format(output_dir=output_dir,
+                                                                            cell_name=cell.name), 'wb') as pf:
+            pickle.dump(cell, pf)
         print("##Filtering by read count##")
         cell.filter_recombinants()
         fasta_filename = "{output_dir}/filtered_TCR_seqs/{cell_name}_TCRseqs.fa".format(output_dir=output_dir,
@@ -222,8 +237,9 @@ class Launcher(object):
         fasta_file.write(cell.get_fasta_string())
         fasta_file.close()
         self.print_cell_summary(cell, "{output_dir}/filtered_TCR_seqs/filtered_TCRs.txt".format(output_dir=output_dir))
-        pickle.dump(cell, open(
-            "{output_dir}/filtered_TCR_seqs/{cell_name}.pkl".format(output_dir=output_dir, cell_name=cell.name), 'w'))
+        with open("{output_dir}/filtered_TCR_seqs/{cell_name}.pkl".format(output_dir=output_dir,
+                                                                          cell_name=cell.name), 'wb') as pf:
+            pickle.dump(cell, pf)
 
     def resolve_relative_path(self, path):
         if not path.startswith("/"):
@@ -329,7 +345,7 @@ class Launcher(object):
                     fastq_out.close()
 
     def assemble_with_trinity(self, trinity, locus_names, output_dir, cell_name, ncores, trinity_grid_conf, JM,
-                              should_resume, single_end, species):
+                              version, should_resume, single_end, species):
         print("##Assembling Trinity Contigs##")
 
         if should_resume:
@@ -345,7 +361,8 @@ class Launcher(object):
         if trinity_grid_conf:
             command = command + ['--grid_conf', trinity_grid_conf]
 
-        command = command + ['--seqType', 'fq', '--JM', JM, '--CPU', ncores, '--full_cleanup']
+        memory_string = '--max_memory' if (version == '2') else '--JM'
+        command = command + ['--seqType', 'fq', memory_string, JM, '--CPU', ncores, '--full_cleanup']
 
         for locus in locus_names:
             print("##{}##".format(locus))
@@ -354,26 +371,30 @@ class Launcher(object):
             if not single_end:
                 file1 = "{}_1.fastq".format(aligned_read_path)
                 file2 = "{}_2.fastq".format(aligned_read_path)
-                command = command + ["--left", file1, "--right", file2, "--output", '{}'.format(trinity_output)]
+                command = command + ["--left", file1, "--right", file2, "--output",
+                                     '{}/Trinity_output/Trinity_{}_{}'.format(output_dir, cell_name, locus)]
             else:
                 file = "{}.fastq".format(aligned_read_path)
-                command = command + ["--single", file, "--output", '{}'.format(trinity_output)]
+                command = command + ["--single", file, "--output",
+                                     '{}/Trinity_output/Trinity_{}_{}'.format(output_dir, cell_name, locus)]
             try:
                 subprocess.check_call(command)
-            except subprocess.CalledProcessError:
+                shutil.move('{}/Trinity_output/Trinity_{}_{}.Trinity.fasta'.format(output_dir, cell_name, locus),
+                            '{}/Trinity_output/{}_{}.Trinity.fasta'.format(output_dir, cell_name, locus))
+            except (subprocess.CalledProcessError, IOError):
                 print("Trinity failed for locus")
 
         # clean up unsuccessful assemblies
         sleep(10)  # this gives the cluster filesystem time to catch up and stops weird things happening
         successful_files = glob.glob("{}/Trinity_output/*.fasta".format(output_dir))
-        unsuccessful_directories = os.walk("{}/Trinity_output".format(output_dir)).next()[1]
+        unsuccessful_directories = next(os.walk("{}/Trinity_output".format(output_dir)))[1]
         for directory in unsuccessful_directories:
             shutil.rmtree("{}/Trinity_output/{}".format(output_dir, directory))
         successful_file_summary = "{}/Trinity_output/successful_trinity_assemblies.txt".format(output_dir)
         unsuccessful_file_summary = "{}/Trinity_output/unsuccessful_trinity_assemblies.txt".format(output_dir)
 
-        successful_files = tracer.clean_file_list(successful_files)
-        unsuccessful_directories = tracer.clean_file_list(unsuccessful_directories)
+        successful_files = io.clean_file_list(successful_files)
+        unsuccessful_directories = io.clean_file_list(unsuccessful_directories)
 
         success_out = open(successful_file_summary, "w")
         fail_out = open(unsuccessful_file_summary, "w")
@@ -386,20 +407,20 @@ class Launcher(object):
 
         for filename in successful_files:
             # success_out.write("{}\n".format(filename))
-            parsed_name = tracer.get_filename_and_locus(filename)
+            parsed_name = io.get_filename_and_locus(filename)
             successful[parsed_name[0]].append(parsed_name[1])
             successful_ordered_files.add(parsed_name[0])
         successful_ordered_files = sorted(list(successful_ordered_files))
 
         for filename in unsuccessful_directories:
             # fail_out.write("{}\n".format(filename))
-            parsed_name = tracer.get_filename_and_locus(filename)
+            parsed_name = io.get_filename_and_locus(filename)
             unsuccessful[parsed_name[0]].append(parsed_name[1])
             unsuccessful_ordered_files.add(parsed_name[0])
         unsuccessful_ordered_files = sorted(list(unsuccessful_ordered_files))
 
-        successful = tracer.sort_locus_names(successful)
-        unsuccessful = tracer.sort_locus_names(unsuccessful)
+        successful = io.sort_locus_names(successful)
+        unsuccessful = io.sort_locus_names(unsuccessful)
 
         for file in successful_ordered_files:
             success_out.write("{}\t{}\n".format(file, successful[file]))
@@ -442,10 +463,7 @@ class Launcher(object):
 
         # Lines below suppress Igblast warning about not having an auxliary file.
         # Taken from http://stackoverflow.com/questions/11269575/how-to-hide-output-of-subprocess-in-python-2-7
-        try:
-            from subprocess import DEVNULL  # py3k
-        except ImportError:
-            DEVNULL = open(os.devnull, 'wb')
+        DEVNULL = open(os.devnull, 'wb')
 
         for locus in locus_names:
             print("##{}##".format(locus))
@@ -476,7 +494,7 @@ class Launcher(object):
         print("##Making Kallisto indices##")
         kallisto_dirs = ['kallisto_index']
         for d in kallisto_dirs:
-            tracer.makeOutputDir("{}/expression_quantification/{}".format(output_dir, d))
+            io.makeOutputDir("{}/expression_quantification/{}".format(output_dir, d))
         fasta_filename = "{output_dir}/unfiltered_TCR_seqs/{cell_name}_TCRseqs.fa".format(output_dir=output_dir,
                                                                                           cell_name=cell_name)
         fasta_file = open(fasta_filename, 'w')
@@ -539,15 +557,17 @@ class Launcher(object):
 
     def die_with_empty_cell(self, cell_name, output_dir, species):
         print("##No TCR recombinants found##")
-        cell = tracer.Cell(cell_name, None, None, None, None, is_empty=True, species=species)
+        cell = core.Cell(cell_name, None, None, None, None, is_empty=True, species=species)
         self.print_cell_summary(cell,
                                 "{output_dir}/unfiltered_TCR_seqs/unfiltered_TCRs.txt".format(output_dir=output_dir))
-        pickle.dump(cell, open(
-            "{output_dir}/unfiltered_TCR_seqs/{cell_name}.pkl".format(output_dir=output_dir, cell_name=cell.name), 'w'))
+        with open("{output_dir}/unfiltered_TCR_seqs/{cell_name}.pkl".format(output_dir=output_dir,
+                                                                            cell_name=cell.name), 'wb') as pf:
+            pickle.dump(cell, pf)
         cell.filter_recombinants()
         self.print_cell_summary(cell, "{output_dir}/filtered_TCR_seqs/filtered_TCRs.txt".format(output_dir=output_dir))
-        pickle.dump(cell, open(
-            "{output_dir}/filtered_TCR_seqs/{cell_name}.pkl".format(output_dir=output_dir, cell_name=cell.name), 'w'))
+        with open("{output_dir}/filtered_TCR_seqs/{cell_name}.pkl".format(output_dir=output_dir,
+                                                                          cell_name=cell.name), 'wb') as pf:
+            pickle.dump(cell, pf)
         exit(0)
 
     ##SUMMARISE
@@ -580,8 +600,8 @@ class Launcher(object):
             root_dir = os.path.abspath(kwargs['root_dir'])
 
         # Read config file
-        tracer.check_config_file(config_file)
-        config = ConfigParser.ConfigParser()
+        tracer_func.check_config_file(config_file)
+        config = ConfigParser()
         config.read(config_file)
 
         dot = self.resolve_relative_path(config.get('tool_locations', 'dot_path'))
@@ -590,7 +610,7 @@ class Launcher(object):
         # check that executables from config file can be used
         not_executable = []
         for name, x in six.iteritems({"dot": dot, "neato": neato}):
-            if not tracer.is_exe(x):
+            if not io.is_exe(x):
                 not_executable.append((name, x))
         if len(not_executable) > 0:
             print()
@@ -603,7 +623,7 @@ class Launcher(object):
         cells = {}
         empty_cells = []
         NKT_cells = {}
-        subdirectories = os.walk(root_dir).next()[1]
+        subdirectories = next(os.walk(root_dir))[1]
 
         if use_unfiltered:
             pkl_dir = "unfiltered_TCR_seqs"
@@ -617,7 +637,7 @@ class Launcher(object):
             # outfile = open("{root_dir}/filtered_TCR_summary.txt".format(root_dir=root_dir), 'w')
             # length_filename_root = "{}/filtered_reconstructed_lengths_TCR".format(root_dir)
 
-        tracer.makeOutputDir(outdir)
+        io.makeOutputDir(outdir)
 
         outfile = open("{}/TCR_summary.txt".format(outdir), 'w')
         length_filename_root = "{}/reconstructed_lengths_TCR".format(outdir)
@@ -625,7 +645,7 @@ class Launcher(object):
         for d in subdirectories:
             cell_pkl = "{root_dir}/{d}/{pkl_dir}/{d}.pkl".format(pkl_dir=pkl_dir, d=d, root_dir=root_dir)
             if os.path.isfile(cell_pkl):
-                cl = pickle.load(open(cell_pkl))
+                cl = pickle.load(open(cell_pkl, 'rb'))
                 cells[d] = cl
                 if cl.is_empty:
                     empty_cells.append(d)
@@ -669,7 +689,7 @@ class Launcher(object):
             counters['prod_alpha'].update({cell.count_productive_recombinants('A'): 1})
             counters['prod_beta'].update({cell.count_productive_recombinants('B'): 1})
 
-        max_recombinant_count = max(counters['all_alpha'].keys() + counters['all_beta'].keys())
+        max_recombinant_count = max(list(counters['all_alpha'].keys()) + list(counters['all_beta'].keys()))
         table_header = ['', '0 recombinants', '1 recombinant', '2 recombinants']
         recomb_range = range(0, 3)
         if max_recombinant_count > 2:
@@ -766,7 +786,7 @@ class Launcher(object):
                 del cells[cell_name]
 
         # make clonotype networks
-        component_groups = tracer.draw_network_from_cells(cells, outdir, graph_format, dot, neato)
+        component_groups = tracer_func.draw_network_from_cells(cells, outdir, graph_format, dot, neato)
 
         # Print component groups to the summary#
         outfile.write(
@@ -777,7 +797,7 @@ class Launcher(object):
 
         # plot clonotype sizes
         plt.figure()
-        clonotype_sizes = tracer.get_component_groups_sizes(cells)
+        clonotype_sizes = tracer_func.get_component_groups_sizes(cells)
         w = 0.85
         x_range = range(1, len(clonotype_sizes) + 1)
         plt.bar(x_range, height=clonotype_sizes, width=w, color='black', align='center')
@@ -796,7 +816,7 @@ class Launcher(object):
         # Write out recombinant details for each cell
         with open("{}/recombinants.txt".format(outdir), 'w') as f:
             f.write("cell_name\tlocus\trecombinant_id\tproductive\treconstructed_length\n")
-            sorted_cell_names = sorted(cells.keys())
+            sorted_cell_names = sorted(list(cells.keys()))
             for cell_name in sorted_cell_names:
                 cell = cells[cell_name]
                 for locus in "AB":
