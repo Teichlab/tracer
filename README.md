@@ -21,7 +21,9 @@ Please email questions / problems to ms31@sanger.ac.uk
 ##Installation
 TraCeR is written in Python and so can just be downloaded, made executable (with `chmod u+x tracer`) and run or run with `python tracer`. Download the latest version and accompanying files from www.github.com/teichlab/tracer. 
 
-Tracer relies on several additional tools and Python modules that you should install.
+TraCeR relies on several additional tools and Python modules that you should install.
+
+Note that TraCeR is compatible with both Python 2 and 3.
 
 ###Pre-requisites
 
@@ -53,9 +55,13 @@ The python modules can be installed by running the setup script:
 
     python setup.py install
 
-Or using pip from the requirements.txt file:
+This will add the binary 'tracer' to your local bin folder, which can then be run from anywhere.
+
+You can also install TraCeR manually, using pip to install the requirements from the requirements.txt file:
 
     pip install -r requirements.txt
+
+**Note** that in this case you must ensure that the tracer folder is on your `PYTHONPATH`.
 
 Once the prerequisites above are installed and working you're ready to tell TraCeR where to find them.
 
