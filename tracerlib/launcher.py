@@ -645,7 +645,8 @@ class Launcher(object):
         for d in subdirectories:
             cell_pkl = "{root_dir}/{d}/{pkl_dir}/{d}.pkl".format(pkl_dir=pkl_dir, d=d, root_dir=root_dir)
             if os.path.isfile(cell_pkl):
-                cl = pickle.load(open(cell_pkl, 'rb'))
+                with open(cell_pkl, 'rb') as pkl:
+                    cl = pickle.load(pkl)
                 cells[d] = cl
                 if cl.is_empty:
                     empty_cells.append(d)
@@ -831,6 +832,8 @@ class Launcher(object):
             f.write("\n\n")
             for cell_name in empty_cells:
                 f.write("{}\tNo TCRs found\n".format(cell_name))
+
+        outfile.close()
 
     summarize = summarise
 
