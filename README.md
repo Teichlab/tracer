@@ -29,7 +29,7 @@ Note that TraCeR is compatible with both Python 2 and 3.
 
 ####Software####
 1. [Bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml) - required for alignment of reads to synthetic TCR genomes.
-2. [Trinity](http://sourceforge.net/projects/trinityrnaseq/files/PREV_CONTENTS/previous_releases/) - required for assembly of reads into TCR contigs. **Currently TraCeR uses Trinity parameters intended for use with [Trinity v1](http://sourceforge.net/projects/trinityrnaseq/files/PREV_CONTENTS/previous_releases/). Updates for use with [Trinity v2](https://github.com/trinityrnaseq/trinityrnaseq/wiki) are coming soon.**
+2. [Trinity](https://github.com/trinityrnaseq/trinityrnaseq/wiki) - required for assembly of reads into TCR contigs. TraCeR now works with both version 1 and version 2 of Trinity. It should automatically detect the version that is installed or you can [specify it in the config file](https://github.com/Teichlab/tracer#trinity-options).
     - Please note that Trinity requires a working installation of [Bowtie v1](http://bowtie-bio.sourceforge.net).
 3. [IgBLAST](http://www.ncbi.nlm.nih.gov/igblast/faq.html#standalone) - required for analysis of assembled contigs. (ftp://ftp.ncbi.nih.gov/blast/executables/igblast/release/).
 4. [Kallisto](http://pachterlab.github.io/kallisto/) - required for quantification of TCR expression.
@@ -72,14 +72,14 @@ TraCeR uses a configuration file to point it to the locations of files that it n
 ###External tool locations###
 Edit `tracer.conf` (or a copy) so that the paths within the `[tool_locations]` section point to the executables for all of the required tools. 
 
-		[tool_locations]
-		#paths to tools used by TraCeR for alignment, quantitation, etc
-		bowtie2_path = /path/to/bowtie2
-		igblast_path = /path/to/igblastn
-		kallisto_path = /path/to/kallisto
-		trinity_path = /path/to/trinity
-		dot_path = /path/to/dot
-		neato_path = /path/to/neato
+	[tool_locations]
+	#paths to tools used by TraCeR for alignment, quantitation, etc
+	bowtie2_path = /path/to/bowtie2
+	igblast_path = /path/to/igblastn
+	kallisto_path = /path/to/kallisto
+	trinity_path = /path/to/trinity
+	dot_path = /path/to/dot
+	neato_path = /path/to/neato
 		
 ###Resource locations and necessary files###
 The tools used by TraCeR need a variety of additional files to work properly and to allow extraction of TCR-derived reads and expression quantification etc. The locations of these files are specified in the other sections of the configuration file and are detailed below.
@@ -99,8 +99,16 @@ This path specifies the directory that contains Bowtie2 indices constructed from
 		#line below specifies maximum memory for Trinity Jellyfish component. Set it appropriately for your environment.
 		max_jellyfish_memory = 1G
 
-Trinity needs to know the maximum memory available to it for the Jellyfish component. Specify this here. 
-#####HPC configuration#####
+Trinity needs to know the maximum memory available to it for the Jellyfish component. Specify this here.
+
+####Trinity version####
+    #uncomment the line below to explicitly specify Trinity version. Options are '1' or '2'
+    #trinity_version = 2
+
+TraCeR will automatically detect the version of Trinity you have installed. You can also explicitly specify it here if you wish.
+
+#####HPC configuration####
+    #uncomment the line below if you've got a configuration file for Trinity to use a computing grid #
     trinity_grid_conf = /path/to/trinity/grid.conf
 
 Trinity can parallelise contig assembly by submitting jobs across a compute cluster. If you're running in such an environment you can specify an optional trinity config file here. See the Trinity documentation for more information.

@@ -436,7 +436,8 @@ class Launcher(object):
         for f in readcount_files:
             os.remove(f)
 
-        if len(unsuccessful_directories) == 2:
+        # if len(unsuccessful_directories) == 2:
+        if len(successful_files) == 0:
             print("No successful Trinity assemblies")
             self.die_with_empty_cell(cell_name, output_dir, species)
 
