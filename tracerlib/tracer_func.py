@@ -26,7 +26,7 @@ from Bio import SeqIO
 from Bio.Alphabet import IUPAC
 from Bio.Seq import Seq
 
-from tracer.tracerlib.core import Cell, Recombinant
+from tracerlib.core import Cell, Recombinant
 
 
 def process_chunk(chunk):

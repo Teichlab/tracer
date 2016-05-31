@@ -38,6 +38,7 @@ setup(
         "scipy",
         "seaborn",
         "six",
-        "future"
+        "future",
+        "mock"
     ]
 )

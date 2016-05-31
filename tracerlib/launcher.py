@@ -2,14 +2,14 @@ from __future__ import print_function
 import six
 import matplotlib as mpl
 
-from tracer.tracerlib import io, core
+from tracerlib import io, core
 
 mpl.use('pdf')
 import re
 import seaborn as sns
 from matplotlib import pyplot as plt
-from tracer import base_dir
-from tracer.tracerlib import tracer_func
+from tracerlib import base_dir
+from tracerlib import tracer_func
 from configparser import ConfigParser
 import argparse
 import sys

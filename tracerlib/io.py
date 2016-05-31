@@ -5,7 +5,7 @@ from collections import defaultdict
 import six
 from Bio import SeqIO
 
-from tracer.tracerlib.tracer_func import process_chunk, find_possible_alignments
+from tracerlib.tracer_func import process_chunk, find_possible_alignments
 
 
 def makeOutputDir(output_dir_path):

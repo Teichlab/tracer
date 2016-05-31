@@ -7,8 +7,8 @@ import sys
 import pandas as pd
 from pandas.util.testing import assert_frame_equal
 
-from tracer.tracerlib.launcher import Launcher
-from tracer import base_dir
+from tracerlib.launcher import Launcher
+from tracerlib import base_dir
 
 
 class TestInstall(unittest.TestCase):

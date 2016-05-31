@@ -63,9 +63,13 @@ You can also install TraCeR manually, using pip to install the requirements from
 
 **Note** that in this case you must ensure that the tracer folder is on your `PYTHONPATH`.
 
+If you would like to contribute to TraCeR, you can set up a development version with
+
+    python setup.py develop
+
 Once the prerequisites above are installed and working you're ready to tell TraCeR where to find them.
 
-TraCeR uses a configuration file to point it to the locations of files that it needs and a couple of other options. By default, this is `tracer.conf` in the same directory as the TraCeR executable. The `-c` option to the various tracer modules allows you to specify any other file to act as the configuration file. 
+TraCeR uses a configuration file to point it to the locations of files that it needs and a couple of other options. By default, this is `tracer.conf` in the same directory as the TraCeR executable. The `-c` option to the various tracer modules allows you to specify any other file to act as the configuration file.
 
 **Important:** If you  specify relative paths in the config file these will be used as relative to the directory that contains the `tracer` executable.
 
