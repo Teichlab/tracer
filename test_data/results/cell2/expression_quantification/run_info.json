@@ -1,9 +1,9 @@
 {
 	"n_targets": 88202,
 	"n_bootstraps": 0,
-	"n_processed": 3912236,
-	"kallisto_version": "0.42.3",
+	"n_processed": 1135,
+	"kallisto_version": "0.42.4",
 	"index_version": 10,
-	"start_time": "Fri Nov 20 11:45:24 2015",
-	"call": "/nfs/research2/teichmann/tools/kallisto/build/src/kallisto quant -i /panfs/nobackup/research/saraht/mstubb/TCR/Tapio/original_results_for_testing_seq_generation/stm01i/12392_57/expression_quantification/kallisto_index/12392_57_transcriptome.idx -t 5 -o /panfs/nobackup/research/saraht/mstubb/TCR/Tapio/original_results_for_testing_seq_generation/stm01i/12392_57/expression_quantification /panfs/nobackup/research/saraht/mstubb/TCR/Tapio/stm01i/concatenated_fastq/12392_57_1.fastq /panfs/nobackup/research/saraht/mstubb/TCR/Tapio/stm01i/concatenated_fastq/12392_57_2.fastq"
+	"start_time": "Wed May 25 14:45:59 2016",
+	"call": "/Users/ge2/homebrew/bin/kallisto quant -i /Users/ge2/software/tracer/test_data/results/cell2/expression_quantification/kallisto_index/cell2_transcriptome.idx -t 1 -o /Users/ge2/software/tracer/test_data/results/cell2/expression_quantification /Users/ge2/software/tracer/test_data/cell2_1.fastq /Users/ge2/software/tracer/test_data/cell2_2.fastq"
 }
