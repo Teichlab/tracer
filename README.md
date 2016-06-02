@@ -48,6 +48,7 @@ You should also ensure to set the `$IGDATA` environment variable to point to the
 5. [Levenshtein](https://pypi.python.org/pypi/python-Levenshtein/)
 6. [Networkx](https://networkx.github.io)
 7. It seems that v1.11 of Networkx behaves differently when writing dot files for use with Graphviz. If you have this (or later versions) you also need to install [PyDotPlus](http://pydotplus.readthedocs.org).
+8. [Future](http://python-future.org/index.html) for compatibility with Python 2.
 
 
 ##Setup##
@@ -71,7 +72,7 @@ Once the prerequisites above are installed and working you're ready to tell TraC
 
 TraCeR uses a configuration file to point it to the locations of files that it needs and a couple of other options. By default, this is `tracer.conf` in the same directory as the TraCeR executable. The `-c` option to the various tracer modules allows you to specify any other file to act as the configuration file.
 
-**Important:** If you  specify relative paths in the config file these will be used as relative to the directory that contains the `tracer` executable.
+**Important:** If you  specify relative paths in the config file these will be used as relative to the main installation directory. For example, `resources/igblast_dbs/mouse` will resolve to `/<wherever you installed tracer>/tracer/resources/igblast_dbs/mouse`.
 
 ###External tool locations###
 Edit `tracer.conf` (or a copy) so that the paths within the `[tool_locations]` section point to the executables for all of the required tools. 
@@ -92,18 +93,19 @@ Currently, organism-specific files (TCR gene sequences, synthetic genome indices
 
 
 ####Bowtie synthetic genomes path####
-		[bowtie2_options]
-		synthetic_genome_index_path = resources/synthetic_genomes/mouse
+	[bowtie2_options]
+	synthetic_genome_index_path = resources/synthetic_genomes/mouse
 
 This path specifies the directory that contains Bowtie2 indices constructed from all possible combinations of V and J segments for each locus. 
 
 ####Trinity options####
 #####Jellyfish memory#####
-		[trinity_options]
-		#line below specifies maximum memory for Trinity Jellyfish component. Set it appropriately for your environment.
-		max_jellyfish_memory = 1G
+	[trinity_options]
+	#line below specifies maximum memory for Trinity Jellyfish component. Set it appropriately for your environment.
+	max_jellyfish_memory = 1G
 
 Trinity needs to know the maximum memory available to it for the Jellyfish component. Specify this here.
+
 
 ####Trinity version####
     #uncomment the line below to explicitly specify Trinity version. Options are '1' or '2'
@@ -119,8 +121,8 @@ Trinity can parallelise contig assembly by submitting jobs across a compute clus
 
 ####IgBLAST options####
 #####Databases path#####
-		[IgBlast_options]
-		igblast_index_location = resources/igblast_dbs/mouse
+	[IgBlast_options]
+	igblast_index_location = resources/igblast_dbs/mouse
 #####VDJ sequences#####
 This path specifies the directory that contains IgBLAST database files for V, D and J genes. These files are named `imgt_tcr_db_<SEGMENT>.fa`.
 
@@ -133,8 +135,8 @@ Path to fasta files with sequences for each V, D or J gene. Files are names `TR<
 Type of sequence to be analysed. Since TraCeR currently only works with TCR sequences, there's no need to change this. 
 
 ####Kallisto options####
-		[kallisto_options]
-		base_transcriptome = /path/to/kallisto/transcriptome
+	[kallisto_options]
+	base_transcriptome = /path/to/kallisto/transcriptome
 
 Location of the transcriptome fasta file to which the specific TCR sequences will be appended from each cell. Can be downloaded from http://bio.math.berkeley.edu/kallisto/transcriptomes/ and many other places. This must be a plain-text fasta file so decompress it if necessary (files from the Kallisto link are gzipped).
 
@@ -143,6 +145,8 @@ Location of the transcriptome fasta file to which the specific TCR sequences wil
 TraCeR comes with a small dataset in `test_data/` (containing only TCRA or TCRB reads for a single cell) that you can use to test your installation and config file and confirm that all the prerequisites are working. Run it as:
 
     tracer test -p <ncores> -c <config_file>
+    
+**Note:** The data used in the test are derived from mouse T cells so make sure that the config file points to the appropriate mouse resource files.
     
 This will peform the [`assemble`](#assemble-tcr-reconstruction) step using the small test dataset. It will then perform [`summarise`](#summarise-summary-and-clonotype-networks) using the assemblies that are generated along with pre-calculated output for two other cells (in `test_data/results`).
 

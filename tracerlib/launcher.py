@@ -24,6 +24,8 @@ import pickle
 from prettytable import PrettyTable
 from Bio.Seq import Seq
 
+#import pdb
+
 
 class Launcher(object):
 
@@ -163,6 +165,7 @@ class Launcher(object):
 
         kallisto_base_transcriptome = self.resolve_relative_path(config.get('kallisto_options', 'base_transcriptome'))
 
+        
         # check that executables from config file can be used
         not_executable = []
         for name, x in six.iteritems({"bowtie2": bowtie2, "igblast": igblast, "kallisto": kallisto, "trinity": trinity}):
@@ -228,7 +231,7 @@ class Launcher(object):
                                 "{output_dir}/unfiltered_TCR_seqs/unfiltered_TCRs.txt".format(output_dir=output_dir))
         with open("{output_dir}/unfiltered_TCR_seqs/{cell_name}.pkl".format(output_dir=output_dir,
                                                                             cell_name=cell.name), 'wb') as pf:
-            pickle.dump(cell, pf)
+            pickle.dump(cell, pf, protocol=0)
         print("##Filtering by read count##")
         cell.filter_recombinants()
         fasta_filename = "{output_dir}/filtered_TCR_seqs/{cell_name}_TCRseqs.fa".format(output_dir=output_dir,
@@ -239,12 +242,12 @@ class Launcher(object):
         self.print_cell_summary(cell, "{output_dir}/filtered_TCR_seqs/filtered_TCRs.txt".format(output_dir=output_dir))
         with open("{output_dir}/filtered_TCR_seqs/{cell_name}.pkl".format(output_dir=output_dir,
                                                                           cell_name=cell.name), 'wb') as pf:
-            pickle.dump(cell, pf)
+            pickle.dump(cell, pf, protocol=0)
 
     def resolve_relative_path(self, path):
         if not path.startswith("/"):
             base_directory = os.path.abspath(os.path.dirname(__file__))
-            full_path = os.path.normpath("{}/{}".format(base_directory, path))
+            full_path = os.path.normpath("/{}/../{}".format(base_directory, path))
         else:
             full_path = path
         return full_path
@@ -563,12 +566,12 @@ class Launcher(object):
                                 "{output_dir}/unfiltered_TCR_seqs/unfiltered_TCRs.txt".format(output_dir=output_dir))
         with open("{output_dir}/unfiltered_TCR_seqs/{cell_name}.pkl".format(output_dir=output_dir,
                                                                             cell_name=cell.name), 'wb') as pf:
-            pickle.dump(cell, pf)
+            pickle.dump(cell, pf, protocol=0)
         cell.filter_recombinants()
         self.print_cell_summary(cell, "{output_dir}/filtered_TCR_seqs/filtered_TCRs.txt".format(output_dir=output_dir))
         with open("{output_dir}/filtered_TCR_seqs/{cell_name}.pkl".format(output_dir=output_dir,
                                                                           cell_name=cell.name), 'wb') as pf:
-            pickle.dump(cell, pf)
+            pickle.dump(cell, pf, protocol=0)
         exit(0)
 
     ##SUMMARISE
