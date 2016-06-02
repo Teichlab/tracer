@@ -231,7 +231,7 @@ class Launcher(object):
                                 "{output_dir}/unfiltered_TCR_seqs/unfiltered_TCRs.txt".format(output_dir=output_dir))
         with open("{output_dir}/unfiltered_TCR_seqs/{cell_name}.pkl".format(output_dir=output_dir,
                                                                             cell_name=cell.name), 'wb') as pf:
-            pickle.dump(cell, pf)
+            pickle.dump(cell, pf, protocol=0)
         print("##Filtering by read count##")
         cell.filter_recombinants()
         fasta_filename = "{output_dir}/filtered_TCR_seqs/{cell_name}_TCRseqs.fa".format(output_dir=output_dir,
@@ -242,7 +242,7 @@ class Launcher(object):
         self.print_cell_summary(cell, "{output_dir}/filtered_TCR_seqs/filtered_TCRs.txt".format(output_dir=output_dir))
         with open("{output_dir}/filtered_TCR_seqs/{cell_name}.pkl".format(output_dir=output_dir,
                                                                           cell_name=cell.name), 'wb') as pf:
-            pickle.dump(cell, pf)
+            pickle.dump(cell, pf, protocol=0)
 
     def resolve_relative_path(self, path):
         if not path.startswith("/"):
@@ -566,12 +566,12 @@ class Launcher(object):
                                 "{output_dir}/unfiltered_TCR_seqs/unfiltered_TCRs.txt".format(output_dir=output_dir))
         with open("{output_dir}/unfiltered_TCR_seqs/{cell_name}.pkl".format(output_dir=output_dir,
                                                                             cell_name=cell.name), 'wb') as pf:
-            pickle.dump(cell, pf)
+            pickle.dump(cell, pf, protocol=0)
         cell.filter_recombinants()
         self.print_cell_summary(cell, "{output_dir}/filtered_TCR_seqs/filtered_TCRs.txt".format(output_dir=output_dir))
         with open("{output_dir}/filtered_TCR_seqs/{cell_name}.pkl".format(output_dir=output_dir,
                                                                           cell_name=cell.name), 'wb') as pf:
-            pickle.dump(cell, pf)
+            pickle.dump(cell, pf, protocol=0)
         exit(0)
 
     ##SUMMARISE
