@@ -1,6 +1,8 @@
 # TraCeR
 TraCeR - reconstruction of T cell receptor sequences from single-cell RNA-seq data.
 
+** IMPORTANT: Python dependencies have changed since the last release. Use the requirements file (detailed [here](#setup)) to update them if necessary.
+
 ##Contents##
 1. [Introduction](#introduction)
 2. [Installation](#installation)
