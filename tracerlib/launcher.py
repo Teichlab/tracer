@@ -587,6 +587,7 @@ class Launcher(object):
                                 action="store_true")
             parser.add_argument('--graph_format', '-f', metavar="<GRAPH_FORMAT>", help='graphviz output format [pdf]',
                                 default='pdf')
+            parser.add_argument('--no_networks', help='skip attempts to draw network graphs', action = "store_true")                    
             parser.add_argument('dir', metavar="<DIR>",
                                 help='directory containing subdirectories for each cell to be summarised')
             args = parser.parse_args(sys.argv[2:])
@@ -596,33 +597,39 @@ class Launcher(object):
             config_file = args.config_file
             keep_inkt = args.keep_inkt
             use_unfiltered = args.use_unfiltered
+            draw_graphs = not(args.no_networks)
         else:
             config_file = kwargs['config_file']
             use_unfiltered = kwargs['use_unfiltered']
             keep_inkt = kwargs['keep_inkt']
             graph_format = kwargs['graph_format']
             root_dir = os.path.abspath(kwargs['root_dir'])
+            draw_graphs = not(kwargs['no_networks'])
 
         # Read config file
         tracer_func.check_config_file(config_file)
         config = ConfigParser()
         config.read(config_file)
-
-        dot = self.resolve_relative_path(config.get('tool_locations', 'dot_path'))
-        neato = self.resolve_relative_path(config.get('tool_locations', 'neato_path'))
-
-        # check that executables from config file can be used
-        not_executable = []
-        for name, x in six.iteritems({"dot": dot, "neato": neato}):
-            if not io.is_exe(x):
-                not_executable.append((name, x))
-        if len(not_executable) > 0:
-            print()
-            print("Could not execute the following required tools. Check your configuration file.")
-            for t in not_executable:
-                print( t[0], t[1])
-            print()
-            exit(1)
+        
+        if draw_graphs:
+            dot = self.resolve_relative_path(config.get('tool_locations', 'dot_path'))
+            neato = self.resolve_relative_path(config.get('tool_locations', 'neato_path'))
+            
+            # check that executables from config file can be used
+            not_executable = []
+            for name, x in six.iteritems({"dot": dot, "neato": neato}):
+                if not io.is_exe(x):
+                    not_executable.append((name, x))
+            if len(not_executable) > 0:
+                print()
+                print("Could not execute the following required tools. Check your configuration file.")
+                for t in not_executable:
+                    print( t[0], t[1])
+                print()
+                exit(1)
+        else:
+            dot = ""
+            neato = ""
 
         cells = {}
         empty_cells = []
@@ -791,7 +798,7 @@ class Launcher(object):
                 del cells[cell_name]
 
         # make clonotype networks
-        component_groups = tracer_func.draw_network_from_cells(cells, outdir, graph_format, dot, neato)
+        component_groups = tracer_func.draw_network_from_cells(cells, outdir, graph_format, dot, neato, draw_graphs)
 
         # Print component groups to the summary#
         outfile.write(
@@ -847,6 +854,9 @@ class Launcher(object):
                             default=1)
         parser.add_argument('--config_file', '-c', metavar="<CONFIG_FILE>", help='config file to use [tracer.conf]',
                             default='tracer.conf')
+        parser.add_argument('--graph_format', '-f', metavar="<GRAPH_FORMAT>", help='graphviz output format [pdf]',
+                            default='pdf')
+        parser.add_argument('--no_networks', help='skip attempts to draw network graphs', action = "store_true")
         args = parser.parse_args(sys.argv[2:])
 
         # test_dir = self.resolve_relative_path("test_data")
@@ -861,5 +871,5 @@ class Launcher(object):
                           species='Mmus', seq_method='imgt', fastq1=f1, fastq2=f2, cell_name=name, output_dir=out_dir,
                           single_end=False, fragment_length=False, fragment_sd=False)
 
-        self.summarise(config_file=args.config_file, use_unfiltered=False, keep_inkt=False, graph_format='pdf',
-                       root_dir=out_dir)
+        self.summarise(config_file=args.config_file, use_unfiltered=False, keep_inkt=False, 
+                        graph_format=args.graph_format, no_networks=args.no_networks, root_dir=out_dir)
