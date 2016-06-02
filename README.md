@@ -48,7 +48,7 @@ You should also ensure to set the `$IGDATA` environment variable to point to the
 5. [Levenshtein](https://pypi.python.org/pypi/python-Levenshtein/)
 6. [Networkx](https://networkx.github.io)
 7. It seems that v1.11 of Networkx behaves differently when writing dot files for use with Graphviz. If you have this (or later versions) you also need to install [PyDotPlus](http://pydotplus.readthedocs.org).
-8. [Future](http://python-future.org/index.html)
+8. [Future](http://python-future.org/index.html) for compatibility with Python 2.
 
 
 ##Setup##
