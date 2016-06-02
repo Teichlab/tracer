@@ -1,5 +1,5 @@
 ------------------
-12392_1
+cell3
 ------------------
 TCRA recombinants: 1/2
 TCRB recombinants: 1/2
@@ -7,75 +7,75 @@ TCRB recombinants: 1/2
 
 #TCRA#
 ##c0_g1_i1##
+V segment:	TRAV7-5*01,TRAV7D-5*01
+J segment:	TRAJ27*01
+ID:	TRAV7-5_TGAGCGACACC_TRAJ27
+TPM:	4255.22
+Productive:	True
+Stop codon:	False
+In frame:	True
+
+Segment	query_id	subject_id	% identity	alignment length	mismatches	gap opens	gaps	q start	q end	s start	s end	e value	bit score
+V	reversed|c0_g1_i1	TRAV7-5*01	97.10	276	8	0	0	16	291	1	276	2e-115	  406
+V	reversed|c0_g1_i1	TRAV7D-5*01	97.10	276	8	0	0	16	291	1	276	2e-115	  406
+V	reversed|c0_g1_i1	TRAV7N-5*01	95.29	276	13	0	0	16	291	1	276	1e-110	  391
+V	reversed|c0_g1_i1	TRAV7-1*01	85.51	276	40	0	0	16	291	1	276	2e-85	  307
+V	reversed|c0_g1_i1	TRAV7D-4*02	85.25	278	41	0	0	16	293	1	278	2e-85	  307
+J	reversed|c0_g1_i1	TRAJ27*01	100.00	57	0	0	0	293	349	3	59	2e-28	  113
+
+
+##c0_g1_i2##
 V segment:	TRAV3-3*01
 J segment:	TRAJ26*01
 ID:	TRAV3-3_CAGTGGGGGAACTA_TRAJ26
-TPM:	710.408
+TPM:	710.417
 Productive:	False
 Stop codon:	True
 In frame:	False
 
 Segment	query_id	subject_id	% identity	alignment length	mismatches	gap opens	gaps	q start	q end	s start	s end	e value	bit score
-V	reversed|c0_g1_i1	TRAV3-3*01	100.00	280	0	0	0	22	301	1	280	9e-125	  438
-V	reversed|c0_g1_i1	TRAV3D-3*01	99.64	280	1	0	0	22	301	1	280	8e-124	  434
-V	reversed|c0_g1_i1	TRAV3D-3*02	98.57	280	4	0	0	22	301	1	280	5e-121	  425
-V	reversed|c0_g1_i1	TRAV3N-3*01	98.57	280	4	0	0	22	301	1	280	5e-121	  425
-V	reversed|c0_g1_i1	TRAV3-1*01	89.64	280	29	0	0	22	301	1	280	1e-97	  347
-J	reversed|c0_g1_i1	TRAJ26*01	100.00	55	0	0	0	306	360	6	60	4e-27	  109
+V	reversed|c0_g1_i2	TRAV3-3*01	100.00	280	0	0	0	22	301	1	280	1e-124	  438
+V	reversed|c0_g1_i2	TRAV3D-3*01	99.64	280	1	0	0	22	301	1	280	8e-124	  434
+V	reversed|c0_g1_i2	TRAV3D-3*02	98.57	280	4	0	0	22	301	1	280	5e-121	  425
+V	reversed|c0_g1_i2	TRAV3N-3*01	98.57	280	4	0	0	22	301	1	280	5e-121	  425
+V	reversed|c0_g1_i2	TRAV3-1*01	89.64	280	29	0	0	22	301	1	280	2e-97	  347
+J	reversed|c0_g1_i2	TRAJ26*01	100.00	55	0	0	0	306	360	6	60	4e-27	  109
 
 
-##c0_g1_i2##
-V segment:	TRAV7-5*01,TRAV7D-5*01
-J segment:	TRAJ27*01
-ID:	TRAV7-5_TGAGCGACACC_TRAJ27
-TPM:	4255.43
+#TCRB#
+##c1_g1_i1##
+V segment:	TRBV31*01
+D segment:	TRBD1*01
+J segment:	TRBJ1-5*01
+ID:	TRBV31_TGGAGCCCCGGGACAGGGCTCAACC_TRBJ1-5
+TPM:	1149.35
 Productive:	True
 Stop codon:	False
 In frame:	True
 
 Segment	query_id	subject_id	% identity	alignment length	mismatches	gap opens	gaps	q start	q end	s start	s end	e value	bit score
-V	reversed|c0_g1_i2	TRAV7-5*01	97.10	276	8	0	0	16	291	1	276	2e-115	  406
-V	reversed|c0_g1_i2	TRAV7D-5*01	97.10	276	8	0	0	16	291	1	276	2e-115	  406
-V	reversed|c0_g1_i2	TRAV7N-5*01	95.29	276	13	0	0	16	291	1	276	1e-110	  391
-V	reversed|c0_g1_i2	TRAV7-1*01	85.51	276	40	0	0	16	291	1	276	2e-85	  307
-V	reversed|c0_g1_i2	TRAV7D-4*02	85.25	278	41	0	0	16	293	1	278	2e-85	  307
-J	reversed|c0_g1_i2	TRAJ27*01	100.00	57	0	0	0	293	349	3	59	2e-28	  113
+V	c1_g1_i1	TRBV31*01	100.00	281	0	0	0	15	295	1	281	3e-125	  439
+V	c1_g1_i1	TRBV31*02	99.65	282	1	0	0	15	296	1	282	9e-125	  438
+D	c1_g1_i1	TRBD1*01	100.00	9	0	0	0	300	308	1	9	0.057	18.4
+D	c1_g1_i1	TRBD2*01	100.00	5	0	0	0	300	304	1	5	   14	10.4
+J	c1_g1_i1	TRBJ1-5*01	100.00	47	0	0	0	311	357	4	50	2e-22	93.7
+J	c1_g1_i1	TRBJ1-5*02	100.00	40	0	0	0	318	357	10	49	3e-18	79.8
+J	c1_g1_i1	TRBJ1-5*03	95.74	47	2	0	0	311	357	4	50	1e-17	77.8
 
 
-#TCRB#
-##c0_g1_i1##
+##c1_g1_i3##
 V segment:	TRBV31*01
 D segment:	N/A
 J segment:	TRBJ2-5*01
 ID:	TRBV31_AGTCTTGACACAAGA_TRBJ2-5
-TPM:	349.721
+TPM:	349.763
 Productive:	False
 Stop codon:	False
 In frame:	False
 
 Segment	query_id	subject_id	% identity	alignment length	mismatches	gap opens	gaps	q start	q end	s start	s end	e value	bit score
-V	c0_g1_i1	TRBV31*01	100.00	120	0	0	0	63	182	165	284	6e-50	  188
-V	c0_g1_i1	TRBV31*02	100.00	117	0	0	0	63	179	165	281	2e-48	  184
-J	c0_g1_i1	TRBJ2-5*01	100.00	46	0	0	0	188	233	4	49	6e-22	91.7
-
-
-##c0_g1_i2##
-V segment:	TRBV31*01
-D segment:	TRBD1*01
-J segment:	TRBJ1-5*01
-ID:	TRBV31_TGGAGCCCCGGGACAGGGCTCAACC_TRBJ1-5
-TPM:	1149.19
-Productive:	True
-Stop codon:	False
-In frame:	True
-
-Segment	query_id	subject_id	% identity	alignment length	mismatches	gap opens	gaps	q start	q end	s start	s end	e value	bit score
-V	c0_g1_i2	TRBV31*01	100.00	281	0	0	0	15	295	1	281	3e-125	  439
-V	c0_g1_i2	TRBV31*02	99.65	282	1	0	0	15	296	1	282	8e-125	  438
-D	c0_g1_i2	TRBD1*01	100.00	9	0	0	0	300	308	1	9	0.057	18.4
-D	c0_g1_i2	TRBD2*01	100.00	5	0	0	0	300	304	1	5	   14	10.4
-J	c0_g1_i2	TRBJ1-5*01	100.00	47	0	0	0	311	357	4	50	2e-22	93.7
-J	c0_g1_i2	TRBJ1-5*02	100.00	40	0	0	0	318	357	10	49	3e-18	79.8
-J	c0_g1_i2	TRBJ1-5*03	95.74	47	2	0	0	311	357	4	50	1e-17	77.8
+V	c1_g1_i3	TRBV31*01	100.00	120	0	0	0	63	182	165	284	7e-50	  188
+V	c1_g1_i3	TRBV31*02	100.00	117	0	0	0	63	179	165	281	2e-48	  184
+J	c1_g1_i3	TRBJ2-5*01	100.00	46	0	0	0	188	233	4	49	6e-22	91.7
 
 

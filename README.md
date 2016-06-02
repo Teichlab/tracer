@@ -21,7 +21,9 @@ Please email questions / problems to ms31@sanger.ac.uk
 ##Installation
 TraCeR is written in Python and so can just be downloaded, made executable (with `chmod u+x tracer`) and run or run with `python tracer`. Download the latest version and accompanying files from www.github.com/teichlab/tracer. 
 
-Tracer relies on several additional tools and Python modules that you should install.
+TraCeR relies on several additional tools and Python modules that you should install.
+
+Note that TraCeR is compatible with both Python 2 and 3.
 
 ###Pre-requisites
 
@@ -46,6 +48,7 @@ You should also ensure to set the `$IGDATA` environment variable to point to the
 5. [Levenshtein](https://pypi.python.org/pypi/python-Levenshtein/)
 6. [Networkx](https://networkx.github.io)
 7. It seems that v1.11 of Networkx behaves differently when writing dot files for use with Graphviz. If you have this (or later versions) you also need to install [PyDotPlus](http://pydotplus.readthedocs.org).
+8. [Future](http://python-future.org/index.html)
 
 
 ##Setup##
@@ -53,15 +56,23 @@ The python modules can be installed by running the setup script:
 
     python setup.py install
 
-Or using pip from the requirements.txt file:
+This will add the binary 'tracer' to your local bin folder, which can then be run from anywhere.
+
+You can also install TraCeR manually, using pip to install the requirements from the requirements.txt file:
 
     pip install -r requirements.txt
 
+**Note** that in this case you must ensure that the tracer folder is on your `PYTHONPATH`.
+
+If you would like to contribute to TraCeR, you can set up a development version with
+
+    python setup.py develop
+
 Once the prerequisites above are installed and working you're ready to tell TraCeR where to find them.
 
-TraCeR uses a configuration file to point it to the locations of files that it needs and a couple of other options. By default, this is `tracer.conf` in the same directory as the TraCeR executable. The `-c` option to the various tracer modules allows you to specify any other file to act as the configuration file. 
+TraCeR uses a configuration file to point it to the locations of files that it needs and a couple of other options. By default, this is `tracer.conf` in the same directory as the TraCeR executable. The `-c` option to the various tracer modules allows you to specify any other file to act as the configuration file.
 
-**Important:** If you  specify relative paths in the config file these will be used as relative to the directory that contains the `tracer` executable.
+**Important:** If you  specify relative paths in the config file these will be used as relative to the main installation directory. For example, `resources/igblast_dbs/mouse` will resolve to `/<wherever you installed tracer>/tracer/resources/igblast_dbs/mouse`.
 
 ###External tool locations###
 Edit `tracer.conf` (or a copy) so that the paths within the `[tool_locations]` section point to the executables for all of the required tools. 
@@ -93,16 +104,17 @@ This path specifies the directory that contains Bowtie2 indices constructed from
 	#line below specifies maximum memory for Trinity Jellyfish component. Set it appropriately for your environment.
 	max_jellyfish_memory = 1G
 
-Trinity needs to know the maximum memory available to it for the Jellyfish component. Specify this here. 
+Trinity needs to know the maximum memory available to it for the Jellyfish component. Specify this here.
+
 
 ####Trinity version####
     #uncomment the line below to explicitly specify Trinity version. Options are '1' or '2'
     #trinity_version = 2
-        
-TraCeR will automatically detect the version of Trinity you have installed. You can also explicitly specify it here if you wish.         
-        
-#####HPC configuration#####
-    #uncomment the line below if you've got a configuration file for Trinity to use a computing grid 
+
+TraCeR will automatically detect the version of Trinity you have installed. You can also explicitly specify it here if you wish.
+
+#####HPC configuration####
+    #uncomment the line below if you've got a configuration file for Trinity to use a computing grid #
     trinity_grid_conf = /path/to/trinity/grid.conf
 
 Trinity can parallelise contig assembly by submitting jobs across a compute cluster. If you're running in such an environment you can specify an optional trinity config file here. See the Trinity documentation for more information.
@@ -133,6 +145,8 @@ Location of the transcriptome fasta file to which the specific TCR sequences wil
 TraCeR comes with a small dataset in `test_data/` (containing only TCRA or TCRB reads for a single cell) that you can use to test your installation and config file and confirm that all the prerequisites are working. Run it as:
 
     tracer test -p <ncores> -c <config_file>
+    
+**Note:** The data used in the test are derived from mouse T cells so make sure that the config file points to the appropriate mouse resource files.
     
 This will peform the [`assemble`](#assemble-tcr-reconstruction) step using the small test dataset. It will then perform [`summarise`](#summarise-summary-and-clonotype-networks) using the assemblies that are generated along with pre-calculated output for two other cells (in `test_data/results`).
 

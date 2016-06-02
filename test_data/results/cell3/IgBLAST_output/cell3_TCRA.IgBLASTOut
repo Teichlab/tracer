@@ -1,6 +1,41 @@
 # IGBLASTN 2.2.29+
-# Query: c0_g1_i1 len=822 path=[1655:0-461 412:462-821]
-# Database: /nfs/research2/teichmann/mike/tools/ncbi-igblast-1.4.0/bin/imgt_tcr_db_v.fa /nfs/research2/teichmann/mike/tools/ncbi-igblast-1.4.0/bin/imgt_tcr_db_d.fa /nfs/research2/teichmann/mike/tools/ncbi-igblast-1.4.0/bin/imgt_tcr_db_j.fa
+# Query: c0_g1_i1 len=811 path=[1:0-461 463:462-810]
+# Database: //nfs/research2/teichmann/mike/TCR/tracer/resources/igblast_dbs/mouse/imgt_tcr_db_v.fa //nfs/research2/teichmann/mike/TCR/tracer/resources/igblast_dbs/mouse/imgt_tcr_db_d.fa //nfs/research2/teichmann/mike/TCR/tracer/resources/igblast_dbs/mouse/imgt_tcr_db_j.fa
+# Domain classification requested: imgt
+
+# Note that your query represents the minus strand of a V gene and has been converted to the plus strand. The sequence positions refer to the converted sequence. 
+
+# V-(D)-J rearrangement summary for query sequence (Top V gene match, Top J gene match, Chain type, stop codon, V-J frame, Productive, Strand).  Multiple equivalent top matches having the same score and percent identity, if present, are separated by a comma.
+TRAV7-5*01,TRAV7D-5*01	TRAJ27*01	VA	No	N/A	N/A	-
+
+# V-(D)-J junction details based on top germline gene matches (V end, V-J junction, J start).  Note that possible overlapping nucleotides at VDJ junction (i.e, nucleotides that could be assigned to either rearranging gene) are indicated in parentheses (i.e., (TACT)) but are not included under the V, D, or J gene itself
+TGAGC	G	ACACC	
+
+# Alignment summary between query and top germline V gene hit (from, to, length, matches, mismatches, gaps, percent identity)
+FR1-IMGT	16	93	78	77	1	0	98.7
+CDR1-IMGT	94	111	18	17	1	0	94.4
+FR2-IMGT	112	162	51	50	1	0	98
+CDR2-IMGT	163	180	18	18	0	0	100
+FR3-IMGT	181	282	102	98	4	0	96.1
+CDR3-IMGT (germline)	283	291	9	8	1	0	88.9
+Total	N/A	N/A	276	268	8	0	97.1
+
+# Hit table (the first field indicates the chain type of the hit)
+# Fields: query id, subject id, % identity, alignment length, mismatches, gap opens, gaps, q. start, q. end, s. start, s. end, evalue, bit score
+# 10 hits found
+V	reversed|c0_g1_i1	TRAV7-5*01	97.10	276	8	0	0	16	291	1	276	2e-115	  406
+V	reversed|c0_g1_i1	TRAV7D-5*01	97.10	276	8	0	0	16	291	1	276	2e-115	  406
+V	reversed|c0_g1_i1	TRAV7N-5*01	95.29	276	13	0	0	16	291	1	276	1e-110	  391
+V	reversed|c0_g1_i1	TRAV7-1*01	85.51	276	40	0	0	16	291	1	276	2e-85	  307
+V	reversed|c0_g1_i1	TRAV7D-4*02	85.25	278	41	0	0	16	293	1	278	2e-85	  307
+J	reversed|c0_g1_i1	TRAJ27*01	100.00	57	0	0	0	293	349	3	59	2e-28	  113
+J	reversed|c0_g1_i1	TRAJ46*01	100.00	13	0	0	0	315	327	27	39	0.044	26.3
+J	reversed|c0_g1_i1	TRAJ2*01	87.50	24	3	0	0	307	330	24	47	0.17	24.3
+J	reversed|c0_g1_i1	TRAJ2*02	87.50	24	3	0	0	307	330	21	44	0.17	24.3
+J	reversed|c0_g1_i1	TRAJ31*01	93.33	15	1	0	0	315	329	23	37	0.69	22.3
+# IGBLASTN 2.2.29+
+# Query: c0_g1_i2 len=822 path=[1:0-461 2157:462-821]
+# Database: //nfs/research2/teichmann/mike/TCR/tracer/resources/igblast_dbs/mouse/imgt_tcr_db_v.fa //nfs/research2/teichmann/mike/TCR/tracer/resources/igblast_dbs/mouse/imgt_tcr_db_d.fa //nfs/research2/teichmann/mike/TCR/tracer/resources/igblast_dbs/mouse/imgt_tcr_db_j.fa
 # Domain classification requested: imgt
 
 # Note that your query represents the minus strand of a V gene and has been converted to the plus strand. The sequence positions refer to the converted sequence. 
@@ -23,49 +58,14 @@ Total	N/A	N/A	280	280	0	0	100
 # Hit table (the first field indicates the chain type of the hit)
 # Fields: query id, subject id, % identity, alignment length, mismatches, gap opens, gaps, q. start, q. end, s. start, s. end, evalue, bit score
 # 10 hits found
-V	reversed|c0_g1_i1	TRAV3-3*01	100.00	280	0	0	0	22	301	1	280	9e-125	  438
-V	reversed|c0_g1_i1	TRAV3D-3*01	99.64	280	1	0	0	22	301	1	280	8e-124	  434
-V	reversed|c0_g1_i1	TRAV3D-3*02	98.57	280	4	0	0	22	301	1	280	5e-121	  425
-V	reversed|c0_g1_i1	TRAV3N-3*01	98.57	280	4	0	0	22	301	1	280	5e-121	  425
-V	reversed|c0_g1_i1	TRAV3-1*01	89.64	280	29	0	0	22	301	1	280	1e-97	  347
-J	reversed|c0_g1_i1	TRAJ26*01	100.00	55	0	0	0	306	360	6	60	4e-27	  109
-J	reversed|c0_g1_i1	TRAJ42*01	100.00	10	0	0	0	322	331	26	35	2.7	20.3
-J	reversed|c0_g1_i1	TRAJ27*01	100.00	9	0	0	0	320	328	19	27	   11	18.3
-J	reversed|c0_g1_i1	TRAJ21*01	100.00	8	0	0	0	335	342	32	39	   42	16.4
-J	reversed|c0_g1_i1	TRAJ9*01	100.00	8	0	0	0	324	331	22	29	   42	16.4
-# IGBLASTN 2.2.29+
-# Query: c0_g1_i2 len=811 path=[1655:0-461 1162:462-810]
-# Database: /nfs/research2/teichmann/mike/tools/ncbi-igblast-1.4.0/bin/imgt_tcr_db_v.fa /nfs/research2/teichmann/mike/tools/ncbi-igblast-1.4.0/bin/imgt_tcr_db_d.fa /nfs/research2/teichmann/mike/tools/ncbi-igblast-1.4.0/bin/imgt_tcr_db_j.fa
-# Domain classification requested: imgt
-
-# Note that your query represents the minus strand of a V gene and has been converted to the plus strand. The sequence positions refer to the converted sequence. 
-
-# V-(D)-J rearrangement summary for query sequence (Top V gene match, Top J gene match, Chain type, stop codon, V-J frame, Productive, Strand).  Multiple equivalent top matches having the same score and percent identity, if present, are separated by a comma.
-TRAV7-5*01,TRAV7D-5*01	TRAJ27*01	VA	No	In-frame	Yes	-
-
-# V-(D)-J junction details based on top germline gene matches (V end, V-J junction, J start).  Note that possible overlapping nucleotides at VDJ junction (i.e, nucleotides that could be assigned to either rearranging gene) are indicated in parentheses (i.e., (TACT)) but are not included under the V, D, or J gene itself
-TGAGC	G	ACACC	
-
-# Alignment summary between query and top germline V gene hit (from, to, length, matches, mismatches, gaps, percent identity)
-FR1-IMGT	16	93	78	77	1	0	98.7
-CDR1-IMGT	94	111	18	17	1	0	94.4
-FR2-IMGT	112	162	51	50	1	0	98
-CDR2-IMGT	163	180	18	18	0	0	100
-FR3-IMGT	181	282	102	98	4	0	96.1
-CDR3-IMGT (germline)	283	291	9	8	1	0	88.9
-Total	N/A	N/A	276	268	8	0	97.1
-
-# Hit table (the first field indicates the chain type of the hit)
-# Fields: query id, subject id, % identity, alignment length, mismatches, gap opens, gaps, q. start, q. end, s. start, s. end, evalue, bit score
-# 10 hits found
-V	reversed|c0_g1_i2	TRAV7-5*01	97.10	276	8	0	0	16	291	1	276	2e-115	  406
-V	reversed|c0_g1_i2	TRAV7D-5*01	97.10	276	8	0	0	16	291	1	276	2e-115	  406
-V	reversed|c0_g1_i2	TRAV7N-5*01	95.29	276	13	0	0	16	291	1	276	1e-110	  391
-V	reversed|c0_g1_i2	TRAV7-1*01	85.51	276	40	0	0	16	291	1	276	2e-85	  307
-V	reversed|c0_g1_i2	TRAV7D-4*02	85.25	278	41	0	0	16	293	1	278	2e-85	  307
-J	reversed|c0_g1_i2	TRAJ27*01	100.00	57	0	0	0	293	349	3	59	2e-28	  113
-J	reversed|c0_g1_i2	TRAJ46*01	100.00	13	0	0	0	315	327	27	39	0.043	26.3
-J	reversed|c0_g1_i2	TRAJ2*01	87.50	24	3	0	0	307	330	24	47	0.17	24.3
-J	reversed|c0_g1_i2	TRAJ2*02	87.50	24	3	0	0	307	330	21	44	0.17	24.3
-J	reversed|c0_g1_i2	TRAJ31*01	93.33	15	1	0	0	315	329	23	37	0.67	22.3
+V	reversed|c0_g1_i2	TRAV3-3*01	100.00	280	0	0	0	22	301	1	280	1e-124	  438
+V	reversed|c0_g1_i2	TRAV3D-3*01	99.64	280	1	0	0	22	301	1	280	8e-124	  434
+V	reversed|c0_g1_i2	TRAV3D-3*02	98.57	280	4	0	0	22	301	1	280	5e-121	  425
+V	reversed|c0_g1_i2	TRAV3N-3*01	98.57	280	4	0	0	22	301	1	280	5e-121	  425
+V	reversed|c0_g1_i2	TRAV3-1*01	89.64	280	29	0	0	22	301	1	280	2e-97	  347
+J	reversed|c0_g1_i2	TRAJ26*01	100.00	55	0	0	0	306	360	6	60	4e-27	  109
+J	reversed|c0_g1_i2	TRAJ42*01	100.00	10	0	0	0	322	331	26	35	2.8	20.3
+J	reversed|c0_g1_i2	TRAJ27*01	100.00	9	0	0	0	320	328	19	27	   11	18.3
+J	reversed|c0_g1_i2	TRAJ21*01	100.00	8	0	0	0	335	342	32	39	   43	16.4
+J	reversed|c0_g1_i2	TRAJ9*01	100.00	8	0	0	0	324	331	22	29	   43	16.4
 # BLAST processed 2 queries
