@@ -24,14 +24,20 @@ class TestInstall(unittest.TestCase):
     def test_recombinants(self):
 
         # Assert the generated recombinants are identical
-        expected_recombinants = pd.read_csv(os.path.join(self.expected_folder, 'recombinants.txt'), sep='\t')
-        expected_recombinants.dropna(how='all', inplace=True)
-        expected_recombinants.sort_values(by='recombinant_id', inplace=True)
-        expected_recombinants.reset_index(inplace=True, drop=True)
-        result_recombinants = pd.read_csv(os.path.join(self.results_folder, 'recombinants.txt'), sep='\t')
-        result_recombinants.dropna(how='all', inplace=True)
-        result_recombinants.sort_values(by='recombinant_id', inplace=True)
-        result_recombinants.reset_index(inplace=True, drop=True)
+        def read_recombinants(rec_file):
+
+            recombinants = pd.read_csv(rec_file, sep='\t')
+            recombinants.dropna(how='all', inplace=True)
+            recombinants.sort_values(by='recombinant_id', inplace=True)
+            recombinants.reset_index(inplace=True, drop=True)
+
+            # Reconstructed lengths differ as trinity is stochastic
+            recombinants.drop(['reconstructed_length'], axis=1, inplace=True)
+
+            return recombinants
+
+        expected_recombinants = read_recombinants(os.path.join(self.expected_folder, 'recombinants.txt'))
+        result_recombinants = read_recombinants(os.path.join(self.results_folder, 'recombinants.txt'))
 
         assert_frame_equal(expected_recombinants, result_recombinants)
 

@@ -50,23 +50,24 @@ You should also ensure to set the `$IGDATA` environment variable to point to the
 7. It seems that v1.11 of Networkx behaves differently when writing dot files for use with Graphviz. If you have this (or later versions) you also need to install [PyDotPlus](http://pydotplus.readthedocs.org).
 8. [Future](http://python-future.org/index.html) for compatibility with Python 2.
 
-
 ##Setup##
-The python modules can be installed by running the setup script:
+To set up the python dependencies, use the requirements file:
+
+    pip install -r requirements.txt
+
+It is **highly** recommended that numpy and biopython are first installed through your system's package manager or conda.
+
+The tracer module is then installed using:
 
     python setup.py install
 
 This will add the binary 'tracer' to your local bin folder, which can then be run from anywhere.
 
-You can also install TraCeR manually, using pip to install the requirements from the requirements.txt file:
-
-    pip install -r requirements.txt
-
-**Note** that in this case you must ensure that the tracer folder is on your `PYTHONPATH`.
-
 If you would like to contribute to TraCeR, you can set up a development version with
 
     python setup.py develop
+
+Which will make TraCeR accessible in your python environment, and incorporate local updates to the code.
 
 Once the prerequisites above are installed and working you're ready to tell TraCeR where to find them.
 
