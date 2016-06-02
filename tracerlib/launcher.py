@@ -10,7 +10,7 @@ import seaborn as sns
 from matplotlib import pyplot as plt
 from tracerlib import base_dir
 from tracerlib import tracer_func
-from ConfigParser import ConfigParser
+from configparser import ConfigParser
 import argparse
 import sys
 import os
