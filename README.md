@@ -71,7 +71,7 @@ Once the prerequisites above are installed and working you're ready to tell TraC
 
 TraCeR uses a configuration file to point it to the locations of files that it needs and a couple of other options. By default, this is `tracer.conf` in the same directory as the TraCeR executable. The `-c` option to the various tracer modules allows you to specify any other file to act as the configuration file.
 
-**Important:** If you  specify relative paths in the config file these will be used as relative to the directory that contains the `tracer` executable.
+**Important:** If you  specify relative paths in the config file these will be used as relative to the main installation directory. For example, `resources/igblast_dbs/mouse` will resolve to `/<wherever you installed tracer>/tracer/resources/igblast_dbs/mouse`.
 
 ###External tool locations###
 Edit `tracer.conf` (or a copy) so that the paths within the `[tool_locations]` section point to the executables for all of the required tools. 

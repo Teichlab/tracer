@@ -24,6 +24,8 @@ import pickle
 from prettytable import PrettyTable
 from Bio.Seq import Seq
 
+#import pdb
+
 
 class Launcher(object):
 
@@ -163,6 +165,7 @@ class Launcher(object):
 
         kallisto_base_transcriptome = self.resolve_relative_path(config.get('kallisto_options', 'base_transcriptome'))
 
+        
         # check that executables from config file can be used
         not_executable = []
         for name, x in six.iteritems({"bowtie2": bowtie2, "igblast": igblast, "kallisto": kallisto, "trinity": trinity}):
@@ -244,7 +247,7 @@ class Launcher(object):
     def resolve_relative_path(self, path):
         if not path.startswith("/"):
             base_directory = os.path.abspath(os.path.dirname(__file__))
-            full_path = os.path.normpath("{}/{}".format(base_directory, path))
+            full_path = os.path.normpath("/{}/../{}".format(base_directory, path))
         else:
             full_path = path
         return full_path
