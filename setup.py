@@ -12,7 +12,7 @@ setup(
     author="Mike Stubbington",
     entry_points={
         'console_scripts': [
-            'tracer = tracer'
+            'tracer=tracer.tracerlib.__main__'
         ]
     },
     author_email="mike.stubbington@sanger.ac.uk",
@@ -37,6 +37,8 @@ setup(
         "pytz",
         "scipy",
         "seaborn",
-        "six"
+        "six",
+        "future",
+        "mock"
     ]
 )

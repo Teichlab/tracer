@@ -21,7 +21,9 @@ Please email questions / problems to ms31@sanger.ac.uk
 ##Installation
 TraCeR is written in Python and so can just be downloaded, made executable (with `chmod u+x tracer`) and run or run with `python tracer`. Download the latest version and accompanying files from www.github.com/teichlab/tracer. 
 
-Tracer relies on several additional tools and Python modules that you should install.
+TraCeR relies on several additional tools and Python modules that you should install.
+
+Note that TraCeR is compatible with both Python 2 and 3.
 
 ###Pre-requisites
 
@@ -53,13 +55,21 @@ The python modules can be installed by running the setup script:
 
     python setup.py install
 
-Or using pip from the requirements.txt file:
+This will add the binary 'tracer' to your local bin folder, which can then be run from anywhere.
+
+You can also install TraCeR manually, using pip to install the requirements from the requirements.txt file:
 
     pip install -r requirements.txt
 
+**Note** that in this case you must ensure that the tracer folder is on your `PYTHONPATH`.
+
+If you would like to contribute to TraCeR, you can set up a development version with
+
+    python setup.py develop
+
 Once the prerequisites above are installed and working you're ready to tell TraCeR where to find them.
 
-TraCeR uses a configuration file to point it to the locations of files that it needs and a couple of other options. By default, this is `tracer.conf` in the same directory as the TraCeR executable. The `-c` option to the various tracer modules allows you to specify any other file to act as the configuration file. 
+TraCeR uses a configuration file to point it to the locations of files that it needs and a couple of other options. By default, this is `tracer.conf` in the same directory as the TraCeR executable. The `-c` option to the various tracer modules allows you to specify any other file to act as the configuration file.
 
 **Important:** If you  specify relative paths in the config file these will be used as relative to the directory that contains the `tracer` executable.
 
@@ -93,16 +103,17 @@ This path specifies the directory that contains Bowtie2 indices constructed from
 	#line below specifies maximum memory for Trinity Jellyfish component. Set it appropriately for your environment.
 	max_jellyfish_memory = 1G
 
-Trinity needs to know the maximum memory available to it for the Jellyfish component. Specify this here. 
+Trinity needs to know the maximum memory available to it for the Jellyfish component. Specify this here.
+
 
 ####Trinity version####
     #uncomment the line below to explicitly specify Trinity version. Options are '1' or '2'
     #trinity_version = 2
-        
-TraCeR will automatically detect the version of Trinity you have installed. You can also explicitly specify it here if you wish.         
-        
-#####HPC configuration#####
-    #uncomment the line below if you've got a configuration file for Trinity to use a computing grid 
+
+TraCeR will automatically detect the version of Trinity you have installed. You can also explicitly specify it here if you wish.
+
+#####HPC configuration####
+    #uncomment the line below if you've got a configuration file for Trinity to use a computing grid #
     trinity_grid_conf = /path/to/trinity/grid.conf
 
 Trinity can parallelise contig assembly by submitting jobs across a compute cluster. If you're running in such an environment you can specify an optional trinity config file here. See the Trinity documentation for more information.
