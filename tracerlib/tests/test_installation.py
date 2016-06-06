@@ -19,7 +19,7 @@ class TestInstall(unittest.TestCase):
     def test_installation(self):
         test_args = ['tracer', 'test', '-p', '1', '-c', os.path.expanduser('~/.tracerrc')]
         with patch.object(sys, 'argv', test_args):
-            Launcher()
+            Launcher().launch()
 
     def test_recombinants(self):
 

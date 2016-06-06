@@ -29,7 +29,7 @@ from Bio.Seq import Seq
 
 class Launcher(object):
 
-    def __init__(self):
+    def launch(self):
         parser = argparse.ArgumentParser(
             description='TraCeR: reconstruction of TCR sequences from single-cell RNAseq data',
             usage=''' tracer <mode> [<args>]
@@ -69,15 +69,18 @@ class Launcher(object):
                                 help='species from which T cells were isolated - important to determination of iNKT cells',
                                 choices=['Mmus', 'Hsap'], default='Mmus')
             parser.add_argument('--seq_method', '-m',
-                                help='Method for constructing sequence to assess productivity, quantify expression and for output reporting. See README for details.',
+                                help='Method for constructing sequence to assess productivity, \
+                                quantify expression and for output reporting. See README for details.',
                                 choices=['imgt', 'assembly'], default='imgt')
             parser.add_argument('--single_end', help='set this if your sequencing data are single-end reads',
                                 action="store_true")
             parser.add_argument('--fragment_length',
-                                help='Estimated average fragment length in the sequencing library. Used for Kallisto quantification. REQUIRED for single-end data.',
+                                help='Estimated average fragment length in the sequencing library.'
+                                     ' Used for Kallisto quantification. REQUIRED for single-end data.',
                                 default=False)
             parser.add_argument('--fragment_sd',
-                                help='Estimated standard deviation of average fragment length in the sequencing library. Used for Kallisto quantification. REQUIRED for single-end data.',
+                                help='Estimated standard deviation of average fragment length in the sequencing library.'
+                                     ' Used for Kallisto quantification. REQUIRED for single-end data.',
                                 default=False)
             parser.add_argument('fastq1', metavar="<FASTQ1>", help='first fastq file')
             parser.add_argument('fastq2', metavar="<FASTQ2>", help='second fastq file', nargs='?')
@@ -90,25 +93,7 @@ class Launcher(object):
             cell_name = args.cell_name
             fastq1 = args.fastq1
             single_end = args.single_end
-            if not single_end:
-                if not args.fastq2:
-                    print("Only one fastq file specified. Either set --single_end or provide second fastq.")
-                    exit(1)
-                else:
-                    fastq2 = args.fastq2
-            else:
-                fastq2 = None
-                if args.fastq2:
-                    print("Two fastq files given with --single-end option. Ignoring second file.")
-                if not args.fragment_length and not args.fragment_sd:
-                    print('Must specify estimated average fragment length (--fragment_length) and standard deviation (--fragment_sd) for use with single-end data')
-                    exit(1)
-                elif not args.fragment_length:
-                    print('Must specify estimated average fragment length (--fragment_length) for use with single-end data')
-                    exit(1)
-                elif not args.fragment_sd:
-                    print('Must specify estimated fragment length standard deviation (--fragment_sd) for use with single-end data')
-                    exit(1)
+            fastq2 = args.fastq2
 
             ncores = str(args.ncores)
             config_file = args.config_file
@@ -120,18 +105,39 @@ class Launcher(object):
             output_dir = args.output_dir
 
         else:
-            cell_name = kwargs['cell_name']
-            fastq1 = kwargs['fastq1']
-            fastq2 = kwargs['fastq2']
-            ncores = kwargs['ncores']
-            config_file = kwargs['config_file']
-            species = kwargs['species']
-            seq_method = kwargs['seq_method']
-            resume_with_existing_files = kwargs['resume_with_existing_files']
-            output_dir = kwargs['output_dir']
-            single_end = kwargs['single_end']
-            fragment_length = kwargs['fragment_length']
-            fragment_sd = kwargs['fragment_sd']
+            cell_name = kwargs.get('cell_name')
+            fastq1 = kwargs.get('fastq1')
+            fastq2 = kwargs.get('fastq2')
+            ncores = kwargs.get('ncores')
+            config_file = kwargs.get('config_file')
+            species = kwargs.get('species')
+            seq_method = kwargs.get('seq_method')
+            resume_with_existing_files = kwargs.get('resume_with_existing_files')
+            output_dir = kwargs.get('output_dir')
+            single_end = kwargs.get('single_end')
+            fragment_length = kwargs.get('fragment_length')
+            fragment_sd = kwargs.get('fragment_sd')
+
+        if not single_end:
+            assert fastq2, "Only one fastq file specified. Either set --single_end or provide second fastq."
+        else:
+            fastq2 = None
+            if fastq2:
+                print("Two fastq files given with --single-end option. Ignoring second file.")
+            assert fragment_length and fragment_sd, \
+                'Must specify estimated average fragment length (--fragment_length)' \
+                ' and standard deviation (--fragment_sd) for use with single-end data'
+            assert fragment_length, \
+                'Must specify estimated average fragment length (--fragment_length) for use with single-end data'
+            assert fragment_sd, \
+                'Must specify estimated fragment length standard deviation (--fragment_sd) for use with single-end data'
+
+        # Check FASTQ files exist
+        if not os.path.isfile(fastq1):
+            raise OSError('2', 'FASTQ file not found', fastq1)
+        if not single_end and fastq2:
+            if not os.path.isfile(fastq2):
+                raise OSError('2', 'FASTQ file not found', fastq2)
 
         # Read config file
         tracer_func.check_config_file(config_file)
@@ -165,7 +171,6 @@ class Launcher(object):
 
         kallisto_base_transcriptome = self.resolve_relative_path(config.get('kallisto_options', 'base_transcriptome'))
 
-        
         # check that executables from config file can be used
         not_executable = []
         for name, x in six.iteritems({"bowtie2": bowtie2, "igblast": igblast, "kallisto": kallisto, "trinity": trinity}):
@@ -597,11 +602,11 @@ class Launcher(object):
             keep_inkt = args.keep_inkt
             use_unfiltered = args.use_unfiltered
         else:
-            config_file = kwargs['config_file']
-            use_unfiltered = kwargs['use_unfiltered']
-            keep_inkt = kwargs['keep_inkt']
-            graph_format = kwargs['graph_format']
-            root_dir = os.path.abspath(kwargs['root_dir'])
+            config_file = kwargs.get('config_file')
+            use_unfiltered = kwargs.get('use_unfiltered')
+            keep_inkt = kwargs.get('keep_inkt')
+            graph_format = kwargs.get('graph_format')
+            root_dir = os.path.abspath(kwargs.get('root_dir'))
 
         # Read config file
         tracer_func.check_config_file(config_file)
@@ -620,7 +625,7 @@ class Launcher(object):
             print()
             print("Could not execute the following required tools. Check your configuration file.")
             for t in not_executable:
-                print( t[0], t[1])
+                print(t[0], t[1])
             print()
             exit(1)
 
@@ -857,6 +862,7 @@ class Launcher(object):
             f1 = "{}/{}_1.fastq".format(test_dir, name)
             f2 = "{}/{}_2.fastq".format(test_dir, name)
 
+            print('fastq2', f2)
             self.assemble(ncores=str(args.ncores), config_file=args.config_file, resume_with_existing_files=False,
                           species='Mmus', seq_method='imgt', fastq1=f1, fastq2=f2, cell_name=name, output_dir=out_dir,
                           single_end=False, fragment_length=False, fragment_sd=False)
