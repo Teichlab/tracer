@@ -862,7 +862,6 @@ class Launcher(object):
             f1 = "{}/{}_1.fastq".format(test_dir, name)
             f2 = "{}/{}_2.fastq".format(test_dir, name)
 
-            print('fastq2', f2)
             self.assemble(ncores=str(args.ncores), config_file=args.config_file, resume_with_existing_files=False,
                           species='Mmus', seq_method='imgt', fastq1=f1, fastq2=f2, cell_name=name, output_dir=out_dir,
                           single_end=False, fragment_length=False, fragment_sd=False)
