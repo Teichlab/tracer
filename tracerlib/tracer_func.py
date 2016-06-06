@@ -679,7 +679,7 @@ def make_cell_network_from_dna(cells, colorscheme, colours, keep_unlinked, shape
     return (G, drawing_tool, component_groups)
 
 
-def draw_network_from_cells(cells, output_dir, output_format, dot, neato):
+def draw_network_from_cells(cells, output_dir, output_format, dot, neato, draw_graphs):
     cells = list(cells.values())
     colorscheme = 'set15'
     colours = {'A': '1', 'B': '2', 'G': '3', 'D': '5', 'mean_both': '#a8a8a8bf'}
@@ -691,9 +691,10 @@ def draw_network_from_cells(cells, output_dir, output_format, dot, neato):
     except AttributeError:
         import pydotplus
         nx.drawing.nx_pydot.write_dot(network, network_file)
-    command = draw_tool + ['-o', "{output_dir}/clonotype_network_with_identifiers.{output_format}".format(
-        output_dir=output_dir, output_format=output_format), "-T", output_format, network_file]
-    subprocess.check_call(command)
+    if draw_graphs:
+        command = draw_tool + ['-o', "{output_dir}/clonotype_network_with_identifiers.{output_format}".format(
+            output_dir=output_dir, output_format=output_format), "-T", output_format, network_file]
+        subprocess.check_call(command)
 
     network, draw_tool, cgx = make_cell_network_from_dna(cells, colorscheme, colours, False, "circle", dot, neato)
     network_file = "{}/clonotype_network_without_identifiers.dot".format(output_dir)
@@ -702,9 +703,10 @@ def draw_network_from_cells(cells, output_dir, output_format, dot, neato):
     except AttributeError:
         import pydotplus
         nx.drawing.nx_pydot.write_dot(network, network_file)
-    command = draw_tool + ['-o', "{output_dir}/clonotype_network_without_identifiers.{output_format}".format(
-        output_dir=output_dir, output_format=output_format), "-T", output_format, network_file]
-    subprocess.check_call(command)
+    if draw_graphs:
+        command = draw_tool + ['-o', "{output_dir}/clonotype_network_without_identifiers.{output_format}".format(
+            output_dir=output_dir, output_format=output_format), "-T", output_format, network_file]
+        subprocess.check_call(command)
     return (component_groups)
 
 
