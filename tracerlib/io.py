@@ -1,3 +1,4 @@
+import pandas as pd
 import os
 import re
 from collections import defaultdict
@@ -47,12 +48,13 @@ def sort_locus_names(dictionary_to_sort):
 
 def load_IMGT_seqs(file):
     seqs = {}
-    for record in SeqIO.parse(open(file, 'rU'), 'fasta'):
-        seqs[record.id] = str(record.seq)
+    with open(file, 'rU') as fh:
+        for record in SeqIO.parse(fh, 'fasta'):
+            seqs[record.id] = str(record.seq)
     return (seqs)
 
 
-def parse_IgBLAST(locus_names, output_dir, cell_name, imgt_seq_location, species, seq_method):
+def parse_IgBLAST(locus_names, output_dir, cell_name, imgt_seq_location, species, seq_method, const_seq_file):
     segment_names = ['TRAJ', 'TRAV', 'TRBD', 'TRBJ', 'TRBV']
     IMGT_seqs = dict()
     for segment in segment_names:
@@ -73,7 +75,10 @@ def parse_IgBLAST(locus_names, output_dir, cell_name, imgt_seq_location, species
         else:
             all_locus_data[locus] = None
 
-    cell = find_possible_alignments(all_locus_data, locus_names, cell_name, IMGT_seqs, output_dir, species, seq_method)
+    constant_seqs = pd.read_csv(const_seq_file, index_col=0)['sequence'].to_dict()
+
+    cell = find_possible_alignments(all_locus_data, locus_names, cell_name, IMGT_seqs, output_dir, species, seq_method,
+                                    constant_seqs)
     return (cell)
 
 
@@ -83,14 +88,15 @@ def split_igblast_file(filename):
     chunks = []
     current_chunk = []
 
-    for line in open(filename):
-        line = line.rstrip()
-        if line.startswith(token) and current_chunk:
-            # if line starts with token and the current chunk is not empty
-            chunks.append(current_chunk[:])  # add not empty chunk to chunks
-            current_chunk = []  # make current chunk blank
-        # just append a line to the current chunk on each iteration
-        current_chunk.append(line)
+    with open(filename) as fh:
+        for line in fh:
+            line = line.rstrip()
+            if line.startswith(token) and current_chunk:
+                # if line starts with token and the current chunk is not empty
+                chunks.append(current_chunk[:])  # add not empty chunk to chunks
+                current_chunk = []  # make current chunk blank
+            # just append a line to the current chunk on each iteration
+            current_chunk.append(line)
 
-    chunks.append(current_chunk)  # append the last chunk outside the loop
+        chunks.append(current_chunk)  # append the last chunk outside the loop
     return (chunks)

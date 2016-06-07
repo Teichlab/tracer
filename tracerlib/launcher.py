@@ -8,7 +8,7 @@ mpl.use('pdf')
 import re
 import seaborn as sns
 from matplotlib import pyplot as plt
-from tracerlib import base_dir
+from tracerlib import base_dir, resource_lookup
 from tracerlib import tracer_func
 from configparser import ConfigParser
 import argparse
@@ -168,7 +168,6 @@ class Launcher(object):
         igblast_index_location = self.resolve_relative_path(config.get('IgBlast_options', 'igblast_index_location'))
         igblast_seqtype = config.get('IgBlast_options', 'igblast_seqtype')
         imgt_seq_location = self.resolve_relative_path(config.get('IgBlast_options', 'imgt_seq_location'))
-
         kallisto_base_transcriptome = self.resolve_relative_path(config.get('kallisto_options', 'base_transcriptome'))
 
         # check that executables from config file can be used
@@ -212,9 +211,12 @@ class Launcher(object):
                          should_resume)
         print()
 
+        const_seq_file = os.path.join(base_dir, "resources", resource_lookup[species], "constant_seqs.csv")
+
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            cell = io.parse_IgBLAST(locus_names, output_dir, cell_name, imgt_seq_location, species, seq_method)
+            cell = io.parse_IgBLAST(locus_names, output_dir, cell_name, imgt_seq_location, species, seq_method,
+                                    const_seq_file)
             if cell.is_empty:
                 self.die_with_empty_cell(cell_name, output_dir, species)
 
@@ -329,7 +331,8 @@ class Launcher(object):
                 command = [bowtie2, '--no-unal', '-p', ncores, '-k', '1', '--np', '0', '--rdg', '1,1', '--rfg', '1,1',
                            '-x', "/".join([synthetic_genome_path, locus]), '-U', fastq1, '-S', sam_file]
 
-                subprocess.check_call(command)
+                # subprocess.check_call(command)
+                subprocess.check_output(command)
 
                 with open(sam_file) as sam_in:
                     for line in sam_in:
@@ -878,4 +881,4 @@ class Launcher(object):
                           single_end=False, fragment_length=False, fragment_sd=False)
 
         self.summarise(config_file=args.config_file, use_unfiltered=False, keep_inkt=False, 
-                        graph_format=args.graph_format, no_networks=args.no_networks, root_dir=out_dir)
+                       graph_format=args.graph_format, no_networks=args.no_networks, root_dir=out_dir)

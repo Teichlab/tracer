@@ -18,6 +18,7 @@ import os
 import re
 import subprocess
 from collections import defaultdict, Counter
+import csv
 
 import Levenshtein
 import networkx as nx
@@ -91,15 +92,14 @@ def process_chunk(chunk):
     return (query_name, return_dict)
 
 
-def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs, output_dir, species, seq_method):
-    # pdb.set_trace()
+def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs, output_dir, species, seq_method,
+                             constant_seqs):
     alignment_dict = defaultdict(dict)
     recombinants = {'TCRA': [], 'TCRB': []}
     for locus in locus_names:
         data_for_locus = sample_dict[locus]
         if data_for_locus is not None:
             for query_name, query_data in six.iteritems(data_for_locus):
-                # pdb.set_trace()
                 processed_hit_table = process_hit_table(query_name, query_data, locus)
 
                 if processed_hit_table is not None:
@@ -138,9 +138,10 @@ def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs, out
                     # Only use the VDJ portion found by IgBLAST
                     trinity_file = "{output_dir}/Trinity_output/{cell_name}_{locus}.Trinity.fasta".format(
                         locus=locus, output_dir=output_dir, cell_name=cell_name)
-                    for record in SeqIO.parse(open(trinity_file, 'rU'), 'fasta'):
-                        if query_name in record.id:
-                            trinity_seq = record
+                    with open(trinity_file, 'rU') as tf:
+                        for record in SeqIO.parse(tf, 'fasta'):
+                            if query_name in record.id:
+                                trinity_seq = record
 
                     if 'reversed' in good_hits[0][1]:
                         trinity_seq = trinity_seq.reverse_complement().seq
@@ -151,14 +152,14 @@ def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs, out
 
                     (imgt_reconstructed_seq, is_productive, bestVJNames) = get_fasta_line_for_contig_imgt(
                         rearrangement_summary, junction_list, good_hits, returned_locus, IMGT_seqs, cell_name,
-                        query_name, species)
+                        query_name, species, constant_seqs)
                     del (is_productive)
                     del (bestVJNames)
 
                     if seq_method == 'imgt':
                         (fasta_line_for_contig, is_productive, bestVJNames) = get_fasta_line_for_contig_imgt(
                             rearrangement_summary, junction_list, good_hits, returned_locus, IMGT_seqs, cell_name,
-                            query_name, species)
+                            query_name, species, constant_seqs)
 
                     elif seq_method == 'assembly':
                         fasta_line_for_contig = trinity_seq
@@ -176,7 +177,6 @@ def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs, out
                                           trinity_seq=trinity_seq, imgt_reconstructed_seq=imgt_reconstructed_seq)
                         recombinants[locus].append(rec)
 
-    # pdb.set_trace()
     if recombinants:
         for locus, rs in six.iteritems(recombinants):
             # Adding code to collapse sequences with very low Levenshtein distances caused by confusion between
@@ -281,20 +281,13 @@ def process_hit_table(query_name, query_data, locus):
             #    else:
             #        return(None)
 
+
 def get_fasta_line_for_contig_imgt(rearrangement_summary, junction_details, hit_table, locus, IMGT_seqs,
-                                   sample_name, query_name, species):
-    constant_seqs = dict()
-    if species == 'Mmus':
-        constant_seqs["A"] = "ACATCCAGAACCCAGAACCTGCTGTGTACCAGTTAAAAGATCCTCGGTCTCAGGACAGCACCCTCTGCCTGTTCACCGACTTTGACTCCCAAATCAATGTGCCGAAAACCATGGAATCTGGAACGTTCATCACTGACAAAACTGTGCTGGACATGAAAGCTATGGATTCCAAGAGCAATGGGGCCATTGCCTGGAGCAACCAGACAAGCTTCACCTGCCAAGATATCTTCAAAGAGACCAACGCCACCTACCCCAGTTCAGACGTTCCCTGTGATGCCACGTTGACTGAGAAAAGCTTTGAAACAGATATGAACCTAAACTTTCAAAACCTGTCAGTTATGGGACTCCGAATCCTCCTGCTGAAAGTAGCCGGATTTAACCTGCTCATGACGCTGAGGCTGTGGTCCAGTTGA"
-        # use first 258 bases of TRBC because they're the same between C1 and C2
-        constant_seqs["B"] = "AGGATCTGAGAAATGTGACTCCACCCAAGGTCTCCTTGTTTGAGCCATCAAAAGCAGAGATTGCAAACAAACAAAAGGCTACCCTCGTGTGCTTGGCCAGGGGCTTCTTCCCTGACCACGTGGAGCTGAGCTGGTGGGTGAATGGCAAGGAGGTCCACAGTGGGGTCAGCACGGACCCTCAGGCCTACAAGGAGAGCAATTATAGCTACTGCCTGAGCAGCCGCCTGAGGGTCTCTGCTACCTTCTGGCACAATCCTC"
-        constant_seqs["D"] = "AAAGCCAGCCTCCGGCCAAACCATCTGTTTTCATCATGAAAAATGGAACAAATGTTGCTTGTCTGGTGAAAGATTTCTACCCTAAAGAGGTGACTATAAGTCTCAGATCATCCAAGAAGATTGTGGAATTCGACCCTGCTATAGTCATCTCCCCCAGCGGGAAGTACAGTGCTGTCAAGCTTGGTCAGTATGGAGATTCGAATTCAGTGACATGTTCAGTTCAGCACAACAGTGAAACTGTGCACTCGACTGACTTTGAACCATATGCAAATTCTTTCAATAATGAAAAACTACCAGAACCTGAAAATGACACACAAATTTCAGAGCCTTGCTATGGCCCAAGAGTCACAGTTCACACTGAGAAGGTAAACATGATGTCCCTCACGGTGCTGGGCCTACGACTGCTGTTTGCCAAGACCATTGCCATCAATTTTCTCTTGACTGTTAAGTTATTCTTTTAAGGGTGGGCTGACATGAGGAGACTACGGTTCCTGAAAGAAATCAAAAGCTTAGAAAGATGCTATATCCCAGGCTTCCAACTTCTCAGTGCTTCAGACTGACCCTTCACCACCACATTTAAACAGCTGCTAACAAAACCAGCTTTTCTGTGACAGCAACAAGCCTAGCTAATCCTCCAGTCTAGAAGAAAAGCAAAAGCCCTCGGGACCCCCGGCTTTACCTGCTGCTTTATAAAGGCATGGGAAGTTATGAAAACAGATCCATTTTATTTTGCCCCCATAATTGGTATACTTTGAAAATGGTGTTTCATCCTTCTTCATTTACCCAGAACTAGGAAGTGGGGACCAGCTTCATTATCCAGGAGGAAATAATCTTGAGAGAGAGAACCCGTATCTTTTTAGCTAAACATGGAAAGCTGTACTCAACTCATCCCTAGCCAGAGCCCCCTCCTCCTCTCCTGAGGCGAGCATGGCCCAGCCCCCCCCCCTTTGTATTTACTCCAATAGTCACACAGGAGAGTTTTCCTAGCAGCACTACGGTGTGAACAATTTTAGCACTTTCTGTTTCTCCTAATACTTTACAAACAAACTCACACTTGGCTTCCTTAATGCTCTCCAAGCAGACAATAAAGCTTCTAAGATCGCATC"
-        # for TRGC use first 150 bases. Found by aligning the 4 C region transcripts and taking consensus. Ignored start of TCRG-C4-201 because it's only in that one.
-        constant_seqs["G"] = "GACAAAAGGCTTGATGCAGACATTTCCCCCAAGCCCACTATTTTCCTTCCTTCTGTTGCTGAAACAAATCTCCATAAGACTGGGACATACCTTTGTCTCCTTGAAAAGTTCTTTCCCGATGTCATAAGGGTGTATTGGAAAGAAAAGG"
-    elif species == "Hsap":
-        constant_seqs["A"] = "ATATCCAGAACCCTGACCCTGCCGTGTACCAGCTGAGAGACTCTAAATCCAGTGACAAGTCTGTCTGCCTATTCACCGATTTTGATTCTCAAACAAATGTGTCACAAAGTAAGGATTCTGATGTGTATATCACAGACAAAACTGTGCTAGACATGAGGTCTATGGACTTCAAGAGCAACAGTGCTGTGGCCTGGAGCAACAAATCTGACTTTGCATGTGCAAACGCCTTCAACAACAGCATTATTCCAGAAGACACCTTCTTCCCCAGCCCAGAAAGTTCCTGTGATGTCAAGCTGGTCGAGAAAAGCTTTGAAACAGATACGAACCTAAACTTTCAAAACCTGTCAGTGATTGGGTTCCGAATCCTCCTCCTGAAAGTGGCCGGGTTTAATCTGCTCATGACGCTGCGGCTGTGGTCCAGCTGA"
-        # use first 360 nt of TRBC1 because they're very nearly the same between TRBC1 and TRBCC2
-        constant_seqs["B"] = "AGGACCTGAACAAGGTGTTCCCACCCGAGGTCGCTGTGTTTGAGCCATCAGAAGCAGAGATCTCCCACACCCAAAAGGCCACACTGGTGTGCCTGGCCACAGGCTTCTTCCCTGACCACGTGGAGCTGAGCTGGTGGGTGAATGGGAAGGAGGTGCACAGTGGGGTCAGCACGGACCCGCAGCCCCTCAAGGAGCAGCCCGCCCTCAATGACTCCAGATACTGCCTGAGCAGCCGCCTGAGGGTCTCGGCCACCTTCTGGCAGAACCCCCGCAACCACTTCCGCTGTCAAGTCCAGTTCTACGGGCTCTCGGAGAATGACGAGTGGACCCAGGATAGGGCCAAACCCGTCACCCAGATC"
+                                   sample_name, query_name, species, constant_seqs):
+
+    # use first 258 bases of TRBC because they're the same between C1 and C2
+    # for TRGC use first 150 bases. Found by aligning the 4 C region transcripts and taking consensus. Ignored start of TCRG-C4-201 because it's only in that one.
+    # use first 360 nt of TRBC1 because they're very nearly the same between TRBC1 and TRBCC2
 
     found_best_V = False
     found_best_D = False
