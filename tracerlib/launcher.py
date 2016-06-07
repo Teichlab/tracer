@@ -331,8 +331,7 @@ class Launcher(object):
                 command = [bowtie2, '--no-unal', '-p', ncores, '-k', '1', '--np', '0', '--rdg', '1,1', '--rfg', '1,1',
                            '-x', "/".join([synthetic_genome_path, locus]), '-U', fastq1, '-S', sam_file]
 
-                # subprocess.check_call(command)
-                subprocess.check_output(command)
+                subprocess.check_call(command)
 
                 with open(sam_file) as sam_in:
                     for line in sam_in:
