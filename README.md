@@ -73,12 +73,16 @@ Which will make TraCeR accessible in your python environment, and incorporate lo
 
 Once the prerequisites above are installed and working you're ready to tell TraCeR where to find them.
 
-TraCeR uses a configuration file to point it to the locations of files that it needs and a couple of other options. By default, this is `tracer.conf` in the same directory as the TraCeR executable. The `-c` option to the various tracer modules allows you to specify any other file to act as the configuration file.
+TraCeR uses a configuration file to point it to the locations of files that it needs and a couple of other options.
+An example configuration file is included in the repository - `tracer.conf`.
+By default, this is `~/.tracerrc`. If tracer fails to find this file, it will use the `tracer.conf` in the repository.
+ The `-c` option to the various tracer modules allows you to specify any other file to act as the configuration file.
 
 **Important:** If you  specify relative paths in the config file these will be used as relative to the main installation directory. For example, `resources/igblast_dbs/mouse` will resolve to `/<wherever you installed tracer>/tracer/resources/igblast_dbs/mouse`.
 
 ###External tool locations###
-Edit `tracer.conf` (or a copy) so that the paths within the `[tool_locations]` section point to the executables for all of the required tools. 
+Tracer will look in your system's `PATH` for external tools. You can override this behaviour by editing your `~/.tracerrc`.
+Edit `~/.tracerrc` (or a copy) so that the paths within the `[tool_locations]` section point to the executables for all of the required tools.
 
 	[tool_locations]
 	#paths to tools used by TraCeR for alignment, quantitation, etc
@@ -183,7 +187,7 @@ Tracer has two modes *assemble* and *summarise*.
 
 #####Options#####
 `-p/--ncores <int>` : number of processor cores available. This is passed to Bowtie2 and Trinity. Default=1.  
-`-c/--config_file <conf_file>` : config file to use. Default = `tracer.conf`  
+`-c/--config_file <conf_file>` : config file to use. Default = `~/.tracerrc`
 `-s/--species` : Species from which the T cells were derived. Options are `Mmus` or `Hsap` for mouse or human data. This is only important for determination of iNKT cells in the `summarise` step because it defines the V segments that are indicative of iNKT cells. Default = `Mmus`.  
 `-r/--resume_with_existing_files` : if this is set, TraCeR will look for existing output files and not re-run steps that already appear to have been completed. This saves time if TraCeR died partway through a step and you want to resume where it left off.   
 `-m/--seq_method` : method by which to generate sequences for assessment of recombinant productivity. By default (`-m imgt`), TraCeR replaces all but the junctional sequence of each detected recombinant with the reference sequence from IMGT prior to assessing productivity of the sequence. This makes the assumption that sequence changes outside the junctional region are due to PCR/sequencing errors rather than being genuine polymorphisms. This is likely to be true for well-characterised mouse sequences but may be less so for human and other outbred populations. To determine productivity from only the assembled contig sequence for each recombinant use `-m assembly`.   
@@ -226,7 +230,7 @@ For each cell, an `/<output_directory>/<cell_name>` directory will be created. T
 `<input_dir>` : directory containing subdirectories of each cell you want to summarise. 
 
 #####Options#####
-`-c/--config_file <conf_file>` : config file to use. Default = `tracer.conf`  
+`-c/--config_file <conf_file>` : config file to use. Default = `~/.tracerrc`
 `-u/--use_unfiltered` : Set this flag to use unfiltered recombinants for summary and networks rather than the recombinants filtered by expression level.  
 `-i/--keep_inkt` : TraCeR attempts to identify iNKT cells by their characteristic TCRA gene segments (TRAV11–TRAJ18). By default, these are removed before creation of clonotype networks. Setting this option retains the iNKT cells in all stages.    
 `-g/--graph_format` : Output format for the clonotype networks. This is passed directly to Graphviz and so must be one of the options detailed at http://www.graphviz.org/doc/info/output.html.  

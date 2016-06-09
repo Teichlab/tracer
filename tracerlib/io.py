@@ -1,8 +1,15 @@
+from __future__ import print_function
+
+import distutils
+import shutil
+
+import pandas as pd
 import os
 import re
 from collections import defaultdict
 
 import six
+import sys
 from Bio import SeqIO
 
 from tracerlib.tracer_func import process_chunk, find_possible_alignments
@@ -47,12 +54,13 @@ def sort_locus_names(dictionary_to_sort):
 
 def load_IMGT_seqs(file):
     seqs = {}
-    for record in SeqIO.parse(open(file, 'rU'), 'fasta'):
-        seqs[record.id] = str(record.seq)
+    with open(file, 'rU') as fh:
+        for record in SeqIO.parse(fh, 'fasta'):
+            seqs[record.id] = str(record.seq)
     return (seqs)
 
 
-def parse_IgBLAST(locus_names, output_dir, cell_name, imgt_seq_location, species, seq_method):
+def parse_IgBLAST(locus_names, output_dir, cell_name, imgt_seq_location, species, seq_method, const_seq_file):
     segment_names = ['TRAJ', 'TRAV', 'TRBD', 'TRBJ', 'TRBV']
     IMGT_seqs = dict()
     for segment in segment_names:
@@ -62,7 +70,6 @@ def parse_IgBLAST(locus_names, output_dir, cell_name, imgt_seq_location, species
     for locus in locus_names:
         file = "{output_dir}/IgBLAST_output/{cell_name}_{locus}.IgBLASTOut".format(output_dir=output_dir,
                                                                                    cell_name=cell_name, locus=locus)
-
         if os.path.isfile(file):
             igblast_result_chunks = split_igblast_file(file)
 
@@ -73,7 +80,10 @@ def parse_IgBLAST(locus_names, output_dir, cell_name, imgt_seq_location, species
         else:
             all_locus_data[locus] = None
 
-    cell = find_possible_alignments(all_locus_data, locus_names, cell_name, IMGT_seqs, output_dir, species, seq_method)
+    constant_seqs = pd.read_csv(const_seq_file, index_col=0)['sequence'].to_dict()
+
+    cell = find_possible_alignments(all_locus_data, locus_names, cell_name, IMGT_seqs, output_dir, species, seq_method,
+                                    constant_seqs)
     return (cell)
 
 
@@ -83,14 +93,34 @@ def split_igblast_file(filename):
     chunks = []
     current_chunk = []
 
-    for line in open(filename):
-        line = line.rstrip()
-        if line.startswith(token) and current_chunk:
-            # if line starts with token and the current chunk is not empty
-            chunks.append(current_chunk[:])  # add not empty chunk to chunks
-            current_chunk = []  # make current chunk blank
-        # just append a line to the current chunk on each iteration
-        current_chunk.append(line)
+    with open(filename) as fh:
+        for line in fh:
+            line = line.rstrip()
+            if line.startswith(token) and current_chunk:
+                # if line starts with token and the current chunk is not empty
+                chunks.append(current_chunk[:])  # add not empty chunk to chunks
+                current_chunk = []  # make current chunk blank
+            # just append a line to the current chunk on each iteration
+            current_chunk.append(line)
 
-    chunks.append(current_chunk)  # append the last chunk outside the loop
+        chunks.append(current_chunk)  # append the last chunk outside the loop
     return (chunks)
+
+
+def check_binary(name, user_path=None):
+    if user_path:
+        if not is_exe(user_path):
+            print("The user provided path for {name} is not executable {user_path}. "
+                  "Checking PATH for alternative... ".format(name=name, user_path=user_path))
+        else:
+            return user_path
+    if sys.version_info[0] < 3:
+        binary_path = distutils.spawn.find_executable(name)
+    else:
+        binary_path = shutil.which(name)
+    if not binary_path:
+        raise OSError("Required binary not find: {name}. Please add to PATH or specify location in config file."
+                      .format(name=name))
+    else:
+        print("Binary for {name} found at {binary_path}.".format(name=name, binary_path=binary_path))
+        return binary_path
