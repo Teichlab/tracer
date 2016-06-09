@@ -14,11 +14,14 @@
 
 from __future__ import print_function
 
+import glob
 import os
 import re
+import shutil
 import subprocess
 from collections import defaultdict, Counter
 import csv
+from time import sleep
 
 import Levenshtein
 import networkx as nx
@@ -28,6 +31,7 @@ from Bio.Alphabet import IUPAC
 from Bio.Seq import Seq
 
 from tracerlib.core import Cell, Recombinant
+from tracerlib import io
 
 
 def process_chunk(chunk):
@@ -779,3 +783,294 @@ def check_config_file(filename):
         print("Couldn't find config file: {}".format(filename))
         print()
         exit(1)
+
+
+def bowtie2_alignment(bowtie2, ncores, locus_names, output_dir, cell_name, synthetic_genome_path, fastq1,
+                      fastq2, should_resume, single_end):
+    print("##Finding TCR-derived reads##")
+
+    if should_resume:
+        for locus in locus_names:
+            aligned_read_path = "{}/aligned_reads/{}_{}_".format(output_dir, cell_name, locus)
+            fastq1_out = "{}1.fastq".format(aligned_read_path)
+            fastq2_out = "{}2.fastq".format(aligned_read_path)
+            if os.path.isfile(fastq1_out) and os.path.isfile(fastq2_out):
+                print("Resuming with existing TCRA and B reads")
+                return
+
+    for locus in locus_names:
+        print("##{}##".format(locus))
+        sam_file = "{}/aligned_reads/{}_{}.sam".format(output_dir, cell_name, locus)
+        if not single_end:
+            fastq_out_1 = open("{}/aligned_reads/{}_{}_1.fastq".format(output_dir, cell_name, locus), 'w')
+            fastq_lines_1 = []
+            fastq_out_2 = open("{}/aligned_reads/{}_{}_2.fastq".format(output_dir, cell_name, locus), 'w')
+            fastq_lines_2 = []
+
+            command = [bowtie2, '--no-unal', '-p', ncores, '-k', '1', '--np', '0', '--rdg', '1,1', '--rfg', '1,1',
+                       '-x', "/".join([synthetic_genome_path, locus]), '-1', fastq1, '-2', fastq2, '-S', sam_file]
+
+            subprocess.check_call(command)
+
+            # now to split the sam file for Trinity.
+
+            with open(sam_file) as sam_in:
+                for line in sam_in:
+                    if not line.startswith("@"):
+
+                        line = line.rstrip()
+                        line = line.split("\t")
+                        name = line[0]
+                        seq = line[9]
+                        qual = line[10]
+                        flag = int(line[1])
+                        mate_flag = "{0:b}".format(flag)[-7]
+                        mate_mapped_flag = "{0:b}".format(flag)[-4]
+                        revcomp_flag = "{0:b}".format(flag)[-5]
+
+                        if revcomp_flag == "1":
+                            seq = str(Seq(seq).reverse_complement())
+                            qual = qual[::-1]
+                        if mate_mapped_flag == "0":
+                            if mate_flag == "1":
+                                name_ending = "/1"
+                                fastq_lines_1.append(
+                                    "@{name}{name_ending}\n{seq}\n+\n{qual}\n".format(name=name, seq=seq,
+                                                                                      name_ending=name_ending,
+                                                                                      qual=qual))
+                            else:
+                                name_ending = "/2"
+                                fastq_lines_2.append(
+                                    "@{name}{name_ending}\n{seq}\n+\n{qual}\n".format(name=name, seq=seq,
+                                                                                      name_ending=name_ending,
+                                                                                      qual=qual))
+
+            for line in fastq_lines_1:
+                fastq_out_1.write(line)
+            for line in fastq_lines_2:
+                fastq_out_2.write(line)
+
+            fastq_out_1.close()
+            fastq_out_2.close()
+        else:
+            fastq_out = open("{}/aligned_reads/{}_{}.fastq".format(output_dir, cell_name, locus), 'w')
+            command = [bowtie2, '--no-unal', '-p', ncores, '-k', '1', '--np', '0', '--rdg', '1,1', '--rfg', '1,1',
+                       '-x', "/".join([synthetic_genome_path, locus]), '-U', fastq1, '-S', sam_file]
+
+            subprocess.check_call(command)
+
+            with open(sam_file) as sam_in:
+                for line in sam_in:
+                    if not line.startswith("@"):
+
+                        line = line.rstrip()
+                        line = line.split("\t")
+                        name = line[0]
+                        seq = line[9]
+                        qual = line[10]
+                        flag = int(line[1])
+                        if not flag == 0:
+                            revcomp_flag = "{0:b}".format(flag)[-5]
+                        else:
+                            revcomp_flag = "0"
+
+                        if revcomp_flag == "1":
+                            seq = str(Seq(seq).reverse_complement())
+                            qual = qual[::-1]
+                        fastq_out.write("@{name}\n{seq}\n+\n{qual}\n".format(name=name, seq=seq, qual=qual))
+                fastq_out.close()
+
+
+def assemble_with_trinity(trinity, locus_names, output_dir, cell_name, ncores, trinity_grid_conf, JM,
+                          version, should_resume, single_end, species):
+    print("##Assembling Trinity Contigs##")
+
+    if should_resume:
+        trinity_report_successful = "{}/Trinity_output/successful_trinity_assemblies.txt".format(output_dir)
+        trinity_report_unsuccessful = "{}/Trinity_output/unsuccessful_trinity_assemblies.txt".format(output_dir)
+        if (os.path.isfile(trinity_report_successful) and os.path.isfile(trinity_report_unsuccessful)) and (
+                        os.path.getsize(trinity_report_successful) > 0 or os.path.getsize(
+                    trinity_report_unsuccessful) > 0):
+            print("Resuming with existing Trinity output")
+            return
+
+    command = [trinity]
+    if trinity_grid_conf:
+        command = command + ['--grid_conf', trinity_grid_conf]
+
+    memory_string = '--max_memory' if (version == '2') else '--JM'
+    command = command + ['--seqType', 'fq', memory_string, JM, '--CPU', ncores, '--full_cleanup']
+
+    for locus in locus_names:
+        print("##{}##".format(locus))
+        trinity_output = "{}/Trinity_output/{}_{}".format(output_dir, cell_name, locus)
+        aligned_read_path = "{}/aligned_reads/{}_{}".format(output_dir, cell_name, locus)
+        if not single_end:
+            file1 = "{}_1.fastq".format(aligned_read_path)
+            file2 = "{}_2.fastq".format(aligned_read_path)
+            command = command + ["--left", file1, "--right", file2, "--output",
+                                 '{}/Trinity_output/Trinity_{}_{}'.format(output_dir, cell_name, locus)]
+        else:
+            file = "{}.fastq".format(aligned_read_path)
+            command = command + ["--single", file, "--output",
+                                 '{}/Trinity_output/Trinity_{}_{}'.format(output_dir, cell_name, locus)]
+        try:
+            subprocess.check_call(command)
+            shutil.move('{}/Trinity_output/Trinity_{}_{}.Trinity.fasta'.format(output_dir, cell_name, locus),
+                        '{}/Trinity_output/{}_{}.Trinity.fasta'.format(output_dir, cell_name, locus))
+        except (subprocess.CalledProcessError, IOError):
+            print("Trinity failed for locus")
+
+    # clean up unsuccessful assemblies
+    sleep(10)  # this gives the cluster filesystem time to catch up and stops weird things happening
+    successful_files = glob.glob("{}/Trinity_output/*.fasta".format(output_dir))
+    unsuccessful_directories = next(os.walk("{}/Trinity_output".format(output_dir)))[1]
+    for directory in unsuccessful_directories:
+        shutil.rmtree("{}/Trinity_output/{}".format(output_dir, directory))
+    successful_file_summary = "{}/Trinity_output/successful_trinity_assemblies.txt".format(output_dir)
+    unsuccessful_file_summary = "{}/Trinity_output/unsuccessful_trinity_assemblies.txt".format(output_dir)
+
+    successful_files = io.clean_file_list(successful_files)
+    unsuccessful_directories = io.clean_file_list(unsuccessful_directories)
+
+    success_out = open(successful_file_summary, "w")
+    fail_out = open(unsuccessful_file_summary, "w")
+
+    successful = defaultdict(list)
+    unsuccessful = defaultdict(list)
+
+    successful_ordered_files = set()
+    unsuccessful_ordered_files = set()
+
+    for filename in successful_files:
+        # success_out.write("{}\n".format(filename))
+        parsed_name = io.get_filename_and_locus(filename)
+        successful[parsed_name[0]].append(parsed_name[1])
+        successful_ordered_files.add(parsed_name[0])
+    successful_ordered_files = sorted(list(successful_ordered_files))
+
+    for filename in unsuccessful_directories:
+        # fail_out.write("{}\n".format(filename))
+        parsed_name = io.get_filename_and_locus(filename)
+        unsuccessful[parsed_name[0]].append(parsed_name[1])
+        unsuccessful_ordered_files.add(parsed_name[0])
+    unsuccessful_ordered_files = sorted(list(unsuccessful_ordered_files))
+
+    successful = io.sort_locus_names(successful)
+    unsuccessful = io.sort_locus_names(unsuccessful)
+
+    for file in successful_ordered_files:
+        success_out.write("{}\t{}\n".format(file, successful[file]))
+
+    for file in unsuccessful_ordered_files:
+        fail_out.write("{}\t{}\n".format(file, unsuccessful[file]))
+
+    success_out.close()
+    fail_out.close()
+
+    # remove pointless .readcount files
+    readcount_files = glob.glob("{}/aligned_reads/*.readcount".format(output_dir))
+    for f in readcount_files:
+        os.remove(f)
+
+    # if len(unsuccessful_directories) == 2:
+
+    return successful_files
+
+
+def run_IgBlast(igblast, locus_names, output_dir, cell_name, index_location, ig_seqtype, species,
+                should_resume):
+    print("##Running IgBLAST##")
+
+    species_mapper = {
+        'Mmus': 'mouse',
+        'Hsap': 'human'
+    }
+
+    igblast_species = species_mapper[species]
+
+    if should_resume:
+        igblast_out_A = "{output_dir}/IgBLAST_output/{cell_name}_TCRA.IgBLASTOut".format(output_dir=output_dir,
+                                                                                         cell_name=cell_name)
+        igblast_out_B = "{output_dir}/IgBLAST_output/{cell_name}_TCRB.IgBLASTOut".format(output_dir=output_dir,
+                                                                                         cell_name=cell_name)
+        if (os.path.isfile(igblast_out_A) and os.path.getsize(igblast_out_A) > 0) or (
+                    os.path.isfile(igblast_out_B) and os.path.getsize(igblast_out_B) > 0):
+            print("Resuming with existing IgBLAST output")
+            return
+
+    databases = {}
+    for segment in ['v', 'd', 'j']:
+        databases[segment] = "{}/imgt_tcr_db_{}.fa".format(index_location, segment)
+
+    # Lines below suppress Igblast warning about not having an auxliary file.
+    # Taken from http://stackoverflow.com/questions/11269575/how-to-hide-output-of-subprocess-in-python-2-7
+    DEVNULL = open(os.devnull, 'wb')
+
+    for locus in locus_names:
+        print("##{}##".format(locus))
+        trinity_fasta = "{}/Trinity_output/{}_{}.Trinity.fasta".format(output_dir, cell_name, locus)
+        if os.path.isfile(trinity_fasta):
+            command = [igblast, '-germline_db_V', databases['v'], '-germline_db_D', databases['d'],
+                       '-germline_db_J', databases['j'], '-domain_system', 'imgt', '-organism', igblast_species,
+                       '-ig_seqtype', ig_seqtype, '-show_translation', '-num_alignments_V', '5',
+                       '-num_alignments_D', '5', '-num_alignments_J', '5', '-outfmt', '7', '-query', trinity_fasta]
+            igblast_out = "{output_dir}/IgBLAST_output/{cell_name}_{locus}.IgBLASTOut".format(output_dir=output_dir,
+                                                                                              cell_name=cell_name,
+                                                                                              locus=locus)
+            with open(igblast_out, 'w') as out:
+                # print(" ").join(pipes.quote(s) for s in command)
+                subprocess.check_call(command, stdout=out, stderr=DEVNULL)
+
+    DEVNULL.close()
+
+
+def quantify_with_kallisto(kallisto, cell, output_dir, cell_name, kallisto_base_transcriptome, fastq1, fastq2,
+                           ncores, should_resume, single_end, fragment_length, fragment_sd):
+    print("##Running Kallisto##")
+    if should_resume:
+        if os.path.isfile("{}/expression_quantification/abundance.tsv".format(output_dir)):
+            print("Resuming with existing Kallisto output")
+            return
+
+    print("##Making Kallisto indices##")
+    kallisto_dirs = ['kallisto_index']
+    for d in kallisto_dirs:
+        io.makeOutputDir("{}/expression_quantification/{}".format(output_dir, d))
+    fasta_filename = "{output_dir}/unfiltered_TCR_seqs/{cell_name}_TCRseqs.fa".format(output_dir=output_dir,
+                                                                                      cell_name=cell_name)
+    fasta_file = open(fasta_filename, 'w')
+    fasta_file.write(cell.get_fasta_string())
+    fasta_file.close()
+
+    output_transcriptome = "{}/expression_quantification/kallisto_index/{}_transcriptome.fa".format(output_dir,
+                                                                                                    cell_name)
+    with open(output_transcriptome, 'w') as outfile:
+        for fname in [kallisto_base_transcriptome, fasta_filename]:
+            with open(fname) as infile:
+                for line in infile:
+                    outfile.write(line)
+
+    idx_file = "{}/expression_quantification/kallisto_index/{}_transcriptome.idx".format(output_dir, cell_name)
+
+    index_command = [kallisto, 'index', '-i', idx_file, output_transcriptome]
+    subprocess.check_call(index_command)
+    print("##Quantifying with Kallisto##")
+
+    if not single_end:
+        if not fragment_length:
+            kallisto_command = [kallisto, 'quant', '-i', idx_file, '-t', ncores, '-o',
+                                "{}/expression_quantification".format(output_dir), fastq1, fastq2]
+        else:
+            kallisto_command = [kallisto, 'quant', '-i', idx_file, '-t', ncores, '-l', fragment_length, '-o',
+                                "{}/expression_quantification".format(output_dir), fastq1, fastq2]
+    else:
+        kallisto_command = [kallisto, 'quant', '-i', idx_file, '-t', ncores, '--single', '-l', fragment_length,
+                            '-s', fragment_sd, '-o', "{}/expression_quantification".format(output_dir), fastq1]
+    subprocess.check_call(kallisto_command)
+
+    # delete index file because it's huge and unecessary. Delete transcriptome file
+    # os.remove(idx_file)
+    # os.remove(output_transcriptome)
+    shutil.rmtree("{}/expression_quantification/kallisto_index/".format(output_dir))
+

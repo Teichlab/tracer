@@ -7,8 +7,9 @@ import sys
 import pandas as pd
 from pandas.util.testing import assert_frame_equal
 
-from tracerlib.launcher import Launcher
+from tracerlib.launcher import launch
 from tracerlib import base_dir
+from tracerlib.tasks import Tester
 
 
 class TestInstall(unittest.TestCase):
@@ -17,9 +18,7 @@ class TestInstall(unittest.TestCase):
     results_folder = os.path.join(base_dir, 'test_data', 'results', 'filtered_TCR_summary')
 
     def test_installation(self):
-        test_args = ['tracer', 'test', '-p', '1', '-c', os.path.expanduser('~/.tracerrc')]
-        with patch.object(sys, 'argv', test_args):
-            Launcher().launch()
+        Tester(ncores=1).run()
 
     def test_recombinants(self):
 

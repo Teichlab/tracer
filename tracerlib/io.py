@@ -1,9 +1,15 @@
+from __future__ import print_function
+
+import distutils
+import shutil
+
 import pandas as pd
 import os
 import re
 from collections import defaultdict
 
 import six
+import sys
 from Bio import SeqIO
 
 from tracerlib.tracer_func import process_chunk, find_possible_alignments
@@ -64,7 +70,6 @@ def parse_IgBLAST(locus_names, output_dir, cell_name, imgt_seq_location, species
     for locus in locus_names:
         file = "{output_dir}/IgBLAST_output/{cell_name}_{locus}.IgBLASTOut".format(output_dir=output_dir,
                                                                                    cell_name=cell_name, locus=locus)
-
         if os.path.isfile(file):
             igblast_result_chunks = split_igblast_file(file)
 
@@ -100,3 +105,22 @@ def split_igblast_file(filename):
 
         chunks.append(current_chunk)  # append the last chunk outside the loop
     return (chunks)
+
+
+def check_binary(name, user_path=None):
+    if user_path:
+        if not is_exe(user_path):
+            print("The user provided path for {name} is not executable {user_path}. "
+                  "Checking PATH for alternative... ".format(name=name, user_path=user_path))
+        else:
+            return user_path
+    if sys.version_info[0] < 3:
+        binary_path = distutils.spawn.find_executable(name)
+    else:
+        binary_path = shutil.which(name)
+    if not binary_path:
+        raise OSError("Required binary not find: {name}. Please add to PATH or specify location in config file."
+                      .format(name=name))
+    else:
+        print("Binary for {name} found at {binary_path}.".format(name=name, binary_path=binary_path))
+        return binary_path

@@ -7,9 +7,9 @@ import sys
 import pandas as pd
 from pandas.util.testing import assert_frame_equal
 
-from tracerlib.launcher import Launcher
-from tracerlib import base_dir, resource_lookup
+from tracerlib import base_dir
 from tracerlib.io import parse_IgBLAST
+from tracerlib.tasks import Assembler
 
 
 class TestAssemble(unittest.TestCase):
@@ -27,18 +27,18 @@ class TestAssemble(unittest.TestCase):
 
         # Launcher checks for fastq file existance
         with self.assertRaisesRegex(OSError, 'FASTQ file not found'):
-            Launcher().assemble(**assemble_args)
+            Assembler(**assemble_args).run()
 
         # Launcher checks for second fastq if paired end
         assemble_args['fastq2'] = None
         assemble_args['fastq1'] = os.path.join(base_dir, 'test_data', 'cell1_1.fastq')
         with self.assertRaisesRegex(AssertionError, 'Only one fastq'):
-            Launcher().assemble(**assemble_args)
+            Assembler(**assemble_args).run()
 
         # Check for fragment length with single end
         assemble_args['single_end'] = True
         with self.assertRaisesRegex(AssertionError, 'fragment length'):
-            Launcher().assemble(**assemble_args)
+            Assembler(**assemble_args).run()
 
     def test_parse_igblast(self):
         locus_names = ["TCRA", "TCRB"]

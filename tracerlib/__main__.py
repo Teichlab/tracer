@@ -1,3 +1,3 @@
-from tracerlib.launcher import Launcher
+from tracerlib.launcher import launch
 
-Launcher().launch()
+launch()
