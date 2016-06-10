@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+import csv
 import distutils
 import shutil
 
@@ -60,7 +61,8 @@ def load_IMGT_seqs(file):
     return (seqs)
 
 
-def parse_IgBLAST(locus_names, output_dir, cell_name, imgt_seq_location, species, seq_method, const_seq_file):
+def parse_IgBLAST(locus_names, output_dir, cell_name, imgt_seq_location, species, seq_method, const_seq_file,
+                  invariant_seqs):
     segment_names = ['TRAJ', 'TRAV', 'TRBD', 'TRBJ', 'TRBV']
     IMGT_seqs = dict()
     for segment in segment_names:
@@ -83,7 +85,7 @@ def parse_IgBLAST(locus_names, output_dir, cell_name, imgt_seq_location, species
     constant_seqs = pd.read_csv(const_seq_file, index_col=0)['sequence'].to_dict()
 
     cell = find_possible_alignments(all_locus_data, locus_names, cell_name, IMGT_seqs, output_dir, species, seq_method,
-                                    constant_seqs)
+                                    constant_seqs, invariant_seqs)
     return (cell)
 
 
@@ -124,3 +126,15 @@ def check_binary(name, user_path=None):
     else:
         print("Binary for {name} found at {binary_path}.".format(name=name, binary_path=binary_path))
         return binary_path
+
+
+def parse_invariant_seqs(filename):
+
+    invariant_sequences = []
+    with open(filename) as fh:
+        reader = csv.DictReader(fh)
+        for row in reader:
+            if len(row):
+                invariant_sequences.append(row)
+
+    return invariant_sequences

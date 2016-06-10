@@ -14,8 +14,8 @@
 #      Author: M.J.T. Stubbington ms31@sanger.ac.uk                          #
 ############################################################################## 
 
-from tracerlib.launcher import Launcher
+from tracerlib.launcher import launch
 
 
 if __name__ == '__main__':
-    Launcher().launch()
+    launch()

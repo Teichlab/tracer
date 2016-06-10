@@ -78,7 +78,7 @@ An example configuration file is included in the repository - `tracer.conf`.
 By default, this is `~/.tracerrc`. If tracer fails to find this file, it will use the `tracer.conf` in the repository.
  The `-c` option to the various tracer modules allows you to specify any other file to act as the configuration file.
 
-**Important:** If you  specify relative paths in the config file these will be used as relative to the main installation directory. For example, `resources/igblast_dbs/mouse` will resolve to `/<wherever you installed tracer>/tracer/resources/igblast_dbs/mouse`.
+**Important:** If you  specify relative paths in the config file these will be used as relative to the main installation directory. For example, `resources/Mmus/igblast_dbs` will resolve to `/<wherever you installed tracer>/tracer/resources/Mmus/igblast_dbs`.
 
 ###External tool locations###
 Tracer will look in your system's `PATH` for external tools. You can override this behaviour by editing your `~/.tracerrc`.
@@ -101,7 +101,7 @@ Currently, organism-specific files (TCR gene sequences, synthetic genome indices
 
 ####Bowtie synthetic genomes path####
 	[bowtie2_options]
-	synthetic_genome_index_path = resources/synthetic_genomes/mouse
+	synthetic_genome_index_path = resources/Mmus/synthetic_genomes
 
 This path specifies the directory that contains Bowtie2 indices constructed from all possible combinations of V and J segments for each locus. 
 
@@ -129,11 +129,11 @@ Trinity can parallelise contig assembly by submitting jobs across a compute clus
 ####IgBLAST options####
 #####Databases path#####
 	[IgBlast_options]
-	igblast_index_location = resources/igblast_dbs/mouse
+	igblast_index_location = resources/Mmus/igblast_dbs
 #####VDJ sequences#####
 This path specifies the directory that contains IgBLAST database files for V, D and J genes. These files are named `imgt_tcr_db_<SEGMENT>.fa`.
 
-    imgt_seq_location = resources/imgt_sequences/mouse
+    imgt_seq_location = resources/Mmus/imgt_sequences
 		
 Path to fasta files with sequences for each V, D or J gene. Files are names `TR<LOCUS><SEGMENT>.fa`.
 #####Receptor type#####
@@ -193,7 +193,8 @@ Tracer has two modes *assemble* and *summarise*.
 `-m/--seq_method` : method by which to generate sequences for assessment of recombinant productivity. By default (`-m imgt`), TraCeR replaces all but the junctional sequence of each detected recombinant with the reference sequence from IMGT prior to assessing productivity of the sequence. This makes the assumption that sequence changes outside the junctional region are due to PCR/sequencing errors rather than being genuine polymorphisms. This is likely to be true for well-characterised mouse sequences but may be less so for human and other outbred populations. To determine productivity from only the assembled contig sequence for each recombinant use `-m assembly`.   
 `--single_end` : use this option if your data are single-end reads. If this option is set you must specify fragment length and fragment sd as below.  
 `--fragment_length` : Estimated average fragment length in the sequencing library. Used for Kallisto quantification. Required for single-end data. Can also be set for paired-end data if you don't want Kallisto to estimate it directly.  
-`--fragment_sd` : Estimated standard deviation of average fragment length in the sequencing library. Used for Kallisto quantification. Required for single-end data. Can also be set for paired-end data if you don't want Kallisto to estimate it directly.  
+`--fragment_sd` : Estimated standard deviation of average fragment length in the sequencing library. Used for Kallisto quantification. Required for single-end data. Can also be set for paired-end data if you don't want Kallisto to estimate it directly.
+`--invariant_sequences`: Custom invariant sequence file. Use the default example in 'resources/Mmus/invariant_seqs.csv'
 
 ####Output####
 

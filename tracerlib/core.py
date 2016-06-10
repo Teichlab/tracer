@@ -11,7 +11,7 @@ class Cell(object):
     """Class to describe T cells containing A and B loci"""
 
     def __init__(self, cell_name, A_recombinants, B_recombinants, G_recombinants, D_recombinants, is_empty=False,
-                 species="Mmus"):
+                 species="Mmus", invariant_seqs=None):
         self.name = cell_name
         self.A_recombinants = A_recombinants
         self.B_recombinants = B_recombinants
@@ -21,22 +21,25 @@ class Cell(object):
         self.all_recombinants = {'A': A_recombinants, 'B': B_recombinants, 'G': G_recombinants, 'D': D_recombinants}
         self.cdr3_comparisons = {'A': None, 'B': None, 'mean_both': None}
         self.is_empty = self._check_is_empty()
-        self.is_inkt = self._check_if_inkt(species)
+
+        if not invariant_seqs:
+            self.invariant_seqs = []
+        else:
+            self.invariant_seqs = invariant_seqs
+
+        self.is_inkt = self._check_if_inkt()
 
     def _check_is_empty(self):
         if (self.A_recombinants is None or len(self.A_recombinants) == 0) and (
                 self.B_recombinants is None or len(self.B_recombinants) == 0):
             return (True)
 
-    def _check_if_inkt(self, species):
+    def _check_if_inkt(self):
         A_recombs = self.getMainRecombinantIdentifiersForLocus("A")
         inkt_ident = False
         for recomb in A_recombs:
-            if species == "Mmus":
-                if "TRAV11" in recomb and "TRAJ18" in recomb:
-                    inkt_ident = recomb
-            if species == "Hsap":
-                if "TRAV10" in recomb and "TRAJ18" in recomb:
+            for invar_seq in self.invariant_seqs:
+                if invar_seq['V'] in recomb and invar_seq['J'] in recomb:
                     inkt_ident = recomb
         return (inkt_ident)
 

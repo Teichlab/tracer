@@ -1,4 +1,7 @@
 from __future__ import print_function
+
+import csv
+
 import six
 import matplotlib as mpl
 
@@ -132,6 +135,9 @@ class Assembler(TracerTask):
                                 help='Estimated standard deviation of average fragment length in the sequencing library.'
                                      ' Used for Kallisto quantification. REQUIRED for single-end data.',
                                 default=False)
+            parser.add_argument('--invariant_sequences',
+                                help="Custom invariant sequence file. "
+                                     "Use the example in 'resources/Mmus/invariant_seqs.csv'")
             parser.add_argument('fastq1', metavar="<FASTQ1>", help='first fastq file')
             parser.add_argument('fastq2', metavar="<FASTQ2>", help='second fastq file', nargs='?')
             parser.add_argument('cell_name', metavar="<CELL_NAME>", help='name of cell for file labels')
@@ -151,6 +157,7 @@ class Assembler(TracerTask):
             self.fragment_length = args.fragment_length
             self.fragment_sd = args.fragment_sd
             self.output_dir = args.output_dir
+            invariant_sequences = args.invariant_sequences
             config_file = args.config_file
 
         else:
@@ -165,10 +172,13 @@ class Assembler(TracerTask):
             self.single_end = kwargs.get('single_end')
             self.fragment_length = kwargs.get('fragment_length')
             self.fragment_sd = kwargs.get('fragment_sd')
+            invariant_sequences = kwargs.get('invariant_sequences')
             config_file = kwargs.get('config_file')
 
         self.config = self.read_config(config_file)
+        self.locus_names = ["TCRA", "TCRB"]
 
+        # Check the fastq config is correct
         if not self.single_end:
             assert self.fastq2, "Only one fastq file specified. Either set --single_end or provide second fastq."
         else:
@@ -190,7 +200,14 @@ class Assembler(TracerTask):
             if not os.path.isfile(self.fastq2):
                 raise OSError('2', 'FASTQ file not found', self.fastq2)
 
-        self.locus_names = ["TCRA", "TCRB"]
+        # Get Invariant Sequences
+        if not invariant_sequences:
+            invariant_sequences = self.resolve_relative_path(os.path.join('resources', self.species,
+                                                                          'invariant_seqs.csv'))
+        if not os.path.isfile(invariant_sequences):
+            raise OSError('2', 'Invariant Sequence file not found', invariant_sequences)
+
+        self.invariant_sequences = io.parse_invariant_seqs(invariant_sequences)
 
     def run(self, **kwargs):
 
@@ -302,7 +319,7 @@ class Assembler(TracerTask):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             cell = io.parse_IgBLAST(self.locus_names, self.output_dir, self.cell_name, imgt_seq_location, self.species,
-                                    self.method, const_seq_file)
+                                    self.method, const_seq_file, self.invariant_sequences)
             if cell.is_empty:
                 self.die_with_empty_cell(self.cell_name, self.output_dir, self.species)
 
@@ -433,7 +450,10 @@ class Summariser(TracerTask):
         total_cells = len(cells)
 
         outfile.write(
-            "TCRA reconstruction:\t{count_of_cells_with_alpha_recovered} / {total_cells} ({alpha_percent}%)\nTCRB reconstruction:\t{count_of_cells_with_beta_recovered} / {total_cells} ({beta_percent}%)\nPaired productive chains\t{count_of_cells_with_paired_recovered} / {total_cells} ({paired_percent}%)\n\n".format(
+            "TCRA reconstruction:\t{count_of_cells_with_alpha_recovered} / {total_cells} ({alpha_percent}%)\n"
+            "TCRB reconstruction:\t{count_of_cells_with_beta_recovered} / {total_cells} ({beta_percent}%)\n"
+            "Paired productive chains\t{count_of_cells_with_paired_recovered} / {total_cells} ({paired_percent}%)\n\n"
+            .format(
                 paired_percent=round((count_of_cells_with_paired_recovered / float(total_cells)) * 100, 1),
                 total_cells=total_cells,
                 alpha_percent=round((count_of_cells_with_alpha_recovered / float(total_cells)) * 100, 1),
@@ -557,7 +577,9 @@ class Summariser(TracerTask):
 
         # Print component groups to the summary#
         outfile.write(
-            "\n###Clonotype groups###\nThis is a text representation of the groups shown in clonotype_network_with_identifiers.pdf. It does not exclude cells that only share beta and not alpha.\n\n")
+            "\n###Clonotype groups###\n"
+            "This is a text representation of the groups shown in clonotype_network_with_identifiers.pdf."
+            " It does not exclude cells that only share beta and not alpha.\n\n")
         for g in component_groups:
             outfile.write(", ".join(g))
             outfile.write("\n\n")
@@ -620,7 +642,7 @@ class Tester(TracerTask):
         else:
             self.ncores = kwargs.get('ncores')
             self.config_file = kwargs.get('config_file')
-            self.graph_format = kwargs.get('graph_format')
+            self.graph_format = kwargs.get('graph_format', 'pdf')
             self.no_networks = kwargs.get('no_networks')
 
     def run(self):

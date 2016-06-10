@@ -97,7 +97,7 @@ def process_chunk(chunk):
 
 
 def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs, output_dir, species, seq_method,
-                             constant_seqs):
+                             constant_seqs, invariant_seqs):
     alignment_dict = defaultdict(dict)
     recombinants = {'TCRA': [], 'TCRB': []}
     for locus in locus_names:
@@ -188,9 +188,10 @@ def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs, out
             recombinants[locus] = collapse_close_sequences(rs, locus)
 
         # cell_name, A_recombinants, B_recombinants, G_recombinants, D_recombinants, is_empty=False, species="Mmus")
-        cell = Cell(cell_name, recombinants['TCRA'], recombinants['TCRB'], None, None, species=species)
+        cell = Cell(cell_name, recombinants['TCRA'], recombinants['TCRB'], None, None, species=species,
+                    invariant_seqs=invariant_seqs)
     else:
-        cell = Cell(cell_name, None, None, None, None, species=species)
+        cell = Cell(cell_name, None, None, None, None, species=species, invariant_seqs=invariant_seqs)
 
     # pdb.set_trace()
     return (cell)

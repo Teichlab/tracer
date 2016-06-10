@@ -2,13 +2,12 @@ from __future__ import print_function
 
 import os
 import unittest
-from mock import patch
 import sys
 import pandas as pd
 from pandas.util.testing import assert_frame_equal
 
 from tracerlib import base_dir
-from tracerlib.io import parse_IgBLAST
+from tracerlib.io import parse_IgBLAST, parse_invariant_seqs
 from tracerlib.tasks import Assembler
 
 
@@ -40,14 +39,27 @@ class TestAssemble(unittest.TestCase):
         with self.assertRaisesRegex(AssertionError, 'fragment length'):
             Assembler(**assemble_args).run()
 
-    def test_parse_igblast(self):
+    def generate_cell(self, cell_name):
         locus_names = ["TCRA", "TCRB"]
-        imgt_seq_location = os.path.join(base_dir, "resources", "mouse", "imgt_sequences")
-        const_seq_file = os.path.join(base_dir, "resources", "mouse", "constant_seqs.csv")
+        imgt_seq_location = os.path.join(base_dir, "resources", "Mmus", "imgt_sequences")
+        const_seq_file = os.path.join(base_dir, "resources", "Mmus", "constant_seqs.csv")
         out_dir = os.path.join(base_dir, "test_data", "results", "cell2")
 
-        cell = parse_IgBLAST(locus_names, out_dir, 'cell2', imgt_seq_location, 'Mmus', 'imgt', const_seq_file)
+        invariant_seqs = parse_invariant_seqs(os.path.join(base_dir, "resources", "Mmus", "invariant_seqs.csv"))
+        cell = parse_IgBLAST(locus_names, out_dir, cell_name, imgt_seq_location, 'Mmus', 'imgt', const_seq_file,
+                             invariant_seqs=invariant_seqs)
+        return cell
+
+    def test_parse_igblast(self):
+        cell = self.generate_cell('cell2')
         assert not cell._check_is_empty(), "No Cell results"
+
+    def test_invariant_seqs(self):
+        cell = self.generate_cell('cell2')
+        assert len(cell.invariant_seqs)
+        all_vs = [seq['V'] for seq in cell.invariant_seqs]
+        assert 'TRAV11' in all_vs
+        assert not cell._check_if_inkt()
 
 
 if __name__ == '__main__':

@@ -1,33 +1,11 @@
 from __future__ import print_function
-import six
 import matplotlib as mpl
 
-from tracerlib import io, core
-from tracerlib.io import check_binary
-
 mpl.use('pdf')
-import re
-import seaborn as sns
-from matplotlib import pyplot as plt
-from tracerlib import base_dir
-from tracerlib import tracer_func
-from configparser import ConfigParser, NoOptionError
 import argparse
 import sys
-import os
-import subprocess
-import glob
-import shutil
-from collections import defaultdict, Counter
-from time import sleep
-import warnings
-import pickle
-from prettytable import PrettyTable
-from Bio.Seq import Seq
 
 from tracerlib.tasks import Assembler, Summariser, Tester
-
-#import pdb
 
 
 def launch():
