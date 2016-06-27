@@ -31,7 +31,7 @@ from Bio.Alphabet import IUPAC
 from Bio.Seq import Seq
 
 from tracerlib.core import Cell, Recombinant
-from tracerlib import io
+import tracerlib.io
 
 
 def process_chunk(chunk):
@@ -931,8 +931,8 @@ def assemble_with_trinity(trinity, locus_names, output_dir, cell_name, ncores, t
     successful_file_summary = "{}/Trinity_output/successful_trinity_assemblies.txt".format(output_dir)
     unsuccessful_file_summary = "{}/Trinity_output/unsuccessful_trinity_assemblies.txt".format(output_dir)
 
-    successful_files = io.clean_file_list(successful_files)
-    unsuccessful_directories = io.clean_file_list(unsuccessful_directories)
+    successful_files = tracerlib.io.clean_file_list(successful_files)
+    unsuccessful_directories = tracerlib.io.clean_file_list(unsuccessful_directories)
 
     success_out = open(successful_file_summary, "w")
     fail_out = open(unsuccessful_file_summary, "w")
@@ -945,20 +945,20 @@ def assemble_with_trinity(trinity, locus_names, output_dir, cell_name, ncores, t
 
     for filename in successful_files:
         # success_out.write("{}\n".format(filename))
-        parsed_name = io.get_filename_and_locus(filename)
+        parsed_name = tracerlib.io.get_filename_and_locus(filename)
         successful[parsed_name[0]].append(parsed_name[1])
         successful_ordered_files.add(parsed_name[0])
     successful_ordered_files = sorted(list(successful_ordered_files))
 
     for filename in unsuccessful_directories:
         # fail_out.write("{}\n".format(filename))
-        parsed_name = io.get_filename_and_locus(filename)
+        parsed_name = tracerlib.io.get_filename_and_locus(filename)
         unsuccessful[parsed_name[0]].append(parsed_name[1])
         unsuccessful_ordered_files.add(parsed_name[0])
     unsuccessful_ordered_files = sorted(list(unsuccessful_ordered_files))
 
-    successful = io.sort_locus_names(successful)
-    unsuccessful = io.sort_locus_names(unsuccessful)
+    successful = tracerlib.io.sort_locus_names(successful)
+    unsuccessful = tracerlib.io.sort_locus_names(unsuccessful)
 
     for file in successful_ordered_files:
         success_out.write("{}\t{}\n".format(file, successful[file]))
@@ -1037,7 +1037,7 @@ def quantify_with_kallisto(kallisto, cell, output_dir, cell_name, kallisto_base_
     print("##Making Kallisto indices##")
     kallisto_dirs = ['kallisto_index']
     for d in kallisto_dirs:
-        io.makeOutputDir("{}/expression_quantification/{}".format(output_dir, d))
+        tracerlib.io.makeOutputDir("{}/expression_quantification/{}".format(output_dir, d))
     fasta_filename = "{output_dir}/unfiltered_TCR_seqs/{cell_name}_TCRseqs.fa".format(output_dir=output_dir,
                                                                                       cell_name=cell_name)
     fasta_file = open(fasta_filename, 'w')

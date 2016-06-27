@@ -25,18 +25,18 @@ class TestAssemble(unittest.TestCase):
                 output_dir=self.results_folder, single_end=False, fragment_length=False, fragment_sd=False)
 
         # Launcher checks for fastq file existance
-        with self.assertRaisesRegex(OSError, 'FASTQ file not found'):
+        with self.assertRaisesRegexp(OSError, 'FASTQ file not found'):
             Assembler(**assemble_args).run()
 
         # Launcher checks for second fastq if paired end
         assemble_args['fastq2'] = None
         assemble_args['fastq1'] = os.path.join(base_dir, 'test_data', 'cell1_1.fastq')
-        with self.assertRaisesRegex(AssertionError, 'Only one fastq'):
+        with self.assertRaisesRegexp(AssertionError, 'Only one fastq'):
             Assembler(**assemble_args).run()
 
         # Check for fragment length with single end
         assemble_args['single_end'] = True
-        with self.assertRaisesRegex(AssertionError, 'fragment length'):
+        with self.assertRaisesRegexp(AssertionError, 'fragment length'):
             Assembler(**assemble_args).run()
 
     def generate_cell(self, cell_name):

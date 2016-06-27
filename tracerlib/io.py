@@ -109,23 +109,38 @@ def split_igblast_file(filename):
     return (chunks)
 
 
+# def check_binary(name, user_path=None):
+#     if user_path:
+#         if not is_exe(user_path):
+#             print("The user provided path for {name} is not executable {user_path}. "
+#                   "Checking PATH for alternative... ".format(name=name, user_path=user_path))
+#         else:
+#             return user_path
+#     if sys.version_info[0] < 3:
+#         binary_path = distutils.spawn.find_executable(name)
+#     else:
+#         binary_path = shutil.which(name)
+#     if not binary_path:
+#     else:
+#         print("Binary for {name} found at {binary_path}.".format(name=name, binary_path=binary_path))
+#         return binary_path
+
 def check_binary(name, user_path=None):
+    def is_exe(fpath):
+        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
     if user_path:
-        if not is_exe(user_path):
-            print("The user provided path for {name} is not executable {user_path}. "
-                  "Checking PATH for alternative... ".format(name=name, user_path=user_path))
-        else:
+        if is_exe(user_path):
             return user_path
-    if sys.version_info[0] < 3:
-        binary_path = distutils.spawn.find_executable(name)
     else:
-        binary_path = shutil.which(name)
-    if not binary_path:
-        raise OSError("Required binary not find: {name}. Please add to PATH or specify location in config file."
-                      .format(name=name))
-    else:
-        print("Binary for {name} found at {binary_path}.".format(name=name, binary_path=binary_path))
-        return binary_path
+        for path in os.environ["PATH"].split(os.pathsep):
+            path = path.strip('"')
+            exe_file = os.path.join(path, name)
+            if is_exe(exe_file):
+                return exe_file
+
+    raise OSError("Required binary not find: {name}. Please add to PATH or specify location in config file."
+                  .format(name=name))
 
 
 def parse_invariant_seqs(filename):
