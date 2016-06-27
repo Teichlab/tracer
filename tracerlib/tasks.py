@@ -166,7 +166,7 @@ class Assembler(TracerTask):
             self.fastq2 = kwargs.get('fastq2')
             self.ncores = kwargs.get('ncores')
             self.species = kwargs.get('species')
-            self.method = kwargs.get('seq_method')
+            self.seq_method = kwargs.get('seq_method')
             self.resume_with_existing_files = kwargs.get('resume_with_existing_files')
             self.output_dir = kwargs.get('output_dir')
             self.single_end = kwargs.get('single_end')
@@ -319,7 +319,7 @@ class Assembler(TracerTask):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             cell = io.parse_IgBLAST(self.locus_names, self.output_dir, self.cell_name, imgt_seq_location, self.species,
-                                    self.method, const_seq_file, self.invariant_sequences)
+                                    self.seq_method, const_seq_file, self.invariant_sequences)
             if cell.is_empty:
                 self.die_with_empty_cell(self.cell_name, self.output_dir, self.species)
 
@@ -327,9 +327,13 @@ class Assembler(TracerTask):
 
     def quantify(self, cell):
         kallisto = self.get_binary('kallisto')
-
-        kallisto_base_transcriptome = self.resolve_relative_path(self.config.get('kallisto_options',
-                                                                                 'base_transcriptome'))
+        
+        if not self.config.has_option('kallisto_transcriptomes', self.species):
+            raise OSError("No transcriptome reference specified for {species}. Please specify location in config file."
+                          .format(species = self.species))
+        else:
+            kallisto_base_transcriptome = self.resolve_relative_path(self.config.get('kallisto_transcriptomes',
+                                                                                 self.species))
 
         # Quantification with kallisto
         tracer_func.quantify_with_kallisto(

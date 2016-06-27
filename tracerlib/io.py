@@ -139,7 +139,7 @@ def check_binary(name, user_path=None):
             if is_exe(exe_file):
                 return exe_file
 
-    raise OSError("Required binary not find: {name}. Please add to PATH or specify location in config file."
+    raise OSError("Required binary not found: {name}. Please add to PATH or specify location in config file."
                   .format(name=name))
 
 

@@ -893,7 +893,8 @@ def assemble_with_trinity(trinity, locus_names, output_dir, cell_name, ncores, t
                         os.path.getsize(trinity_report_successful) > 0 or os.path.getsize(
                     trinity_report_unsuccessful) > 0):
             print("Resuming with existing Trinity output")
-            return
+            successful_files = glob.glob("{}/Trinity_output/*.fasta".format(output_dir))
+            return(successful_files)
 
     command = [trinity]
     if trinity_grid_conf:
