@@ -684,6 +684,8 @@ class Builder(TracerTask):
                                  help='number of ambiguous N nucleotides between V and J', type = int)
             parser.add_argument('V_seqs', metavar="<V_SEQS>", help='fasta file containing V gene sequences')
             parser.add_argument('J_seqs', metavar="<J_SEQS>", help='fasta file containing J gene sequences')
+            parser.add_argument('C_seq', metavar="<C_SEQ>", 
+                                help='fasta file containing single constant region sequence')
             parser.add_argument('D_seqs', metavar="<D_SEQS>", nargs='?', default = False,
                                  help='fasta file containing D gene sequences (optional)')
             
@@ -700,6 +702,7 @@ class Builder(TracerTask):
             self.raw_seq_files = {}
             self.raw_seq_files['V']= args.V_seqs
             self.raw_seq_files['J'] = args.J_seqs
+            self.raw_seq_files['C'] = args.C_seq
             if args.D_seqs:
                 self.raw_seq_files['D'] = args.D_seqs
             
@@ -713,6 +716,7 @@ class Builder(TracerTask):
             self.raw_seq_files = {}
             self.raw_seq_files['V'] = kwargs.get('V_seqs')
             self.raw_seq_files['J'] = kwargs.get('J_seqs')
+            self.raw_seq_files['C'] = kwargs.get('C_seq')
             if args.D_seqs:
                 self.raw_seq_files['D'] = kwargs.get('D_seqs')
 
@@ -731,11 +735,12 @@ class Builder(TracerTask):
     
     def copy_raw_files(self):    
         
-        
+        gene_segs = 'VJC'
+
         if 'D' in self.raw_seq_files:
-            gene_segs = 'VDJ'
-        else:
-            gene_segs = 'VJ'
+            gene_segs = gene_segs + 'D'
+
+            
         
         for s in gene_segs:
             fn = "{receptor}{locus}_{s}.fa".format(receptor=self.receptor_name, locus=self.locus_name, s=s)
@@ -745,5 +750,7 @@ class Builder(TracerTask):
                                replace existing file""".format(receptor=self.receptor_name, locus=self.locus_name, s=s))
             else:
                 shutil.copy(self.raw_seq_files[s], out_file)
+        
+        
     
         
