@@ -27,6 +27,7 @@ import warnings
 import pickle
 from prettytable import PrettyTable
 from Bio.Seq import Seq
+from Bio import SeqIO
 
 
 class TracerTask(object):
@@ -731,12 +732,15 @@ class Builder(TracerTask):
         for d in subdirs:
             io.makeOutputDir(os.path.join(self.species_dir, d))
 
-        self.copy_raw_files()
+        VJC_files = self.copy_raw_files()
+        self.make_recombinomes(VJC_files)
     
     def copy_raw_files(self):    
         
         gene_segs = 'VJC'
-
+        
+        VJC_files = {}
+        
         if 'D' in self.raw_seq_files:
             gene_segs = gene_segs + 'D'
 
@@ -745,12 +749,66 @@ class Builder(TracerTask):
         for s in gene_segs:
             fn = "{receptor}{locus}_{s}.fa".format(receptor=self.receptor_name, locus=self.locus_name, s=s)
             out_file = os.path.join(self.species_dir, 'raw_seqs', fn)
+            if s in 'VJC':
+                VJC_files[s] = out_file
             if os.path.isfile(out_file) and not self.force_overwrite:
-                raise OSError("""Raw sequence file already exists for {receptor}{locus}_{s}. Use --force_overwrite to  
-                               replace existing file""".format(receptor=self.receptor_name, locus=self.locus_name, s=s))
+                print("Raw sequence file already exists for {receptor}{locus}_{s}.".format(receptor=self.receptor_name,\
+                 locus=self.locus_name, s=s), "Use --force_overwrite to replace existing file")
+                sys.exit(1)
             else:
                 shutil.copy(self.raw_seq_files[s], out_file)
+        return(VJC_files)
+     
+    def load_segment_seqs(self, file):
+        seqs = {}
+        for record in SeqIO.parse(open(file, 'rU'), 'fasta'):
+            seqs[record.id] = str(record.seq)
+        return(seqs)
         
+            
+    def make_recombinomes(self, VJC_files):
+        
+        self.leader_padding = 20
+        
+        out_fasta = os.path.join(self.species_dir, 'combinatorial_recombinomes', 
+                    '{receptor}{locus}.fa'.format(receptor=self.receptor_name, locus=self.locus_name))
+
+        
+        if os.path.isfile(out_fasta) and not self.force_overwrite:
+            print("Combinatorial recombinome already exists for {receptor}{locus}.".format(receptor=self.receptor_name,\
+             locus=self.locus_name), "Use --force_overwrite to replace existing file")
+            sys.exit(1)
+        
+        seqs = {}
+        
+        for s in 'VJC':
+            in_file = VJC_files[s]
+            seqs[s] = self.load_segment_seqs(in_file)
+        
+        if len(seqs['C']) > 1:
+            print ("\nMore than one constant region sequence included in {C_file}. \
+                      Please only provide one constant sequence.\n".format(self.raw_seq_files['C']))
+            sys.exit(1)
+        
+        const_seq = seqs['C'].values()[0].upper()
+        N_junction_string = "N" * self.N_padding
+        N_leader_string = "N" * self.leader_padding
+        
+        seqs_to_write = []
+        
+        for V_name, V_seq in six.iteritems(seqs['V']):
+            for J_name, J_seq in six.iteritems(seqs['J']):
+                chr_name = ">chr={V_name}_{J_name}".format(J_name=J_name, V_name=V_name)
+                seq = N_leader_string + V_seq.lower() + N_junction_string + J_seq.lower() + const_seq
+                seqs_to_write.append("{chr_name}\n{seq}\n".format(seq=seq, chr_name=chr_name))
+        
+        with open(out_fasta, 'w') as f:
+            for seq in seqs_to_write:
+                f.write(seq)
+
+        
+        
+    
         
     
         
