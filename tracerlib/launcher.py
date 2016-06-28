@@ -5,7 +5,7 @@ mpl.use('pdf')
 import argparse
 import sys
 
-from tracerlib.tasks import Assembler, Summariser, Tester
+from tracerlib.tasks import Assembler, Summariser, Tester, Builder
 
 
 def launch():
@@ -18,18 +18,20 @@ def launch():
               - assemble: assemble TCR sequences from single-cell RNA-sequencing reads
               - summarise: summarise TCR sequences from set of cells, build clonotype networks
               - test : use a small dataset from three cells to test TraCeR installation
+              - build : build resource files from gene segment sequences
 
               use tracer <mode> -h for specific help
               ''')
-    parser.add_argument('mode', metavar="<MODE>", help='tracer mode (assemble, summarise or get_test_data)',
-                        choices=['assemble', 'summarise', 'summarize', 'test'])
+    parser.add_argument('mode', metavar="<MODE>", help='tracer mode (assemble, summarise, test or build)',
+                        choices=['assemble', 'summarise', 'summarize', 'test', 'build'])
     args = parser.parse_args(sys.argv[1:2])
 
     task_mapper = {
         'assemble': Assembler,
         'summarise': Summariser,
         'summarize': Summariser,
-        'test': Tester
+        'test': Tester,
+        'build': Builder
     }
 
     if args.mode not in task_mapper:

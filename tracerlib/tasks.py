@@ -667,3 +667,83 @@ class Tester(TracerTask):
         Summariser(config_file=self.config_file, use_unfiltered=False, keep_inkt=False,
                    graph_format=self.graph_format, no_networks=self.no_networks, root_dir=out_dir) \
             .run()
+
+class Builder(TracerTask):
+
+    def __init__(self, **kwargs):
+        if not kwargs:
+            parser = argparse.ArgumentParser(description="Build resources from sequences")
+            parser.add_argument('--ncores', '-p', metavar="<CORES>", help='number of processor cores to use', type=int,
+                                         default=1)
+            parser.add_argument('--force_overwrite', '-f', help = 'force overwrite of existing resources', 
+                                action = 'store_true')                                 
+            parser.add_argument('species', metavar="<SPECIES>", help='species (eg Mmus)')
+            parser.add_argument('receptor_name', metavar="<RECEPTOR_NAME>", help='name of receptor (eg TCR)')
+            parser.add_argument('locus_name', metavar="<LOCUS_NAME>", help='name of locus (eg A)')
+            parser.add_argument('N_padding', metavar="<N_PADDING>", 
+                                 help='number of ambiguous N nucleotides between V and J', type = int)
+            parser.add_argument('V_seqs', metavar="<V_SEQS>", help='fasta file containing V gene sequences')
+            parser.add_argument('J_seqs', metavar="<J_SEQS>", help='fasta file containing J gene sequences')
+            parser.add_argument('D_seqs', metavar="<D_SEQS>", nargs='?', default = False,
+                                 help='fasta file containing D gene sequences (optional)')
+            
+            args = parser.parse_args(sys.argv[2:])
+            
+            
+            self.ncores = args.ncores
+            self.force_overwrite = args.force_overwrite
+            self.species = args.species
+            self.receptor_name = args.receptor_name
+            self.locus_name = args.locus_name
+            self.N_padding = args.N_padding
+            
+            self.raw_seq_files = {}
+            self.raw_seq_files['V']= args.V_seqs
+            self.raw_seq_files['J'] = args.J_seqs
+            if args.D_seqs:
+                self.raw_seq_files['D'] = args.D_seqs
+            
+        else:
+            self.ncores = kwargs.get('ncores')
+            self.force_overwrite = kwargs.get('force_overwrite')
+            self.species = kwargs.get('species')
+            self.receptor_name = kwargs.get('receptor_name')
+            self.locus_name = kwargs.get('locus_name')
+            self.N_padding = kwargs.get('N_padding')
+            self.raw_seq_files = {}
+            self.raw_seq_files['V'] = kwargs.get('V_seqs')
+            self.raw_seq_files['J'] = kwargs.get('J_seqs')
+            if args.D_seqs:
+                self.raw_seq_files['D'] = kwargs.get('D_seqs')
+
+    def run(self):
+
+        #set up output directories
+        resources_dir = os.path.join(base_dir, 'resources')
+        self.species_dir = os.path.join(resources_dir, self.species)
+        subdirs = ['igblast_dbs', 'combinatorial_recombinomes', 'raw_seqs']
+        
+        io.makeOutputDir(self.species_dir)
+        for d in subdirs:
+            io.makeOutputDir(os.path.join(self.species_dir, d))
+
+        self.copy_raw_files()
+    
+    def copy_raw_files(self):    
+        
+        
+        if 'D' in self.raw_seq_files:
+            gene_segs = 'VDJ'
+        else:
+            gene_segs = 'VJ'
+        
+        for s in gene_segs:
+            fn = "{receptor}{locus}_{s}.fa".format(receptor=self.receptor_name, locus=self.locus_name, s=s)
+            out_file = os.path.join(self.species_dir, 'raw_seqs', fn)
+            if os.path.isfile(out_file) and not self.force_overwrite:
+                raise OSError("""Raw sequence file already exists for {receptor}{locus}_{s}. Use --force_overwrite to  
+                               replace existing file""".format(receptor=self.receptor_name, locus=self.locus_name, s=s))
+            else:
+                shutil.copy(self.raw_seq_files[s], out_file)
+    
+        
