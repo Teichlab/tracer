@@ -673,9 +673,7 @@ class Builder(TracerTask):
 
     def __init__(self, **kwargs):
         if not kwargs:
-            parser = argparse.ArgumentParser(description="Build resources from sequences")
-            parser.add_argument('--ncores', '-p', metavar="<CORES>", help='number of processor cores to use', type=int,
-                                         default=1)
+            parser = argparse.ArgumentParser(description="Build resources from sequences", parents=[self.base_parser])
             parser.add_argument('--force_overwrite', '-f', help = 'force overwrite of existing resources', 
                                 action = 'store_true')                                 
             parser.add_argument('species', metavar="<SPECIES>", help='species (eg Mmus)')
