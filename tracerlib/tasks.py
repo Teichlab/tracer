@@ -29,6 +29,7 @@ from prettytable import PrettyTable
 from Bio.Seq import Seq
 from Bio import SeqIO
 
+import pdb
 
 class TracerTask(object):
 
@@ -734,16 +735,18 @@ class Builder(TracerTask):
         io.makeOutputDir(self.species_dir)
         for d in subdirs:
             io.makeOutputDir(os.path.join(self.species_dir, d))
+    
 
-        VJC_files = self.copy_raw_files()
-        recombinome_fasta = self.make_recombinomes(VJC_files)
+        VDJC_files = self.copy_raw_files()
+        recombinome_fasta = self.make_recombinomes(VDJC_files)
         self.make_bowtie2_index(recombinome_fasta)
+        self.make_igblast_db(VDJC_files)
     
     def copy_raw_files(self):    
         
         gene_segs = 'VJC'
         
-        VJC_files = {}
+        VDJC_files = {}
         
         if 'D' in self.raw_seq_files:
             gene_segs = gene_segs + 'D'
@@ -753,15 +756,14 @@ class Builder(TracerTask):
         for s in gene_segs:
             fn = "{receptor}{locus}_{s}.fa".format(receptor=self.receptor_name, locus=self.locus_name, s=s)
             out_file = os.path.join(self.species_dir, 'raw_seqs', fn)
-            if s in 'VJC':
-                VJC_files[s] = out_file
+            VDJC_files[s] = out_file
             if os.path.isfile(out_file) and not self.force_overwrite:
                 print("Raw sequence file already exists for {receptor}{locus}_{s}.".format(receptor=self.receptor_name,\
                  locus=self.locus_name, s=s), "Use --force_overwrite to replace existing file")
                 sys.exit(1)
             else:
                 shutil.copy(self.raw_seq_files[s], out_file)
-        return(VJC_files)
+        return(VDJC_files)
      
     def load_segment_seqs(self, file):
         seqs = {}
@@ -770,7 +772,7 @@ class Builder(TracerTask):
         return(seqs)
         
             
-    def make_recombinomes(self, VJC_files):
+    def make_recombinomes(self, VDJC_files):
         
         self.leader_padding = 20
         
@@ -786,12 +788,12 @@ class Builder(TracerTask):
         seqs = {}
         
         for s in 'VJC':
-            in_file = VJC_files[s]
+            in_file = VDJC_files[s]
             seqs[s] = self.load_segment_seqs(in_file)
         
         if len(seqs['C']) > 1:
-            print ("\nMore than one constant region sequence included in {C_file}. \
-                      Please only provide one constant sequence.\n".format(self.raw_seq_files['C']))
+            print ("\nMore than one constant region sequence included in {C_file}.".format(self.raw_seq_files['C']))
+            print("Please only provide one constant sequence.\n")
             sys.exit(1)
         
         const_seq = seqs['C'].values()[0].upper()
@@ -824,9 +826,45 @@ class Builder(TracerTask):
         
         command = [bowtie2_build, recombinome_fasta, index_base]
         try:
-          subprocess.check_call(command)
+            subprocess.check_call(command)
         except (subprocess.CalledProcessError):
             print("bowtie2-build failed")
+    
+    def make_igblast_db(self, VDJC_files):
+        
+        igblast_dir = os.path.join(self.species_dir, 'igblast_dbs')
+        
+        for s in 'VDJ':
+            fn = "{receptor}_{segment}.fa".format(receptor=self.receptor_name, segment=s)
+            fasta_file = os.path.join(igblast_dir, fn)
+            # create file if it doesn't already exist
+            open(fasta_file, 'a').close()
+            #pdb.set_trace()
+            if s in VDJC_files:
+                with open(fasta_file) as e:
+                    existing_seqs = SeqIO.to_dict(SeqIO.parse(e, "fasta"))
+                with open(VDJC_files[s]) as n:
+                    new_seqs = SeqIO.to_dict(SeqIO.parse(n, "fasta"))
+                
+                non_overwritten_seqs = []
+                
+                for seq_name, seq in six.iteritems(new_seqs):
+                    if seq_name in existing_seqs:
+                        if not self.force_overwrite:
+                            non_overwritten_seqs.append(seq_name)
+                        else:
+                            existing_seqs.update({seq_name:seq})
+                    else:
+                        existing_seqs.update({seq_name:seq})
+                with open(fasta_file, 'w') as f:
+                    SeqIO.write(existing_seqs.values(), f, "fasta")
+            
+                if len(non_overwritten_seqs)>0:
+                    print ('The follwing IgBLAST DB sequences for {receptor}_{segment} already ' \
+                            'found in {file}.'.format(receptor=self.receptor_name, segment=s, file=fasta_file))
+                    print ('These sequences were not overwritten. Use --force_overwrite to replace with new ones')
+                    for seq in non_overwritten_seqs:
+                        print(seq)
         
     
         
