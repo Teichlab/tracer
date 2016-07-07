@@ -834,6 +834,8 @@ class Builder(TracerTask):
         
         igblast_dir = os.path.join(self.species_dir, 'igblast_dbs')
         
+        makeblastdb = self.get_binary('makeblastdb')
+        
         for s in 'VDJ':
             fn = "{receptor}_{segment}.fa".format(receptor=self.receptor_name, segment=s)
             fasta_file = os.path.join(igblast_dir, fn)
@@ -865,6 +867,14 @@ class Builder(TracerTask):
                     print ('These sequences were not overwritten. Use --force_overwrite to replace with new ones')
                     for seq in non_overwritten_seqs:
                         print(seq)
+
+            command = [makeblastdb, '-parse_seqids', '-dbtype', 'nucl', '-in', fasta_file]
+            try:
+                subprocess.check_call(command)
+            except (subprocess.CalledProcessError):
+                print("makeblastdb failed for {receptor}_{segment}".format(receptor=self.receptor_name, segment=s))
+        
+        
         
     
         
