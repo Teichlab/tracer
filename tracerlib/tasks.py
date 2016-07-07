@@ -817,6 +817,11 @@ class Builder(TracerTask):
         index_base = os.path.join(self.species_dir, 'combinatorial_recombinomes', 
                     '{receptor}{locus}'.format(receptor=self.receptor_name, locus=self.locus_name))
         
+        if os.path.isfile(index_base + ".1.bt2") and not self.force_overwrite:
+            print("Bowtie2 index already exists for {receptor}{locus}.".format(receptor=self.receptor_name,\
+            locus=self.locus_name), "Use --force_overwrite to replace existing file")
+            sys.exit(1)
+        
         command = [bowtie2_build, recombinome_fasta, index_base]
         try:
           subprocess.check_call(command)
