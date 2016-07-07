@@ -704,6 +704,7 @@ class Builder(TracerTask):
             self.raw_seq_files['C'] = args.C_seq
             if args.D_seqs:
                 self.raw_seq_files['D'] = args.D_seqs
+            config_file = args.config_file
             
         else:
             self.ncores = kwargs.get('ncores')
@@ -718,7 +719,11 @@ class Builder(TracerTask):
             self.raw_seq_files['C'] = kwargs.get('C_seq')
             if args.D_seqs:
                 self.raw_seq_files['D'] = kwargs.get('D_seqs')
+            
+            config_file = kwargs.get('config_file')
 
+        self.config = self.read_config(config_file)
+            
     def run(self):
 
         #set up output directories
@@ -731,7 +736,8 @@ class Builder(TracerTask):
             io.makeOutputDir(os.path.join(self.species_dir, d))
 
         VJC_files = self.copy_raw_files()
-        self.make_recombinomes(VJC_files)
+        recombinome_fasta = self.make_recombinomes(VJC_files)
+        self.make_bowtie2_index(recombinome_fasta)
     
     def copy_raw_files(self):    
         
@@ -803,10 +809,19 @@ class Builder(TracerTask):
         with open(out_fasta, 'w') as f:
             for seq in seqs_to_write:
                 f.write(seq)
+        return(out_fasta)
 
+    def make_bowtie2_index(self, recombinome_fasta):
         
+        bowtie2_build = self.get_binary('bowtie2-build')
+        index_base = os.path.join(self.species_dir, 'combinatorial_recombinomes', 
+                    '{receptor}{locus}'.format(receptor=self.receptor_name, locus=self.locus_name))
         
-    
+        command = [bowtie2_build, recombinome_fasta, index_base]
+        try:
+          subprocess.check_call(command)
+        except (subprocess.CalledProcessError):
+            print("bowtie2-build failed")
         
     
         
