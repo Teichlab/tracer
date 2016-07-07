@@ -34,8 +34,9 @@ Note that TraCeR is compatible with both Python 2 and 3.
 2. [Trinity](https://github.com/trinityrnaseq/trinityrnaseq/wiki) - required for assembly of reads into TCR contigs. TraCeR now works with both version 1 and version 2 of Trinity. It should automatically detect the version that is installed or you can [specify it in the config file](https://github.com/Teichlab/tracer#trinity-options).
     - Please note that Trinity requires a working installation of [Bowtie v1](http://bowtie-bio.sourceforge.net).
 3. [IgBLAST](http://www.ncbi.nlm.nih.gov/igblast/faq.html#standalone) - required for analysis of assembled contigs. (ftp://ftp.ncbi.nih.gov/blast/executables/igblast/release/).
-4. [Kallisto](http://pachterlab.github.io/kallisto/) - required for quantification of TCR expression.
-5. [Graphviz](http://www.graphviz.org) - Dot and Neato drawing programs required for visualisation of clonotype graphs. This is optional - see the [`--no_networks` option](#options-1) to [`summarise`](#summarise-summary-and-clonotype-networks).
+4. [makeblastdb](ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/ ) - **optional** but required if you want to use TraCeR's `build` mode to make your own references.
+5. [Kallisto](http://pachterlab.github.io/kallisto/) - required for quantification of TCR expression.
+6. [Graphviz](http://www.graphviz.org) - Dot and Neato drawing programs required for visualisation of clonotype graphs. This is optional - see the [`--no_networks` option](#options-1) to [`summarise`](#summarise-summary-and-clonotype-networks).
 
 #####Installing IgBlast#####
 Downloading the executable files from `ftp://ftp.ncbi.nih.gov/blast/executables/igblast/release/<version_number>` is not sufficient for a working IgBlast installation. You must also download the `internal_data` directory (ftp://ftp.ncbi.nih.gov/blast/executables/igblast/release/internal_data) and put it into the same directory as the igblast executable. This is also described in the igblast README file.
@@ -87,7 +88,9 @@ Edit `~/.tracerrc` (or a copy) so that the paths within the `[tool_locations]` s
 	[tool_locations]
 	#paths to tools used by TraCeR for alignment, quantitation, etc
 	bowtie2_path = /path/to/bowtie2
+    bowtie2-build_path = /path/to/bowtie2-build
 	igblast_path = /path/to/igblastn
+    makeblastdb_path = /path/to/makeblastdb
 	kallisto_path = /path/to/kallisto
 	trinity_path = /path/to/trinity
 	dot_path = /path/to/dot
