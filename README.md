@@ -1,5 +1,5 @@
-** THIS BRANCH DOES NOT WORK: This branch is still a work-in-progress for implementing changes to make TraCeR more
-extensible. It will fail in a lot of interesting but unhelpful ways if you try to use it for actual analyses **
+**THIS BRANCH DOES NOT WORK: This branch is still a work-in-progress for implementing changes to make TraCeR more
+extensible. It will fail in a lot of interesting but unhelpful ways if you try to use it for actual analyses**
 
 # TraCeR
 TraCeR - reconstruction of T cell receptor sequences from single-cell RNA-seq data.
