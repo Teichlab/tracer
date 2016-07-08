@@ -119,6 +119,9 @@ class Assembler(TracerTask):
 
     def __init__(self, **kwargs):
         if not kwargs:
+            
+            # get list of all available species in resources
+            
             parser = argparse.ArgumentParser(
                 description="Reconstruct TCR sequences from RNAseq reads for a single cell", parents=[self.base_parser])
             parser.add_argument('--resume_with_existing_files', '-r',
@@ -126,7 +129,7 @@ class Assembler(TracerTask):
                                 action="store_true")
             parser.add_argument('--species', '-s',
                                 help='species from which T cells were isolated - important to determination of iNKT cells',
-                                choices=['Mmus', 'Hsap'], default='Mmus')
+                                choices=self.get_available_species(), default='Mmus')
             parser.add_argument('--seq_method', '-m',
                                 help='Method for constructing sequence to assess productivity, \
                                 quantify expression and for output reporting. See README for details.',
@@ -214,7 +217,13 @@ class Assembler(TracerTask):
             raise OSError('2', 'Invariant Sequence file not found', invariant_sequences)
 
         self.invariant_sequences = io.parse_invariant_seqs(invariant_sequences)
-
+        
+    def get_available_species(self):
+        resources_dir = os.path.join(base_dir, 'resources')
+        species_dirs = next(os.walk(resources_dir))[1]
+        return(species_dirs)
+        
+        
     def run(self, **kwargs):
 
         # Set-up output directories
@@ -255,10 +264,7 @@ class Assembler(TracerTask):
             pickle.dump(cell, pf, protocol=0)
 
     def get_index_location(self, header, item, name):
-        if self.config.has_option(header, item):
-            location = self.resolve_relative_path(self.config.get(header, item))
-        else:
-            location = os.path.join(base_dir, 'resources', self.species, name)
+        location = os.path.join(base_dir, 'resources', self.species, name)
 
         return location
 
