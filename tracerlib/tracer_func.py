@@ -198,11 +198,9 @@ def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs, out
             recombinants[locus] = collapse_close_sequences(rs, locus)
 
         # cell_name, A_recombinants, B_recombinants, G_recombinants, D_recombinants, is_empty=False, species="Mmus")
-        pdb.set_trace()
-        cell = Cell(cell_name, recombinants['TCRA'], recombinants['TCRB'], None, None, species=species,
-                    invariant_seqs=invariant_seqs)
+        cell = Cell(cell_name, recombinants, species=species, invariant_seqs=invariant_seqs)
     else:
-        cell = Cell(cell_name, None, None, None, None, species=species, invariant_seqs=invariant_seqs)
+        cell = Cell(cell_name, None, species=species, invariant_seqs=invariant_seqs)
 
     # pdb.set_trace()
     return (cell)

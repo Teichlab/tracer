@@ -1,26 +1,25 @@
 import re
-from collections import Counter
+from collections import Counter, defaultdict
 
 import six
 from Bio.Alphabet import generic_dna
 from Bio.Seq import Seq
 
+import pdb
 
 class Cell(object):
 
     """Class to describe T cells containing A and B loci"""
 
-    def __init__(self, cell_name, A_recombinants, B_recombinants, G_recombinants, D_recombinants, is_empty=False,
-                 species="Mmus", invariant_seqs=None):
+    def __init__(self, cell_name, recombinants, is_empty=False, species="Mmus", invariant_seqs=None):
+        
         self.name = cell_name
-        self.A_recombinants = A_recombinants
-        self.B_recombinants = B_recombinants
-        self.G_recombinants = G_recombinants
-        self.D_recombinants = D_recombinants
         self.bgcolor = None
-        self.all_recombinants = {'A': A_recombinants, 'B': B_recombinants, 'G': G_recombinants, 'D': D_recombinants}
-        self.cdr3_comparisons = {'A': None, 'B': None, 'mean_both': None}
         self.is_empty = self._check_is_empty()
+        self.recombinants = self._process_recombinants(recombinants)
+        pdb.set_trace()
+        self.cdr3_comparisons = {'A': None, 'B': None, 'mean_both': None}
+        
 
         if not invariant_seqs:
             self.invariant_seqs = []
@@ -28,10 +27,21 @@ class Cell(object):
             self.invariant_seqs = invariant_seqs
 
         self.is_inkt = self._check_if_inkt()
-
+    
+    def _process_recombinants(self, recombinants):
+        if recombinants is None:
+            return(None)
+        else:
+            recombinant_dict = defaultdict(dict)
+            for r_name, r in six.iteritems(recombinants):
+                r_name = r_name.split("_")
+                receptor = r_name[0]
+                locus = r_name[1]
+                recombinant_dict[receptor][locus] = r
+            return(dict(recombinant_dict))
+                
     def _check_is_empty(self):
-        if (self.A_recombinants is None or len(self.A_recombinants) == 0) and (
-                self.B_recombinants is None or len(self.B_recombinants) == 0):
+        if (self.recombinants is None or len(self.recombinants) == 0):
             return (True)
 
     def _check_if_inkt(self):
