@@ -33,6 +33,9 @@ from Bio.Seq import Seq
 from tracerlib.core import Cell, Recombinant
 import tracerlib.io
 
+import copy
+
+import pdb
 
 def process_chunk(chunk):
     store_VDJ_rearrangement_summary = False
@@ -97,14 +100,18 @@ def process_chunk(chunk):
 
 
 def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs, output_dir, species, seq_method,
-                             constant_seqs, invariant_seqs):
+                             invariant_seqs, loci_for_segments):
     alignment_dict = defaultdict(dict)
-    recombinants = {'TCRA': [], 'TCRB': []}
+    recombinants = {}
+    for locus in locus_names:
+        recombinants[locus] = []
+    
+    #recombinants = {'TCRA': [], 'TCRB': []}
     for locus in locus_names:
         data_for_locus = sample_dict[locus]
         if data_for_locus is not None:
             for query_name, query_data in six.iteritems(data_for_locus):
-                processed_hit_table = process_hit_table(query_name, query_data, locus)
+                processed_hit_table = process_hit_table(query_name, query_data, locus, expecting_D)
 
                 if processed_hit_table is not None:
                     (returned_locus, good_hits, rearrangement_summary) = processed_hit_table
@@ -115,9 +122,9 @@ def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs, out
                     junc_string = "".join(junction_list)
                     junc_string = remove_NA(junc_string)
 
-                    if returned_locus in "BD":
+                    if locus in loci_for_segments['D']:
                         best_J = remove_allele_stars(rearrangement_summary[2].split(",")[0])
-                    elif returned_locus in "AG":
+                    else:
                         best_J = remove_allele_stars(rearrangement_summary[1].split(",")[0])
 
                     identifier = best_V + "_" + junc_string + "_" + best_J
@@ -127,9 +134,9 @@ def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs, out
 
                     all_V_names = [remove_allele_stars(x) for x in rearrangement_summary[0].split(',')]
 
-                    if locus == "TCRB":
+                    if locus in loci_for_segments['D']:
                         all_J_names = [remove_allele_stars(x) for x in rearrangement_summary[2].split(',')]
-                    elif locus == "TCRA":
+                    else:
                         all_J_names = [remove_allele_stars(x) for x in rearrangement_summary[1].split(',')]
 
                     all_poss_identifiers = set()
@@ -156,7 +163,7 @@ def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs, out
 
                     (imgt_reconstructed_seq, is_productive, bestVJNames) = get_fasta_line_for_contig_imgt(
                         rearrangement_summary, junction_list, good_hits, returned_locus, IMGT_seqs, cell_name,
-                        query_name, species, constant_seqs)
+                        query_name, species, loci_for_segments)
                     del (is_productive)
                     del (bestVJNames)
 
@@ -223,7 +230,7 @@ def remove_allele_stars(segment):
     return (m.group(1))
 
 
-def process_hit_table(query_name, query_data, locus):
+def process_hit_table(query_name, query_data, locus, expecting_D):
     hit_table = query_data['hit_table']
     rearrangement_summary = query_data['VDJ_rearrangement_summary']
 
@@ -236,7 +243,9 @@ def process_hit_table(query_name, query_data, locus):
     good_hits = []
 
     segment_locus_pattern = re.compile(r"TRAV.+DV.+")
-
+    
+    locus_name = locus.split("_")[1]
+    
     for entry in hit_table:
         entry = entry.split("\t")
         segment = entry[2]
@@ -247,7 +256,7 @@ def process_hit_table(query_name, query_data, locus):
         segment_type = segment[3]
         e_value = float(entry[12])
 
-        if locus[3] in segment_locus:
+        if locus_name in segment_locus:
             if e_value < e_value_cutoff:
                 if segment_type == "V":
                     found_V.add(locus)
@@ -261,34 +270,16 @@ def process_hit_table(query_name, query_data, locus):
                     if percent_identity == 100:
                         found_D.add(locus)
                         good_hits.append(entry)
+                        
+    if locus in found_V and locus in found_J:
+        return (locus, good_hits, rearrangement_summary)
+    else:
+        return (None)
 
-    if locus == "TCRA":
-        if "TCRA" in found_V and "TCRA" in found_J:
-            return ("A", good_hits, rearrangement_summary)
-        else:
-            return (None)
-
-    # elif locus == "D":
-    #    if "D" in found_V and "D" in found_J:
-    #        return("D", good_hits, rearrangement_summary)
-    #    else:
-    #        return(None)
-
-    elif locus == "TCRB":
-        if "TCRB" in found_V and "TCRB" in found_J:
-            return ("B", good_hits, rearrangement_summary)
-        else:
-            return (None)
-
-            # elif locus == "G":
-            #    if "G" in found_V and "G" in found_J:
-            #        return("G", good_hits, rearrangement_summary)
-            #    else:
-            #        return(None)
 
 
 def get_fasta_line_for_contig_imgt(rearrangement_summary, junction_details, hit_table, locus, IMGT_seqs,
-                                   sample_name, query_name, species, constant_seqs):
+                                   sample_name, query_name, species, loci_for_segments):
 
     # use first 258 bases of TRBC because they're the same between C1 and C2
     # for TRGC use first 150 bases. Found by aligning the 4 C region transcripts and taking consensus. Ignored start of TCRG-C4-201 because it's only in that one.
@@ -298,17 +289,21 @@ def get_fasta_line_for_contig_imgt(rearrangement_summary, junction_details, hit_
     found_best_D = False
     found_best_J = False
 
-    V_pattern = re.compile(r"TR[ABGD]V\d")
-    D_pattern = re.compile(r"TR[BD]D\d")
-    J_pattern = re.compile(r"TR[ABGD]J\d")
+    V_pattern = re.compile(r".+{potential_loci}V.+".format(potential_loci="".join([x.split[1] 
+                                                                                for x in loci_for_segments['V']])))
+    D_pattern = re.compile(r".+{potential_loci}D.+".format(potential_loci="".join([x.split[1] 
+                                                                                for x in loci_for_segments['D']])))
+    J_pattern = re.compile(r".+{potential_loci}J.+".format(potential_loci="".join([x.split[1] 
+                                                                                for x in loci_for_segments['J']])))
 
     for hit in hit_table:
         segment = hit[2]
+        pdb.set_trace()
         if V_pattern.search(segment) and not found_best_V:
-            V_locus_key = "TR{}V".format(segment[2])
+            #V_locus_key = "TR{}V".format(segment[2])
             best_V_name = segment
             # Remove forward slashes from shared A/D gene names to be the same as in the IMGT files.
-            segment = segment.replace("/", "_")
+            #segment = segment.replace("/", "_")
             best_V_seq = IMGT_seqs[V_locus_key][segment]
 
             # hit[11] is the end of the V sequence
@@ -786,19 +781,29 @@ def check_config_file(filename):
         exit(1)
 
 
-def bowtie2_alignment(bowtie2, ncores, locus_names, output_dir, cell_name, synthetic_genome_path, fastq1,
+def bowtie2_alignment(bowtie2, ncores, receptor, loci, output_dir, cell_name, synthetic_genome_path, fastq1,
                       fastq2, should_resume, single_end):
-    print("##Finding TCR-derived reads##")
-
+    print("##Finding recombinant-derived reads##")
+    
+    initial_locus_names = ["_".join([receptor,x]) for x in loci]
+    locus_names = copy.copy(initial_locus_names)
+    
     if should_resume:
-        for locus in locus_names:
+        for locus in initial_locus_names:
             aligned_read_path = "{}/aligned_reads/{}_{}_".format(output_dir, cell_name, locus)
             fastq1_out = "{}1.fastq".format(aligned_read_path)
             fastq2_out = "{}2.fastq".format(aligned_read_path)
             if os.path.isfile(fastq1_out) and os.path.isfile(fastq2_out):
-                print("Resuming with existing TCRA and B reads")
-                return
-
+                print("Resuming with existing {locus} reads".format(locus=locus))
+                locus_names.remove(locus)
+    
+    
+    
+    if len(locus_names) == 0:
+        return
+    
+    print("Attempting new assembly for {locus_names}\n".format(locus_names=locus_names))
+    
     for locus in locus_names:
         print("##{}##".format(locus))
         sam_file = "{}/aligned_reads/{}_{}.sam".format(output_dir, cell_name, locus)
@@ -882,7 +887,7 @@ def bowtie2_alignment(bowtie2, ncores, locus_names, output_dir, cell_name, synth
                 fastq_out.close()
 
 
-def assemble_with_trinity(trinity, locus_names, output_dir, cell_name, ncores, trinity_grid_conf, JM,
+def assemble_with_trinity(trinity, receptor, loci, output_dir, cell_name, ncores, trinity_grid_conf, JM,
                           version, should_resume, single_end, species):
     print("##Assembling Trinity Contigs##")
 
@@ -902,7 +907,9 @@ def assemble_with_trinity(trinity, locus_names, output_dir, cell_name, ncores, t
 
     memory_string = '--max_memory' if (version == '2') else '--JM'
     command = command + ['--seqType', 'fq', memory_string, JM, '--CPU', ncores, '--full_cleanup']
-
+    
+    locus_names = ["_".join([receptor,x]) for x in loci]
+    
     for locus in locus_names:
         print("##{}##".format(locus))
         trinity_output = "{}/Trinity_output/{}_{}".format(output_dir, cell_name, locus)
@@ -980,7 +987,7 @@ def assemble_with_trinity(trinity, locus_names, output_dir, cell_name, ncores, t
     return successful_files
 
 
-def run_IgBlast(igblast, locus_names, output_dir, cell_name, index_location, ig_seqtype, species,
+def run_IgBlast(igblast, receptor, loci, output_dir, cell_name, index_location, ig_seqtype, species,
                 should_resume):
     print("##Running IgBLAST##")
 
@@ -990,20 +997,25 @@ def run_IgBlast(igblast, locus_names, output_dir, cell_name, index_location, ig_
     }
 
     igblast_species = species_mapper[species]
-
+    initial_locus_names = ["_".join([receptor,x]) for x in loci]
+    locus_names = copy.copy(initial_locus_names)
     if should_resume:
-        igblast_out_A = "{output_dir}/IgBLAST_output/{cell_name}_TCRA.IgBLASTOut".format(output_dir=output_dir,
-                                                                                         cell_name=cell_name)
-        igblast_out_B = "{output_dir}/IgBLAST_output/{cell_name}_TCRB.IgBLASTOut".format(output_dir=output_dir,
-                                                                                         cell_name=cell_name)
-        if (os.path.isfile(igblast_out_A) and os.path.getsize(igblast_out_A) > 0) or (
-                    os.path.isfile(igblast_out_B) and os.path.getsize(igblast_out_B) > 0):
-            print("Resuming with existing IgBLAST output")
+        for locus in initial_locus_names:
+            igblast_out = "{output_dir}/IgBLAST_output/{cell_name}_{receptor}_{locus}.IgBLASTOut".format(
+                                                        output_dir=output_dir,cell_name=cell_name, 
+                                                        receptor=receptor, locus=locus)
+            if (os.path.isfile(igblast_out) and os.path.getsize(igblast_out) > 0):
+                locus_names.remove(locus)
+                print("Resuming with existing IgBLAST output for {locus}".format(locus=locus))
+        
+        if len(locus_names) == 0:    
             return
+    
+    print("Performing IgBlast on {locus_names}".format(locus_names = locus_names))
 
     databases = {}
-    for segment in ['v', 'd', 'j']:
-        databases[segment] = "{}/imgt_tcr_db_{}.fa".format(index_location, segment)
+    for segment in ['V', 'D', 'J']:
+        databases[segment] = "{}/{}_{}.fa".format(index_location, receptor, segment)
 
     # Lines below suppress Igblast warning about not having an auxliary file.
     # Taken from http://stackoverflow.com/questions/11269575/how-to-hide-output-of-subprocess-in-python-2-7
@@ -1013,8 +1025,8 @@ def run_IgBlast(igblast, locus_names, output_dir, cell_name, index_location, ig_
         print("##{}##".format(locus))
         trinity_fasta = "{}/Trinity_output/{}_{}.Trinity.fasta".format(output_dir, cell_name, locus)
         if os.path.isfile(trinity_fasta):
-            command = [igblast, '-germline_db_V', databases['v'], '-germline_db_D', databases['d'],
-                       '-germline_db_J', databases['j'], '-domain_system', 'imgt', '-organism', igblast_species,
+            command = [igblast, '-germline_db_V', databases['V'], '-germline_db_D', databases['D'],
+                       '-germline_db_J', databases['J'], '-domain_system', 'imgt', '-organism', igblast_species,
                        '-ig_seqtype', ig_seqtype, '-show_translation', '-num_alignments_V', '5',
                        '-num_alignments_D', '5', '-num_alignments_J', '5', '-outfmt', '7', '-query', trinity_fasta]
             igblast_out = "{output_dir}/IgBLAST_output/{cell_name}_{locus}.IgBLASTOut".format(output_dir=output_dir,

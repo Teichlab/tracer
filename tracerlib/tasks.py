@@ -33,10 +33,10 @@ import pdb
 
 class TracerTask(object):
 
-    base_parser = argparse.ArgumentParser(add_help=False)
+    base_parser = argparse.ArgumentParser(add_help=False, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     base_parser.add_argument('--ncores', '-p', metavar="<CORES>", help='number of processor cores to use', type=int,
                              default=1)
-    base_parser.add_argument('--config_file', '-c', metavar="<CONFIG_FILE>", help='config file to use [~/.tracerrc]',
+    base_parser.add_argument('--config_file', '-c', metavar="<CONFIG_FILE>", help='config file to use',
                              default='~/.tracerrc')
 
     config = None
@@ -123,13 +123,19 @@ class Assembler(TracerTask):
             # get list of all available species in resources
             
             parser = argparse.ArgumentParser(
-                description="Reconstruct TCR sequences from RNAseq reads for a single cell", parents=[self.base_parser])
+                description="Reconstruct TCR sequences from RNAseq reads for a single cell", 
+                parents=[self.base_parser], formatter_class=argparse.ArgumentDefaultsHelpFormatter)
             parser.add_argument('--resume_with_existing_files', '-r',
                                 help='look for existing intermediate files and use those instead of starting from scratch',
                                 action="store_true")
             parser.add_argument('--species', '-s',
                                 help='species from which T cells were isolated - important to determination of iNKT cells',
                                 choices=self.get_available_species(), default='Mmus')
+            parser.add_argument('--receptor_name',
+                                help="Name of receptor to reconstruct", default='TCR')
+            parser.add_argument('--loci',
+                                help="Space-separated list of loci to reconstruct for receptor", 
+                                default=['A','B'], nargs = '+')
             parser.add_argument('--seq_method', '-m',
                                 help='Method for constructing sequence to assess productivity, \
                                 quantify expression and for output reporting. See README for details.',
@@ -147,6 +153,7 @@ class Assembler(TracerTask):
             parser.add_argument('--invariant_sequences',
                                 help="Custom invariant sequence file. "
                                      "Use the example in 'resources/Mmus/invariant_seqs.csv'")
+
             parser.add_argument('fastq1', metavar="<FASTQ1>", help='first fastq file')
             parser.add_argument('fastq2', metavar="<FASTQ2>", help='second fastq file', nargs='?')
             parser.add_argument('cell_name', metavar="<CELL_NAME>", help='name of cell for file labels')
@@ -166,6 +173,8 @@ class Assembler(TracerTask):
             self.fragment_length = args.fragment_length
             self.fragment_sd = args.fragment_sd
             self.output_dir = args.output_dir
+            self.receptor_name = args.receptor_name
+            self.loci = args.loci
             invariant_sequences = args.invariant_sequences
             config_file = args.config_file
 
@@ -181,6 +190,8 @@ class Assembler(TracerTask):
             self.single_end = kwargs.get('single_end')
             self.fragment_length = kwargs.get('fragment_length')
             self.fragment_sd = kwargs.get('fragment_sd')
+            self.receptor_name = kwargs.get('receptor_name')
+            self.loci = kwargs.get('loci')
             invariant_sequences = kwargs.get('invariant_sequences')
             config_file = kwargs.get('config_file')
 
@@ -233,8 +244,9 @@ class Assembler(TracerTask):
 
         io.makeOutputDir(self.output_dir)
 
-        data_dirs = ['aligned_reads', 'Trinity_output', 'IgBLAST_output', 'unfiltered_TCR_seqs',
-                     'expression_quantification', 'filtered_TCR_seqs']
+        data_dirs = ['aligned_reads', 'Trinity_output', 'IgBLAST_output', 
+                     'unfiltered_{receptor}_seqs'.format(receptor = self.receptor_name),'expression_quantification', 
+                     'filtered_{receptor}_seqs'.format(receptor = self.receptor_name)]
         for d in data_dirs:
             io.makeOutputDir("{}/{}".format(self.output_dir, d))
 
@@ -245,25 +257,30 @@ class Assembler(TracerTask):
         self.quantify(cell)
 
         self.print_cell_summary(
-            cell, "{output_dir}/unfiltered_TCR_seqs/unfiltered_TCRs.txt".format(output_dir=self.output_dir))
+            cell, "{output_dir}/unfiltered_{receptor}_seqs/unfiltered_{receptor}s.txt".format(output_dir=self.output_dir))
 
         # Save cell in a pickle
-        with open("{output_dir}/unfiltered_TCR_seqs/{cell_name}.pkl".format(output_dir=self.output_dir,
-                                                                            cell_name=cell.name), 'wb') as pf:
+        with open("{output_dir}/unfiltered_{receptor}_seqs/{cell_name}.pkl".format(output_dir=self.output_dir,
+                                                                            cell_name=cell.name, receptor=self.receptor_name), 
+                                                                            'wb') as pf:
             pickle.dump(cell, pf, protocol=0)
         print("##Filtering by read count##")
         cell.filter_recombinants()
-        fasta_filename = "{output_dir}/filtered_TCR_seqs/{cell_name}_TCRseqs.fa".format(output_dir=self.output_dir,
-                                                                                        cell_name=self.cell_name)
+        fasta_filename = "{output_dir}/filtered_{receptor}seqs/{cell_name}_{receptor}seqs.fa".format(output_dir=self.output_dir,
+                                                                                        cell_name=self.cell_name,
+                                                                                        receptor=self.receptor_name)
         fasta_file = open(fasta_filename, 'w')
         fasta_file.write(cell.get_fasta_string())
         fasta_file.close()
-        self.print_cell_summary(cell, "{output_dir}/filtered_TCR_seqs/filtered_TCRs.txt".format(output_dir=self.output_dir))
-        with open("{output_dir}/filtered_TCR_seqs/{cell_name}.pkl".format(output_dir=self.output_dir,
-                                                                          cell_name=cell.name), 'wb') as pf:
+        self.print_cell_summary(cell, "{output_dir}/filtered_{receptor}_seqs/filtered_{receptor}s.txt".format(
+                                                                                            output_dir=self.output_dir),
+                                                                                            receptor=self.receptor_name)
+        with open("{output_dir}/filtered_{receptor}_seqs/{cell_name}.pkl".format(output_dir=self.output_dir,
+                                                                          cell_name=cell.name,
+                                                                          receptor=self.receptor_name), 'wb') as pf:
             pickle.dump(cell, pf, protocol=0)
 
-    def get_index_location(self, header, item, name):
+    def get_index_location(self, name):
         location = os.path.join(base_dir, 'resources', self.species, name)
 
         return location
@@ -271,13 +288,11 @@ class Assembler(TracerTask):
     def align(self):
         bowtie2 = self.get_binary('bowtie2')
 
-        synthetic_genome_path = self.get_index_location('bowtie2_options', 'synthetic_genome_index_path',
-                                                        'synthetic_genomes')
-        locus_names = ["TCRA", "TCRB"]
+        synthetic_genome_path = self.get_index_location('combinatorial_recombinomes')
         # Align with bowtie
         tracer_func.bowtie2_alignment(
-            bowtie2, self.ncores, locus_names, self.output_dir, self.cell_name, synthetic_genome_path, self.fastq1,
-            self.fastq2, self.resume_with_existing_files, self.single_end)
+            bowtie2, self.ncores, self.receptor_name, self.loci, self.output_dir, self.cell_name, 
+            synthetic_genome_path, self.fastq1, self.fastq2, self.resume_with_existing_files, self.single_end)
         print()
 
     def de_novo_assemble(self):
@@ -303,8 +318,8 @@ class Assembler(TracerTask):
         trinity_JM = self.config.get('trinity_options', 'max_jellyfish_memory')
         trinity_version = self.config.get('trinity_options', 'trinity_version')
         successful_files = tracer_func.assemble_with_trinity(
-            trinity, self.locus_names, self.output_dir, self.cell_name, self.ncores, trinity_grid_conf, trinity_JM,
-            trinity_version, self.resume_with_existing_files, self.single_end, self.species)
+            trinity, self.receptor_name, self.loci, self.output_dir, self.cell_name, self.ncores, trinity_grid_conf, 
+            trinity_JM, trinity_version, self.resume_with_existing_files, self.single_end, self.species)
         if len(successful_files) == 0:
             print("No successful Trinity assemblies")
             self.die_with_empty_cell(self.cell_name, self.output_dir, self.species)
@@ -315,23 +330,22 @@ class Assembler(TracerTask):
         igblastn = self.get_binary('igblastn')
 
         # Reference data locations
-        igblast_index_location = self.get_index_location('IgBlast_options', 'igblast_index_location', 'igblast_dbs')
-        imgt_seq_location = self.get_index_location('IgBlast_options', 'imgt_seq_location', 'imgt_sequences')
+        igblast_index_location = self.get_index_location('igblast_dbs')
+        imgt_seq_location = self.get_index_location('raw_seqs')
 
         igblast_seqtype = self.config.get('IgBlast_options', 'igblast_seqtype')
 
 
         # IgBlast of assembled contigs
-        tracer_func.run_IgBlast(igblastn, self.locus_names, self.output_dir, self.cell_name, igblast_index_location,
+        tracer_func.run_IgBlast(igblastn, self.receptor_name, self.loci, self.output_dir, self.cell_name, igblast_index_location,
                                 igblast_seqtype, self.species, self.resume_with_existing_files)
         print()
-
-        const_seq_file = os.path.join(base_dir, "resources", self.species, "constant_seqs.csv")
-
+        
+        
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            cell = io.parse_IgBLAST(self.locus_names, self.output_dir, self.cell_name, imgt_seq_location, self.species,
-                                    self.seq_method, const_seq_file, self.invariant_sequences)
+            cell = io.parse_IgBLAST(self.receptor_name, self.loci, self.output_dir, self.cell_name, imgt_seq_location, 
+                                    self.species, self.seq_method, self.invariant_sequences)
             if cell.is_empty:
                 self.die_with_empty_cell(self.cell_name, self.output_dir, self.species)
 
@@ -671,10 +685,10 @@ class Tester(TracerTask):
             f1 = "{}/{}_1.fastq".format(test_dir, name)
             f2 = "{}/{}_2.fastq".format(test_dir, name)
 
-            Assembler(ncores=str(self.ncores), config_file=self.config_file, resume_with_existing_files=False,
+            Assembler(ncores=str(self.ncores), config_file=self.config_file, resume_with_existing_files=True,
                       species='Mmus', seq_method='imgt', fastq1=f1, fastq2=f2, cell_name=name, output_dir=out_dir,
-                      single_end=False, fragment_length=False, fragment_sd=False) \
-                .run()
+                      single_end=False, fragment_length=False, fragment_sd=False, receptor_name = 'TCR', 
+                      loci = ['A', 'B']).run()
 
         Summariser(config_file=self.config_file, use_unfiltered=False, keep_inkt=False,
                    graph_format=self.graph_format, no_networks=self.no_networks, root_dir=out_dir) \
@@ -767,11 +781,11 @@ class Builder(TracerTask):
             
         
         for s in gene_segs:
-            fn = "{receptor}{locus}_{s}.fa".format(receptor=self.receptor_name, locus=self.locus_name, s=s)
+            fn = "{receptor}_{locus}_{s}.fa".format(receptor=self.receptor_name, locus=self.locus_name, s=s)
             out_file = os.path.join(self.species_dir, 'raw_seqs', fn)
             VDJC_files[s] = out_file
             if os.path.isfile(out_file) and not self.force_overwrite:
-                print("Raw sequence file already exists for {receptor}{locus}_{s}.".format(receptor=self.receptor_name,\
+                print("Raw sequence file already exists for {receptor}_{locus}_{s}.".format(receptor=self.receptor_name,\
                  locus=self.locus_name, s=s), "Use --force_overwrite to replace existing file")
                 sys.exit(1)
             else:
@@ -790,11 +804,11 @@ class Builder(TracerTask):
         self.leader_padding = 20
         
         out_fasta = os.path.join(self.species_dir, 'combinatorial_recombinomes', 
-                    '{receptor}{locus}.fa'.format(receptor=self.receptor_name, locus=self.locus_name))
+                    '{receptor}_{locus}.fa'.format(receptor=self.receptor_name, locus=self.locus_name))
 
         
         if os.path.isfile(out_fasta) and not self.force_overwrite:
-            print("Combinatorial recombinome already exists for {receptor}{locus}.".format(receptor=self.receptor_name,\
+            print("Combinatorial recombinome already exists for {receptor}_{locus}.".format(receptor=self.receptor_name,\
              locus=self.locus_name), "Use --force_overwrite to replace existing file")
             sys.exit(1)
         
@@ -830,10 +844,10 @@ class Builder(TracerTask):
         
         bowtie2_build = self.get_binary('bowtie2-build')
         index_base = os.path.join(self.species_dir, 'combinatorial_recombinomes', 
-                    '{receptor}{locus}'.format(receptor=self.receptor_name, locus=self.locus_name))
+                    '{receptor}_{locus}'.format(receptor=self.receptor_name, locus=self.locus_name))
         
         if os.path.isfile(index_base + ".1.bt2") and not self.force_overwrite:
-            print("Bowtie2 index already exists for {receptor}{locus}.".format(receptor=self.receptor_name,\
+            print("Bowtie2 index already exists for {receptor}_{locus}.".format(receptor=self.receptor_name,\
             locus=self.locus_name), "Use --force_overwrite to replace existing file")
             sys.exit(1)
         

@@ -39,11 +39,10 @@ def clean_file_list(file_list):
 
 
 def get_filename_and_locus(name):
-    pattern = re.compile(r"(.+)_TCR([ABDG])")
-    pattern_match = pattern.search(name)
-    file = pattern_match.group(1)
-    locus = pattern_match.group(2)
-    return ([file, locus])
+    name = name.split("_")
+    cell = name[0]
+    locus = "_".join(name[1:3])
+    return ([cell, locus])
 
 
 def sort_locus_names(dictionary_to_sort):
@@ -61,13 +60,33 @@ def load_IMGT_seqs(file):
     return (seqs)
 
 
-def parse_IgBLAST(locus_names, output_dir, cell_name, imgt_seq_location, species, seq_method, const_seq_file,
-                  invariant_seqs):
-    segment_names = ['TRAJ', 'TRAV', 'TRBD', 'TRBJ', 'TRBV']
+def parse_IgBLAST(receptor, loci, output_dir, cell_name, raw_seq_dir, species, seq_method, invariant_seqs):
+    
     IMGT_seqs = dict()
-    for segment in segment_names:
-        IMGT_seqs[segment] = load_IMGT_seqs("{}/{}.fa".format(imgt_seq_location, segment))
-
+    #expecting_D = dict()
+    
+    loci_for_segments = defaultdict(list)
+    
+    for locus in loci:
+        expecting_D[locus] = False
+    
+    for locus in loci:
+        seq_files = glob.glob(os.path.join(raw_seq_dir, "{receptor}_{locus}_*.fa".format(receptor=receptor, 
+                                                                                    locus=locus)))
+        for f in seq_files:
+            #if not f.endswith("_C.fa"):
+                segment_name = os.path.splitext(os.path.split(f)[1])[0]
+                IMGT_seqs[segment_name] = load_IMGT_seqs(f)
+                #if segment_name.split("_")[2] == 'D':
+                #    expecting_D[locus] = True
+                loci_for_segments[segment_name.split("_")[2]].append(locus)
+                    
+    #segment_names = ['TRAJ', 'TRAV', 'TRBD', 'TRBJ', 'TRBV']
+    #IMGT_seqs = dict()
+    #for segment in segment_names:
+    #    IMGT_seqs[segment] = load_IMGT_seqs("{}/{}.fa".format(imgt_seq_location, segment))
+    
+    locus_names = ["_".join(receptor,x) for x in loci]
     all_locus_data = defaultdict(dict)
     for locus in locus_names:
         file = "{output_dir}/IgBLAST_output/{cell_name}_{locus}.IgBLASTOut".format(output_dir=output_dir,
@@ -85,7 +104,7 @@ def parse_IgBLAST(locus_names, output_dir, cell_name, imgt_seq_location, species
     constant_seqs = pd.read_csv(const_seq_file, index_col=0)['sequence'].to_dict()
 
     cell = find_possible_alignments(all_locus_data, locus_names, cell_name, IMGT_seqs, output_dir, species, seq_method,
-                                    constant_seqs, invariant_seqs)
+                                     invariant_seqs, loci_for_segments)
     return (cell)
 
 
