@@ -109,7 +109,11 @@ class TracerTask(object):
                                                                           cell_name=cell.name), 'wb') as pf:
             pickle.dump(cell, pf, protocol=0)
         exit(0)
-
+    
+    def get_resources_root(self, species):
+        resources_dir = os.path.join(base_dir, 'resources')
+        resources_root = os.path.join(resources_dir, species)
+        return(resources_root)
 
 class Assembler(TracerTask):
 
@@ -728,8 +732,7 @@ class Builder(TracerTask):
     def run(self):
 
         #set up output directories
-        resources_dir = os.path.join(base_dir, 'resources')
-        self.species_dir = os.path.join(resources_dir, self.species)
+        self.species_dir = self.get_resources_root(self.species)
         subdirs = ['igblast_dbs', 'combinatorial_recombinomes', 'raw_seqs']
         
         io.makeOutputDir(self.species_dir)
