@@ -14,7 +14,7 @@ import sys
 from Bio import SeqIO
 
 from tracerlib.tracer_func import process_chunk, find_possible_alignments
-
+import glob
 
 def makeOutputDir(output_dir_path):
     if not os.path.exists(output_dir_path):
@@ -67,8 +67,8 @@ def parse_IgBLAST(receptor, loci, output_dir, cell_name, raw_seq_dir, species, s
     
     loci_for_segments = defaultdict(list)
     
-    for locus in loci:
-        expecting_D[locus] = False
+    #for locus in loci:
+    #    expecting_D[locus] = False
     
     for locus in loci:
         seq_files = glob.glob(os.path.join(raw_seq_dir, "{receptor}_{locus}_*.fa".format(receptor=receptor, 
@@ -86,7 +86,7 @@ def parse_IgBLAST(receptor, loci, output_dir, cell_name, raw_seq_dir, species, s
     #for segment in segment_names:
     #    IMGT_seqs[segment] = load_IMGT_seqs("{}/{}.fa".format(imgt_seq_location, segment))
     
-    locus_names = ["_".join(receptor,x) for x in loci]
+    locus_names = ["_".join([receptor,x]) for x in loci]
     all_locus_data = defaultdict(dict)
     for locus in locus_names:
         file = "{output_dir}/IgBLAST_output/{cell_name}_{locus}.IgBLASTOut".format(output_dir=output_dir,
@@ -101,7 +101,6 @@ def parse_IgBLAST(receptor, loci, output_dir, cell_name, raw_seq_dir, species, s
         else:
             all_locus_data[locus] = None
 
-    constant_seqs = pd.read_csv(const_seq_file, index_col=0)['sequence'].to_dict()
 
     cell = find_possible_alignments(all_locus_data, locus_names, cell_name, IMGT_seqs, output_dir, species, seq_method,
                                      invariant_seqs, loci_for_segments)

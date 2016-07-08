@@ -111,7 +111,7 @@ def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs, out
         data_for_locus = sample_dict[locus]
         if data_for_locus is not None:
             for query_name, query_data in six.iteritems(data_for_locus):
-                processed_hit_table = process_hit_table(query_name, query_data, locus, expecting_D)
+                processed_hit_table = process_hit_table(query_name, query_data, locus)
 
                 if processed_hit_table is not None:
                     (returned_locus, good_hits, rearrangement_summary) = processed_hit_table
@@ -121,11 +121,13 @@ def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs, out
 
                     junc_string = "".join(junction_list)
                     junc_string = remove_NA(junc_string)
-
-                    if locus in loci_for_segments['D']:
+                    
+                    locus_letter = returned_locus.split("_")[1]
+                    if locus_letter in loci_for_segments['D']:
                         best_J = remove_allele_stars(rearrangement_summary[2].split(",")[0])
                     else:
                         best_J = remove_allele_stars(rearrangement_summary[1].split(",")[0])
+
 
                     identifier = best_V + "_" + junc_string + "_" + best_J
 
@@ -134,7 +136,7 @@ def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs, out
 
                     all_V_names = [remove_allele_stars(x) for x in rearrangement_summary[0].split(',')]
 
-                    if locus in loci_for_segments['D']:
+                    if locus_letter in loci_for_segments['D']:
                         all_J_names = [remove_allele_stars(x) for x in rearrangement_summary[2].split(',')]
                     else:
                         all_J_names = [remove_allele_stars(x) for x in rearrangement_summary[1].split(',')]
@@ -170,13 +172,14 @@ def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs, out
                     if seq_method == 'imgt':
                         (fasta_line_for_contig, is_productive, bestVJNames) = get_fasta_line_for_contig_imgt(
                             rearrangement_summary, junction_list, good_hits, returned_locus, IMGT_seqs, cell_name,
-                            query_name, species, constant_seqs)
+                            query_name, species, loci_for_segments)
 
                     elif seq_method == 'assembly':
                         fasta_line_for_contig = trinity_seq
                         (is_productive, bestVJNames) = get_fasta_line_for_contig_assembly(trinity_seq, good_hits,
                                                                                           returned_locus, IMGT_seqs,
-                                                                                          cell_name, query_name)
+                                                                                          cell_name, query_name,
+                                                                                          loci_for_segments)
 
                     if len(junc_string) < 50:
                         rec = Recombinant(contig_name=query_name, locus=returned_locus, identifier=identifier,
@@ -195,6 +198,7 @@ def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs, out
             recombinants[locus] = collapse_close_sequences(rs, locus)
 
         # cell_name, A_recombinants, B_recombinants, G_recombinants, D_recombinants, is_empty=False, species="Mmus")
+        pdb.set_trace()
         cell = Cell(cell_name, recombinants['TCRA'], recombinants['TCRB'], None, None, species=species,
                     invariant_seqs=invariant_seqs)
     else:
@@ -230,7 +234,7 @@ def remove_allele_stars(segment):
     return (m.group(1))
 
 
-def process_hit_table(query_name, query_data, locus, expecting_D):
+def process_hit_table(query_name, query_data, locus):
     hit_table = query_data['hit_table']
     rearrangement_summary = query_data['VDJ_rearrangement_summary']
 
@@ -288,19 +292,21 @@ def get_fasta_line_for_contig_imgt(rearrangement_summary, junction_details, hit_
     found_best_V = False
     found_best_D = False
     found_best_J = False
+    
 
-    V_pattern = re.compile(r".+{potential_loci}V.+".format(potential_loci="".join([x.split[1] 
-                                                                                for x in loci_for_segments['V']])))
-    D_pattern = re.compile(r".+{potential_loci}D.+".format(potential_loci="".join([x.split[1] 
-                                                                                for x in loci_for_segments['D']])))
-    J_pattern = re.compile(r".+{potential_loci}J.+".format(potential_loci="".join([x.split[1] 
-                                                                                for x in loci_for_segments['J']])))
+    
+    V_pattern = re.compile(r".+{potential_loci}V.+".format(potential_loci='[' + "".join(loci_for_segments['V']) + ']'))
+    D_pattern = re.compile(r".+{potential_loci}D.+".format(potential_loci='[' + "".join(loci_for_segments['D']) + ']'))
+    J_pattern = re.compile(r".+{potential_loci}J.+".format(potential_loci='[' + "".join(loci_for_segments['J']) + ']'))
+    
 
     for hit in hit_table:
         segment = hit[2]
-        pdb.set_trace()
-        if V_pattern.search(segment) and not found_best_V:
+        V_match = V_pattern.search(segment)
+        J_match = J_pattern.search(segment)
+        if V_match and not found_best_V:
             #V_locus_key = "TR{}V".format(segment[2])
+            V_locus_key = "_".join([locus, 'V'])
             best_V_name = segment
             # Remove forward slashes from shared A/D gene names to be the same as in the IMGT files.
             #segment = segment.replace("/", "_")
@@ -309,8 +315,9 @@ def get_fasta_line_for_contig_imgt(rearrangement_summary, junction_details, hit_
             # hit[11] is the end of the V sequence
             best_V_seq = best_V_seq[0:int(hit[11])]
             found_best_V = True
-        elif J_pattern.search(segment) and not found_best_J:
-            J_locus_key = "TR{}J".format(segment[2])
+        elif J_match and not found_best_J:
+            #J_locus_key = "TR{}J".format(segment[2])
+            J_locus_key = "_".join([locus, 'J'])
             best_J_name = segment
             best_J_seq = IMGT_seqs[J_locus_key][segment]
             # hit 10 is the start of the J sequence
@@ -320,8 +327,10 @@ def get_fasta_line_for_contig_imgt(rearrangement_summary, junction_details, hit_
     junction = []
 
     parens_pattern = re.compile(r"\([CAGT]+\)")
-
-    if locus == "B" or locus == "D":
+    
+    locus_letter = locus.split("_")[1]
+    
+    if locus_letter in loci_for_segments['D']:
         # junc_seqs = junction_details[1:3]
         VD_junc = junction_details[1]
         D_region = junction_details[2]
@@ -337,7 +346,7 @@ def get_fasta_line_for_contig_imgt(rearrangement_summary, junction_details, hit_
         junc_seqs = [VD_junc, D_region, DJ_junc]
 
 
-    elif locus == "A" or locus == "G":
+    else:
         VJ_junc = junction_details[1]
         # junctions in parentheses are represented in the coordinates of the matched segments.
         # Need to trim them then include the NTs in the junction
@@ -354,13 +363,15 @@ def get_fasta_line_for_contig_imgt(rearrangement_summary, junction_details, hit_
             junction.append(seq)
 
     junction = "".join(junction)
+    
 
-    constant_seq = constant_seqs[locus]
+    constant_seq = IMGT_seqs["_".join([locus, 'C'])].values()[0]
 
     # Editing IMGT V and J sequences to include any alterations from the junction details
     V_end_seq = junction_details[0]
     J_start_seq = junction_details[-1]
     best_V_seq = best_V_seq[:-(len(V_end_seq))]
+    
     best_V_seq = best_V_seq + V_end_seq
     best_J_seq = best_J_seq[len(J_start_seq):]
     best_J_seq = J_start_seq + best_J_seq
@@ -404,19 +415,20 @@ def get_segment_name(name, pattern):
     return (number)
 
 
-def get_fasta_line_for_contig_assembly(trinity_seq, hit_table, locus, IMGT_seqs, sample_name, query_name):
+def get_fasta_line_for_contig_assembly(trinity_seq, hit_table, locus, IMGT_seqs, sample_name, 
+                                        query_name, loci_for_segments):
     found_best_V = False
     found_best_D = False
     found_best_J = False
 
-    V_pattern = re.compile(r"TR[ABGD]V\d")
-    D_pattern = re.compile(r"TR[BD]D\d")
-    J_pattern = re.compile(r"TR[ABGD]J\d")
+    V_pattern = re.compile(r".+{potential_loci}V.+".format(potential_loci='[' + "".join(loci_for_segments['V']) + ']'))
+    D_pattern = re.compile(r".+{potential_loci}D.+".format(potential_loci='[' + "".join(loci_for_segments['D']) + ']'))
+    J_pattern = re.compile(r".+{potential_loci}J.+".format(potential_loci='[' + "".join(loci_for_segments['J']) + ']'))
 
     for hit in hit_table:
         segment = hit[2]
         if V_pattern.search(segment) and not found_best_V:
-            V_locus_key = "TR{}V".format(segment[2])
+            V_locus_key = V_locus_key = "_".join([locus, 'V'])
             best_V_name = segment
             # Remove forward slashes from shared A/D gene names to be the same as in the IMGT files.
             segment = segment.replace("/", "_")
@@ -426,13 +438,13 @@ def get_fasta_line_for_contig_assembly(trinity_seq, hit_table, locus, IMGT_seqs,
             # best_V_seq = best_V_seq[0:int(hit[11])]
             found_best_V = True
         elif J_pattern.search(segment) and not found_best_J:
-            J_locus_key = "TR{}J".format(segment[2])
+            J_locus_key = "_".join([locus, 'J'])
             best_J_name = segment
             ref_J_seq = IMGT_seqs[J_locus_key][segment]
             # hit 10 is the start of the J sequence
             # best_J_seq = best_J_seq[int(hit[10])-1 :]
             found_best_J = True
-
+    
     # work out if sequence that exists is in frame
 
     found_V = False
