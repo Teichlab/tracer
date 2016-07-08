@@ -740,7 +740,11 @@ class Builder(TracerTask):
         VDJC_files = self.copy_raw_files()
         recombinome_fasta = self.make_recombinomes(VDJC_files)
         self.make_bowtie2_index(recombinome_fasta)
-        self.make_igblast_db(VDJC_files)
+        missing_dbs = self.make_igblast_db(VDJC_files)
+        for s in missing_dbs:
+            print("\nIMPORTANT: there is no IgBLAST database for {receptor}_{segment}\n"\
+                  "Run build with {segment} segments for {receptor} before using tracer assemble\n".format(\
+                   receptor = self.receptor_name, segment=s))
     
     def copy_raw_files(self):    
         
@@ -835,12 +839,13 @@ class Builder(TracerTask):
         igblast_dir = os.path.join(self.species_dir, 'igblast_dbs')
         
         makeblastdb = self.get_binary('makeblastdb')
-        
+        missing_dbs = []
         for s in 'VDJ':
             fn = "{receptor}_{segment}.fa".format(receptor=self.receptor_name, segment=s)
             fasta_file = os.path.join(igblast_dir, fn)
             # create file if it doesn't already exist
             open(fasta_file, 'a').close()
+
             #pdb.set_trace()
             if s in VDJC_files:
                 with open(fasta_file) as e:
@@ -860,6 +865,9 @@ class Builder(TracerTask):
                         existing_seqs.update({seq_name:seq})
                 with open(fasta_file, 'w') as f:
                     SeqIO.write(existing_seqs.values(), f, "fasta")
+                
+                if len(existing_seqs) == 0:
+                    missing_dbs.append(s)
             
                 if len(non_overwritten_seqs)>0:
                     print ('The follwing IgBLAST DB sequences for {receptor}_{segment} already ' \
@@ -867,13 +875,22 @@ class Builder(TracerTask):
                     print ('These sequences were not overwritten. Use --force_overwrite to replace with new ones')
                     for seq in non_overwritten_seqs:
                         print(seq)
+                
+                command = [makeblastdb, '-parse_seqids', '-dbtype', 'nucl', '-in', fasta_file]
+                try:
+                    subprocess.check_call(command)
+                except (subprocess.CalledProcessError):
+                    print("makeblastdb failed for {receptor}_{segment}".format(receptor=self.receptor_name, segment=s))
+                
+            else:
+                with open(fasta_file) as e:
+                    existing_seqs = SeqIO.to_dict(SeqIO.parse(e, "fasta"))
+                if len(existing_seqs) == 0:
+                    missing_dbs.append(s)
 
-            command = [makeblastdb, '-parse_seqids', '-dbtype', 'nucl', '-in', fasta_file]
-            try:
-                subprocess.check_call(command)
-            except (subprocess.CalledProcessError):
-                print("makeblastdb failed for {receptor}_{segment}".format(receptor=self.receptor_name, segment=s))
-        
+        return(missing_dbs)
+
+            
         
         
     
