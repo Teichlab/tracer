@@ -31,6 +31,7 @@ from Bio import SeqIO
 
 import pdb
 
+
 class TracerTask(object):
 
     base_parser = argparse.ArgumentParser(add_help=False, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -114,6 +115,7 @@ class TracerTask(object):
         resources_dir = os.path.join(base_dir, 'resources')
         resources_root = os.path.join(resources_dir, species)
         return(resources_root)
+
 
 class Assembler(TracerTask):
 
@@ -233,7 +235,6 @@ class Assembler(TracerTask):
         resources_dir = os.path.join(base_dir, 'resources')
         species_dirs = next(os.walk(resources_dir))[1]
         return(species_dirs)
-        
         
     def run(self, **kwargs):
 
@@ -687,34 +688,37 @@ class Tester(TracerTask):
 
             Assembler(ncores=str(self.ncores), config_file=self.config_file, resume_with_existing_files=True,
                       species='Mmus', seq_method='imgt', fastq1=f1, fastq2=f2, cell_name=name, output_dir=out_dir,
-                      single_end=False, fragment_length=False, fragment_sd=False, receptor_name = 'TCR', 
-                      loci = ['A', 'B']).run()
+                      single_end=False, fragment_length=False, fragment_sd=False, receptor_name='TCR',
+                      loci=['A', 'B']).run()
 
         Summariser(config_file=self.config_file, use_unfiltered=False, keep_inkt=False,
                    graph_format=self.graph_format, no_networks=self.no_networks, root_dir=out_dir) \
             .run()
 
+
 class Builder(TracerTask):
 
+    """ Build Combinatorial Recombinomes for a given species """
+
     def __init__(self, **kwargs):
+        self.leader_padding = 20
         if not kwargs:
             parser = argparse.ArgumentParser(description="Build resources from sequences", parents=[self.base_parser])
-            parser.add_argument('--force_overwrite', '-f', help = 'force overwrite of existing resources', 
-                                action = 'store_true')                                 
+            parser.add_argument('--force_overwrite', '-f', help='force overwrite of existing resources',
+                                action='store_true')
             parser.add_argument('species', metavar="<SPECIES>", help='species (eg Mmus)')
             parser.add_argument('receptor_name', metavar="<RECEPTOR_NAME>", help='name of receptor (eg TCR)')
             parser.add_argument('locus_name', metavar="<LOCUS_NAME>", help='name of locus (eg A)')
             parser.add_argument('N_padding', metavar="<N_PADDING>", 
-                                 help='number of ambiguous N nucleotides between V and J', type = int)
+                                 help='number of ambiguous N nucleotides between V and J', type=int)
             parser.add_argument('V_seqs', metavar="<V_SEQS>", help='fasta file containing V gene sequences')
             parser.add_argument('J_seqs', metavar="<J_SEQS>", help='fasta file containing J gene sequences')
             parser.add_argument('C_seq', metavar="<C_SEQ>", 
                                 help='fasta file containing single constant region sequence')
-            parser.add_argument('D_seqs', metavar="<D_SEQS>", nargs='?', default = False,
-                                 help='fasta file containing D gene sequences (optional)')
+            parser.add_argument('D_seqs', metavar="<D_SEQS>", nargs='?', default=False,
+                                help='fasta file containing D gene sequences (optional)')
             
             args = parser.parse_args(sys.argv[2:])
-            
             
             self.ncores = args.ncores
             self.force_overwrite = args.force_overwrite
@@ -724,7 +728,7 @@ class Builder(TracerTask):
             self.N_padding = args.N_padding
             
             self.raw_seq_files = {}
-            self.raw_seq_files['V']= args.V_seqs
+            self.raw_seq_files['V'] = args.V_seqs
             self.raw_seq_files['J'] = args.J_seqs
             self.raw_seq_files['C'] = args.C_seq
             if args.D_seqs:
@@ -742,119 +746,138 @@ class Builder(TracerTask):
             self.raw_seq_files['V'] = kwargs.get('V_seqs')
             self.raw_seq_files['J'] = kwargs.get('J_seqs')
             self.raw_seq_files['C'] = kwargs.get('C_seq')
-            if args.D_seqs:
+            if kwargs.get('D_seqs'):
                 self.raw_seq_files['D'] = kwargs.get('D_seqs')
             
             config_file = kwargs.get('config_file')
 
         self.config = self.read_config(config_file)
-            
+        self.species_dir = self.get_resources_root(self.species)
+
     def run(self):
 
-        #set up output directories
-        self.species_dir = self.get_resources_root(self.species)
-        subdirs = ['igblast_dbs', 'combinatorial_recombinomes', 'raw_seqs']
-        
-        io.makeOutputDir(self.species_dir)
-        for d in subdirs:
-            io.makeOutputDir(os.path.join(self.species_dir, d))
-    
+        # Check that there will not be git conflicts with inbuilt species
+        assert self.species not in ('Mmus', 'Hsap'), \
+            "Cannot overwrite inbuilt species. Please choose a unique name " \
+            "e.g. 'Mmus_1'"
 
+        self.init_dirs()
         VDJC_files = self.copy_raw_files()
         recombinome_fasta = self.make_recombinomes(VDJC_files)
         self.make_bowtie2_index(recombinome_fasta)
         missing_dbs = self.make_igblast_db(VDJC_files)
         for s in missing_dbs:
             print("\nIMPORTANT: there is no IgBLAST database for {receptor}_{segment}\n"\
-                  "Run build with {segment} segments for {receptor} before using tracer assemble\n".format(\
-                   receptor = self.receptor_name, segment=s))
-    
-    def copy_raw_files(self):    
+                  "Run build with {segment} segments for {receptor} before using tracer assemble\n"
+                  .format(receptor = self.receptor_name, segment=s))
+
+    def check_duplicate(self, new_path, segment=None, descriptor="Resource"):
+        error_string = "{descriptor} already exists for {receptor}_{locus}" \
+            .format(descriptor=descriptor, receptor=self.receptor_name,
+                    locus=self.locus_name)
+        if segment:
+            error_string += "_" + segment
+        error_string += ". Use --force_overwrite to replace existing file."
+        if os.path.isfile(new_path):
+            assert self.force_overwrite, error_string
+
+    def init_dirs(self):
+
+        # Set up output directories
+        subdirs = ['igblast_dbs', 'combinatorial_recombinomes', 'raw_seqs']
+
+        io.makeOutputDir(self.species_dir)
+        for d in subdirs:
+            io.makeOutputDir(os.path.join(self.species_dir, d))
+
+    def copy_raw_files(self):
+
+        """ Move user-specified files to internal resources file system """
         
         gene_segs = 'VJC'
         
         VDJC_files = {}
         
         if 'D' in self.raw_seq_files:
-            gene_segs = gene_segs + 'D'
+            gene_segs += 'D'
 
-            
-        
         for s in gene_segs:
-            fn = "{receptor}_{locus}_{s}.fa".format(receptor=self.receptor_name, locus=self.locus_name, s=s)
+            fn = "{receptor}_{locus}_{s}.fa".format(receptor=self.receptor_name,
+                                                    locus=self.locus_name, s=s)
             out_file = os.path.join(self.species_dir, 'raw_seqs', fn)
             VDJC_files[s] = out_file
-            if os.path.isfile(out_file) and not self.force_overwrite:
-                print("Raw sequence file already exists for {receptor}_{locus}_{s}.".format(receptor=self.receptor_name,\
-                 locus=self.locus_name, s=s), "Use --force_overwrite to replace existing file")
-                sys.exit(1)
-            else:
-                shutil.copy(self.raw_seq_files[s], out_file)
-        return(VDJC_files)
+            self.check_duplicate(out_file, segment=s,
+                                 descriptor="Sequence File")
+            shutil.copy(self.raw_seq_files[s], out_file)
+
+        return VDJC_files
      
-    def load_segment_seqs(self, file):
+    def load_segment_seqs(self, filename):
         seqs = {}
-        for record in SeqIO.parse(open(file, 'rU'), 'fasta'):
-            seqs[record.id] = str(record.seq)
-        return(seqs)
+        with open(filename, 'rU') as fn:
+            for record in SeqIO.parse(fn, 'fasta'):
+                seqs[record.id] = str(record.seq)
+
+        return seqs
         
-            
     def make_recombinomes(self, VDJC_files):
         
-        self.leader_padding = 20
-        
-        out_fasta = os.path.join(self.species_dir, 'combinatorial_recombinomes', 
-                    '{receptor}_{locus}.fa'.format(receptor=self.receptor_name, locus=self.locus_name))
+        out_fasta = os.path.join(
+            self.species_dir, 'combinatorial_recombinomes',
+            '{receptor}_{locus}.fa'.format(receptor=self.receptor_name,
+                                           locus=self.locus_name))
 
-        
-        if os.path.isfile(out_fasta) and not self.force_overwrite:
-            print("Combinatorial recombinome already exists for {receptor}_{locus}.".format(receptor=self.receptor_name,\
-             locus=self.locus_name), "Use --force_overwrite to replace existing file")
-            sys.exit(1)
+        self.check_duplicate(out_fasta, descriptor="Combinatorial recombinome")
         
         seqs = {}
         
         for s in 'VJC':
             in_file = VDJC_files[s]
             seqs[s] = self.load_segment_seqs(in_file)
-        
+
+        # Logical check for C region
         if len(seqs['C']) > 1:
-            print ("\nMore than one constant region sequence included in {C_file}.".format(self.raw_seq_files['C']))
+            print("\nMore than one constant region sequence included in {C_file}." \
+                  .format(self.raw_seq_files['C']))
             print("Please only provide one constant sequence.\n")
             sys.exit(1)
-        
-        const_seq = seqs['C'].values()[0].upper()
+
+        const_seq = list(seqs['C'].values())[0].upper()
         N_junction_string = "N" * self.N_padding
         N_leader_string = "N" * self.leader_padding
         
         seqs_to_write = []
-        
+
+        # Compile sequences to write
         for V_name, V_seq in six.iteritems(seqs['V']):
             for J_name, J_seq in six.iteritems(seqs['J']):
-                chr_name = ">chr={V_name}_{J_name}".format(J_name=J_name, V_name=V_name)
-                seq = N_leader_string + V_seq.lower() + N_junction_string + J_seq.lower() + const_seq
-                seqs_to_write.append("{chr_name}\n{seq}\n".format(seq=seq, chr_name=chr_name))
+                chr_name = ">chr={V_name}_{J_name}".format(J_name=J_name,
+                                                           V_name=V_name)
+                seq = N_leader_string + V_seq.lower() + N_junction_string + \
+                      J_seq.lower() + const_seq
+                seqs_to_write.append("{chr_name}\n{seq}\n"
+                                     .format(seq=seq, chr_name=chr_name))
         
         with open(out_fasta, 'w') as f:
             for seq in seqs_to_write:
                 f.write(seq)
-        return(out_fasta)
+
+        return out_fasta
 
     def make_bowtie2_index(self, recombinome_fasta):
         
         bowtie2_build = self.get_binary('bowtie2-build')
-        index_base = os.path.join(self.species_dir, 'combinatorial_recombinomes', 
-                    '{receptor}_{locus}'.format(receptor=self.receptor_name, locus=self.locus_name))
+        index_base = os.path.join(
+            self.species_dir, 'combinatorial_recombinomes',
+            '{receptor}_{locus}'.format(receptor=self.receptor_name,
+                                        locus=self.locus_name))
+
+        self.check_duplicate(index_base + ".1.bt2", descriptor="Bowtie2 index")
         
-        if os.path.isfile(index_base + ".1.bt2") and not self.force_overwrite:
-            print("Bowtie2 index already exists for {receptor}_{locus}.".format(receptor=self.receptor_name,\
-            locus=self.locus_name), "Use --force_overwrite to replace existing file")
-            sys.exit(1)
-        
-        command = [bowtie2_build, recombinome_fasta, index_base]
+        command = [bowtie2_build, '-q', recombinome_fasta, index_base]
         try:
             subprocess.check_call(command)
-        except (subprocess.CalledProcessError):
+        except subprocess.CalledProcessError:
             print("bowtie2-build failed")
     
     def make_igblast_db(self, VDJC_files):
@@ -864,9 +887,11 @@ class Builder(TracerTask):
         makeblastdb = self.get_binary('makeblastdb')
         missing_dbs = []
         for s in 'VDJ':
-            fn = "{receptor}_{segment}.fa".format(receptor=self.receptor_name, segment=s)
+            fn = "{receptor}_{segment}.fa".format(receptor=self.receptor_name,
+                                                  segment=s)
             fasta_file = os.path.join(igblast_dir, fn)
-            # create file if it doesn't already exist
+
+            # Create file if it doesn't already exist
             open(fasta_file, 'a').close()
 
             #pdb.set_trace()
@@ -883,27 +908,32 @@ class Builder(TracerTask):
                         if not self.force_overwrite:
                             non_overwritten_seqs.append(seq_name)
                         else:
-                            existing_seqs.update({seq_name:seq})
+                            existing_seqs.update({seq_name: seq})
                     else:
-                        existing_seqs.update({seq_name:seq})
+                        existing_seqs.update({seq_name: seq})
                 with open(fasta_file, 'w') as f:
                     SeqIO.write(existing_seqs.values(), f, "fasta")
                 
                 if len(existing_seqs) == 0:
                     missing_dbs.append(s)
             
-                if len(non_overwritten_seqs)>0:
-                    print ('The follwing IgBLAST DB sequences for {receptor}_{segment} already ' \
-                            'found in {file}.'.format(receptor=self.receptor_name, segment=s, file=fasta_file))
-                    print ('These sequences were not overwritten. Use --force_overwrite to replace with new ones')
+                if len(non_overwritten_seqs) > 0:
+                    print('The follwing IgBLAST DB sequences for '
+                          '{receptor}_{segment} already found in {file}.'
+                          .format(receptor=self.receptor_name, segment=s,
+                                  file=fasta_file))
+                    print('These sequences were not overwritten. '
+                          'Use --force_overwrite to replace with new ones')
                     for seq in non_overwritten_seqs:
                         print(seq)
                 
-                command = [makeblastdb, '-parse_seqids', '-dbtype', 'nucl', '-in', fasta_file]
+                command = [makeblastdb, '-parse_seqids', '-dbtype', 'nucl',
+                           '-in', fasta_file]
                 try:
                     subprocess.check_call(command)
-                except (subprocess.CalledProcessError):
-                    print("makeblastdb failed for {receptor}_{segment}".format(receptor=self.receptor_name, segment=s))
+                except subprocess.CalledProcessError:
+                    print("makeblastdb failed for {receptor}_{segment}"
+                          .format(receptor=self.receptor_name, segment=s))
                 
             else:
                 with open(fasta_file) as e:
@@ -911,10 +941,4 @@ class Builder(TracerTask):
                 if len(existing_seqs) == 0:
                     missing_dbs.append(s)
 
-        return(missing_dbs)
-
-            
-        
-        
-    
-        
+        return missing_dbs
