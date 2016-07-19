@@ -82,8 +82,13 @@ def split_igblast_file(filename):
     token = '# IGBLASTN'
     chunks = []
     current_chunk = []
-
-    for line in open(filename):
+    
+    try:
+        f = open(filename)
+    except TypeError:
+        f = filename
+    
+    for line in f:
         line = line.rstrip()
         if line.startswith(token) and current_chunk:
             # if line starts with token and the current chunk is not empty

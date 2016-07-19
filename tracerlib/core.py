@@ -71,7 +71,7 @@ class Cell(object):
                     identifier_list.add(cdr3)
         return (identifier_list)
 
-    def html_style_label_dna(self):
+    def html_style_label_dna(self, transgenic_ids = False):
         colours = {'A': {'productive': '#E41A1C', 'non-productive': "#ff8c8e"},
                    'B': {'productive': '#377eb8', 'non-productive': "#95c1e5"},
                    'G': {'productive': '#4daf4a', 'non-productive': "#aee5ac"},
@@ -87,8 +87,15 @@ class Cell(object):
                         prod = "productive"
                     else:
                         prod = "non-productive"
-                    recombinant_set.add("<BR/>" + '<FONT COLOR = "{}">'.format(
-                        colours[locus][prod]) + recombinant.identifier + '</FONT>')
+                    
+                    if transgenic_ids and recombinant.identifier in transgenic_ids:
+                        recombinant_set.add("<BR/>" + '<FONT COLOR = "#999999">'.format(colours[locus][prod])  + recombinant.identifier  + '</FONT>')
+                        
+                        
+                        
+                    else:    
+                        recombinant_set.add("<BR/>" + '<FONT COLOR = "{}">'.format(colours[locus][prod])  + recombinant.identifier  + '</FONT>')
+                    
 
                 recombinants[locus] = recombinant_set
         for locus in locus_names:
@@ -99,7 +106,7 @@ class Cell(object):
         return (final_string)
         # return(self.name)
 
-    def html_style_label_for_circles(self):
+    def html_style_label_for_circles(self, transgenic_ids = False):
         colours = {'A': {'productive': '#E41A1C', 'non-productive': "#ff8c8e"},
                    'B': {'productive': '#377eb8', 'non-productive': "#95c1e5"},
                    'G': {'productive': '#4daf4a', 'non-productive': "#aee5ac"},
@@ -116,8 +123,11 @@ class Cell(object):
                         prod = "productive"
                     else:
                         prod = "non-productive"
-                    recombinant_set.add(
-                        '<tr><td height="10" width="40" bgcolor="{}"></td></tr>'.format(colours[locus][prod]))
+                    if transgenic_ids and recombinant.identifier in transgenic_ids:
+                        recombinant_set.add('<tr><td height="10" width="40" border="2" color="{}"></td></tr>'.format(colours[locus][prod]))
+                    else:
+                        recombinant_set.add('<tr><td height="10" width="40" bgcolor="{}"></td></tr>'.format(colours[locus][prod]))
+                    
 
                 recombinants[locus] = recombinant_set
         strings = []
@@ -189,21 +199,61 @@ class Cell(object):
                     prod_count += 1
             return ("{}/{}".format(prod_count, total_count))
 
-    def filter_recombinants(self):
+    def filter_recombinants(self, transgenic_ids=False):
         for locus in ['A', 'B']:
             recs = self.all_recombinants[locus]
             if recs is not None:
-                if len(recs) > 2:
-                    TPM_ranks = Counter()
-                    for rec in recs:
-                        TPM_ranks.update({rec.contig_name: rec.TPM})
-                    two_most_common = [x[0] for x in TPM_ranks.most_common(2)]
-                    to_remove = []
-                    for rec in recs:
-                        if rec.contig_name not in two_most_common:
-                            to_remove.append(rec)
-                    for rec in to_remove:
-                        self.all_recombinants[locus].remove(rec)
+                to_remove = []
+                
+                if not transgenic_ids: #this is the normal situation
+                    if len(recs) > 2:
+                        TPM_ranks = Counter()
+                        for rec in recs:
+                            TPM_ranks.update({rec.contig_name: rec.TPM})
+                        two_most_common = [x[0] for x in TPM_ranks.most_common(2)]
+                        for rec in recs:
+                            if rec.contig_name not in two_most_common:
+                                to_remove.append(rec)
+                        
+                else:
+                    if len(recs) > 2:
+                        TPM_ranks = Counter()
+                        for rec in recs:
+                            TPM_ranks.update({rec.contig_name: rec.TPM})
+                        three_most_common = [x[0] for x in TPM_ranks.most_common(3)]
+                        three_most_common_ids = []
+                        for rec in recs:
+                            if rec.contig_name in three_most_common:
+                                three_most_common_ids.append(rec.identifier)
+                        if len(set(transgenic_ids).intersection(set(three_most_common_ids))) > 0:
+                            for rec in recs:
+                                if rec.contig_name not in three_most_common:
+                                    to_remove.append(rec)
+                        else:
+                            TPM_ranks = Counter()
+                            for rec in recs:
+                                TPM_ranks.update({rec.contig_name: rec.TPM})
+                            two_most_common = [x[0] for x in TPM_ranks.most_common(2)]
+                            for rec in recs:
+                                if rec.contig_name not in two_most_common:
+                                    to_remove.append(rec)
+                
+                for rec in to_remove:
+                    self.all_recombinants[locus].remove(rec)
+                
+                
+                
+                #if len(recs) > 2:
+                #    TPM_ranks = Counter()
+                #    for rec in recs:
+                #        TPM_ranks.update({rec.contig_name: rec.TPM})
+                #    two_most_common = [x[0] for x in TPM_ranks.most_common(2)]
+                #    to_remove = []
+                #    for rec in recs:
+                #        if rec.contig_name not in two_most_common:
+                #            to_remove.append(rec)
+                #    for rec in to_remove:
+                #        self.all_recombinants[locus].remove(rec)
 
     def count_productive_recombinants(self, locus):
         recs = self.all_recombinants[locus]

@@ -602,16 +602,16 @@ def load_kallisto_counts(tsv_file):
     return counts
 
 
-def make_cell_network_from_dna(cells, colorscheme, colours, keep_unlinked, shape, dot, neato):
+def make_cell_network_from_dna(cells, colorscheme, colours, keep_unlinked, shape, dot, neato, transgenic_ids=False):
     G = nx.MultiGraph()
     # initialise all cells as nodes
 
     if shape == 'circle':
         for cell in cells:
-            G.add_node(cell, shape=shape, label=cell.html_style_label_for_circles(), sep=0.4, fontname="helvetica neue")
+            G.add_node(cell, shape=shape, label=cell.html_style_label_for_circles(transgenic_ids), sep=0.4, fontname="helvetica neue")
     else:
         for cell in cells:
-            G.add_node(cell, shape=shape, label=cell.html_style_label_dna(), fontname="helvetica neue")
+            G.add_node(cell, shape=shape, label=cell.html_style_label_dna(transgenic_ids), fontname="helvetica neue")
     # make edges:
     for i in range(len(cells)):
         current_cell = cells[i]
@@ -625,12 +625,13 @@ def make_cell_network_from_dna(cells, colorscheme, colours, keep_unlinked, shape
                 shared_identifiers = 0
                 if current_cell.all_recombinants[locus] is not None:
                     for current_recombinant in current_cell.all_recombinants[locus]:
-                        current_id_set = current_recombinant.all_poss_identifiers
-                        if comparison_cell.all_recombinants[locus] is not None:
-                            for comparison_recombinant in comparison_cell.all_recombinants[locus]:
-                                comparison_id_set = comparison_recombinant.all_poss_identifiers
-                                if len(current_id_set.intersection(comparison_id_set)) > 0:
-                                    shared_identifiers += 1
+                        if not (transgenic_ids and current_recombinant.identifier in transgenic_ids):
+                            current_id_set = current_recombinant.all_poss_identifiers
+                            if comparison_cell.all_recombinants[locus] is not None:
+                                for comparison_recombinant in comparison_cell.all_recombinants[locus]:
+                                    comparison_id_set = comparison_recombinant.all_poss_identifiers
+                                    if len(current_id_set.intersection(comparison_id_set)) > 0:
+                                        shared_identifiers += 1
 
                 # comparison_identifiers = comparison_cell.getAllRecombinantIdentifiersForLocus(locus)
                 # common_identifiers = current_identifiers.intersection(comparison_identifiers)
@@ -679,12 +680,12 @@ def make_cell_network_from_dna(cells, colorscheme, colours, keep_unlinked, shape
     return (G, drawing_tool, component_groups)
 
 
-def draw_network_from_cells(cells, output_dir, output_format, dot, neato, draw_graphs):
+def draw_network_from_cells(cells, output_dir, output_format, dot, neato, draw_graphs, transgenic_ids=False):
     cells = list(cells.values())
     colorscheme = 'set15'
     colours = {'A': '1', 'B': '2', 'G': '3', 'D': '5', 'mean_both': '#a8a8a8bf'}
     network, draw_tool, component_groups = make_cell_network_from_dna(cells, colorscheme, colours, False, "box", dot,
-                                                                      neato)
+                                                                      neato, transgenic_ids)
     network_file = "{}/clonotype_network_with_identifiers.dot".format(output_dir)
     try:
         nx.write_dot(network, network_file)
@@ -696,7 +697,7 @@ def draw_network_from_cells(cells, output_dir, output_format, dot, neato, draw_g
             output_dir=output_dir, output_format=output_format), "-T", output_format, network_file]
         subprocess.check_call(command)
 
-    network, draw_tool, cgx = make_cell_network_from_dna(cells, colorscheme, colours, False, "circle", dot, neato)
+    network, draw_tool, cgx = make_cell_network_from_dna(cells, colorscheme, colours, False, "circle", dot, neato, transgenic_ids)
     network_file = "{}/clonotype_network_without_identifiers.dot".format(output_dir)
     try:
         nx.write_dot(network, network_file)
@@ -710,7 +711,7 @@ def draw_network_from_cells(cells, output_dir, output_format, dot, neato, draw_g
     return (component_groups)
 
 
-def get_component_groups_sizes(cells):
+def get_component_groups_sizes(cells, transgenic_ids=False):
     cells = list(cells.values())
     G = nx.MultiGraph()
     # initialise all cells as nodes
@@ -728,12 +729,13 @@ def get_component_groups_sizes(cells):
                 shared_identifiers = 0
                 if current_cell.all_recombinants[locus] is not None:
                     for current_recombinant in current_cell.all_recombinants[locus]:
-                        current_id_set = current_recombinant.all_poss_identifiers
-                        if comparison_cell.all_recombinants[locus] is not None:
-                            for comparison_recombinant in comparison_cell.all_recombinants[locus]:
-                                comparison_id_set = comparison_recombinant.all_poss_identifiers
-                                if len(current_id_set.intersection(comparison_id_set)) > 0:
-                                    shared_identifiers += 1
+                        if not (transgenic_ids and current_recombinant.identifier in transgenic_ids):
+                            current_id_set = current_recombinant.all_poss_identifiers
+                            if comparison_cell.all_recombinants[locus] is not None:
+                                for comparison_recombinant in comparison_cell.all_recombinants[locus]:
+                                    comparison_id_set = comparison_recombinant.all_poss_identifiers
+                                    if len(current_id_set.intersection(comparison_id_set)) > 0:
+                                        shared_identifiers += 1
 
                 # comparison_identifiers = comparison_cell.getAllRecombinantIdentifiersForLocus(locus)
                 # common_identifiers = current_identifiers.intersection(comparison_identifiers)
@@ -779,6 +781,34 @@ def get_component_groups_sizes(cells):
 
     return (clonotype_sizes)
 
+
+def extract_identifier_from_chunk(chunk_dict, query_name, locus):
+                   
+     processed_hit_table = process_hit_table(query_name, chunk_dict, locus)
+     
+     if processed_hit_table is not None:
+         (returned_locus, good_hits, rearrangement_summary) = processed_hit_table
+         junction_list = chunk_dict['junction_details']
+         
+         
+                   
+         
+         best_V = remove_allele_stars(rearrangement_summary[0].split(",")[0])
+          
+         
+                   
+         junc_string = "".join(junction_list)
+         junc_string = remove_NA(junc_string)
+         
+         if returned_locus in "BD":
+             best_J = remove_allele_stars(rearrangement_summary[2].split(",")[0])
+         elif returned_locus in "AG":
+             best_J = remove_allele_stars(rearrangement_summary[1].split(",")[0])
+                   
+         identifier = best_V + "_" + junc_string + "_" + best_J
+         
+         
+         return(identifier)
 
 def check_config_file(filename):
     if not os.path.isfile(filename):

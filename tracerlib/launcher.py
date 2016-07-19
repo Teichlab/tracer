@@ -23,8 +23,8 @@ import warnings
 import pickle
 from prettytable import PrettyTable
 from Bio.Seq import Seq
-
-#import pdb
+import StringIO
+import pdb
 
 
 class Launcher(object):
@@ -68,6 +68,9 @@ class Launcher(object):
             parser.add_argument('--species', '-s',
                                 help='species from which T cells were isolated - important to determination of iNKT cells',
                                 choices=['Mmus', 'Hsap'], default='Mmus')
+            parser.add_argument('--transgenic', '-t', 
+                                help='Use if cells have transgenic TCRs outside endogenous loci to allow three \
+                                recombinants per chain.', action="store_true")
             parser.add_argument('--seq_method', '-m',
                                 help='Method for constructing sequence to assess productivity, \
                                 quantify expression and for output reporting. See README for details.',
@@ -103,6 +106,7 @@ class Launcher(object):
             fragment_length = args.fragment_length
             fragment_sd = args.fragment_sd
             output_dir = args.output_dir
+            transgenic = args.transgenic
 
         else:
             cell_name = kwargs.get('cell_name')
@@ -117,6 +121,7 @@ class Launcher(object):
             single_end = kwargs.get('single_end')
             fragment_length = kwargs.get('fragment_length')
             fragment_sd = kwargs.get('fragment_sd')
+            transgenic = kwargs.get('transgenic')
 
         if not single_end:
             assert fastq2, "Only one fastq file specified. Either set --single_end or provide second fastq."
@@ -183,7 +188,23 @@ class Launcher(object):
                 print(t[0], t[1])
             print()
             exit(1)
+        
+        transgenic_ids = {'A':False, 'B':False}
+        
+        if transgenic:
+            #transgenic_ids
+            if not (config.has_option('transgenic_sequences', 'tcra_tg') or config.has_option('transgenic_sequences', 'tcrb_tg')):
+                print
+                print("No transgenic sequences specified. Please edit the config file to include them or run without -t flag.")
+                print
+                exit(1)
+            else:
+                if config.has_option('transgenic_sequences', 'tcra_tg'):
+                    transgenic_ids['A'] = self.get_tg_identifier(config.get('transgenic_sequences', 'tcra_tg'), 'A', igblast, igblast_index_location, igblast_seqtype)
 
+                if config.has_option('transgenic_sequences', 'tcra_tg'):
+                    transgenic_ids['B'] = self.get_tg_identifier(config.get('transgenic_sequences', 'tcrb_tg'), 'B', igblast, igblast_index_location, igblast_seqtype)
+        
         # set-up output directories
         root_output_dir = os.path.abspath(output_dir)
         io.makeOutputDir(root_output_dir)
@@ -238,7 +259,12 @@ class Launcher(object):
                                                                             cell_name=cell.name), 'wb') as pf:
             pickle.dump(cell, pf, protocol=0)
         print("##Filtering by read count##")
-        cell.filter_recombinants()
+        if transgenic:
+            cell.filter_recombinants(transgenic_ids.values())
+        else:
+            cell.filter_recombinants()
+            
+            
         fasta_filename = "{output_dir}/filtered_TCR_seqs/{cell_name}_TCRseqs.fa".format(output_dir=output_dir,
                                                                                         cell_name=cell_name)
         fasta_file = open(fasta_filename, 'w')
@@ -590,6 +616,8 @@ class Launcher(object):
             parser.add_argument('--use_unfiltered', '-u', help='use unfiltered recombinants', action="store_true")
             parser.add_argument('--keep_inkt', '-i', help='ignore iNKT cells when constructing networks',
                                 action="store_true")
+            parser.add_argument('--transgenic', '-t', help='summarise detection of expected transgenic TCRs. \
+                                Ignore these when constructing networks', action="store_true")                                
             parser.add_argument('--graph_format', '-f', metavar="<GRAPH_FORMAT>", help='graphviz output format [pdf]',
                                 default='pdf')
             parser.add_argument('--no_networks', help='skip attempts to draw network graphs', action = "store_true")                    
@@ -603,6 +631,7 @@ class Launcher(object):
             keep_inkt = args.keep_inkt
             use_unfiltered = args.use_unfiltered
             draw_graphs = not(args.no_networks)
+            transgenic = args.transgenic
         else:
             config_file = kwargs.get('config_file')
             use_unfiltered = kwargs.get('use_unfiltered')
@@ -610,7 +639,7 @@ class Launcher(object):
             graph_format = kwargs.get('graph_format')
             root_dir = os.path.abspath(kwargs.get('root_dir'))
             draw_graphs = not(kwargs.get('no_networks'))
-
+            transgenic = kwargs.get('transgenic')
         # Read config file
         tracer_func.check_config_file(config_file)
         config = ConfigParser()
@@ -636,7 +665,32 @@ class Launcher(object):
         else:
             dot = ""
             neato = ""
+        
+        transgenic_ids = {'A':False, 'B':False}
+        
+        if transgenic:
+            transgenic_ids
+            if not (config.has_option('transgenic_sequences', 'tcra_tg') or config.has_option('transgenic_sequences', 'tcrb_tg')):
+                print
+                print("No transgenic sequences specified. Please edit the config file to include them or run without -t flag.")
+                print
+                exit(1)
+            else:
+                igblast = self.resolve_relative_path(config.get('tool_locations', 'igblast_path'))
+                igblast_index_location = self.resolve_relative_path(config.get('IgBlast_options', 'igblast_index_location'))
+                igblast_seqtype = config.get('IgBlast_options', 'igblast_seqtype')
+                if not io.is_exe(igblast):
+                    print
+                    print("Could not execute IgBlast. Check your configuration file.")
+                
+                
+                if config.has_option('transgenic_sequences', 'tcra_tg'):
+                    transgenic_ids['A'] = self.get_tg_identifier(config.get('transgenic_sequences', 'tcra_tg'), 'A', igblast, igblast_index_location, igblast_seqtype)
 
+                if config.has_option('transgenic_sequences', 'tcra_tg'):
+                    transgenic_ids['B'] = self.get_tg_identifier(config.get('transgenic_sequences', 'tcrb_tg'), 'B', igblast, igblast_index_location, igblast_seqtype)
+        
+        
         cells = {}
         empty_cells = []
         NKT_cells = {}
@@ -672,9 +726,34 @@ class Launcher(object):
         count_of_cells_with_alpha_recovered = 0
         count_of_cells_with_beta_recovered = 0
         count_of_cells_with_paired_recovered = 0
+        
+        
+        if args.transgenic:
+            transgenic_combinations = ['AB', 'Ab', 'aB','ab', 'A', 'a', 'B', 'b']
+            
+            count_of_cells_with_transgenic = dict.fromkeys(transgenic_combinations, 0)
+            for locus, ident in transgenic_ids.iteritems():
+                if ident:
+                    count_of_cells_with_transgenic[locus] = 0
+        
+        
         for cell_name, cell in six.iteritems(cells):
             prod_a_count = cell.count_productive_recombinants('A')
             prod_b_count = cell.count_productive_recombinants('B')
+            productive_counts = {'A':prod_a_count, 'B':prod_b_count}  
+            if transgenic:
+                transgenic_label = ""
+                for locus in ['A','B']:
+                    prod_count = productive_counts[locus]
+                    ident = transgenic_ids[locus]
+                    if ident in cell.getAllRecombinantIdentifiersForLocus(locus) and prod_count>0:
+                        transgenic_label = transgenic_label + locus
+                    elif prod_count > 0 and not ident in cell.getAllRecombinantIdentifiersForLocus(locus):
+                        transgenic_label = transgenic_label + locus.lower()
+                
+                if len(transgenic_label) > 0:
+                    count_of_cells_with_transgenic[transgenic_label] +=1
+            
             if prod_a_count > 0:
                 count_of_cells_with_alpha_recovered += 1
             if prod_b_count > 0:
@@ -693,7 +772,13 @@ class Launcher(object):
                 count_of_cells_with_beta_recovered=count_of_cells_with_beta_recovered,
                 count_of_cells_with_paired_recovered=count_of_cells_with_paired_recovered,
                 count_of_cells_with_alpha_recovered=count_of_cells_with_alpha_recovered))
-
+        
+        if transgenic:
+            outfile.write("DETECTION OF TRANSGENIC SEQUENCES\nNumber of cells with transgenic sequence detected.\nUppercase letter indicates transgenic seq detected for locus, lowercase indicates a different productive recombinant.\n")
+            for comb in transgenic_combinations:
+                outfile.write("{}:\t{}\n".format(comb, count_of_cells_with_transgenic[comb]))
+            outfile.write("\n\n")
+        
         all_alpha_counter = Counter()
         all_beta_counter = Counter()
         prod_alpha_counter = Counter()
@@ -804,7 +889,10 @@ class Launcher(object):
                 del cells[cell_name]
 
         # make clonotype networks
-        component_groups = tracer_func.draw_network_from_cells(cells, outdir, graph_format, dot, neato, draw_graphs)
+        if transgenic:
+            component_groups = tracer_func.draw_network_from_cells(cells, outdir, graph_format, dot, neato, draw_graphs, transgenic_ids.values())
+        else:
+            component_groups = tracer_func.draw_network_from_cells(cells, outdir, graph_format, dot, neato, draw_graphs)
 
         # Print component groups to the summary#
         outfile.write(
@@ -815,7 +903,10 @@ class Launcher(object):
 
         # plot clonotype sizes
         plt.figure()
-        clonotype_sizes = tracer_func.get_component_groups_sizes(cells)
+        if transgenic:
+            clonotype_sizes = tracer_func.get_component_groups_sizes(cells, transgenic_ids.values())
+        else:
+            clonotype_sizes = tracer_func.get_component_groups_sizes(cells)
         w = 0.85
         x_range = range(1, len(clonotype_sizes) + 1)
         plt.bar(x_range, height=clonotype_sizes, width=w, color='black', align='center')
@@ -852,6 +943,33 @@ class Launcher(object):
 
         outfile.close()
 
+    def get_tg_identifier(self, seq, locus, igblast, index_location, ig_seqtype):
+        seq = ">Tg_TCR{} len={}\n{}".format(locus, len(seq), seq)
+        
+        databases = {}
+        for segment in ['v','d','j']:
+            databases[segment] = "{}/imgt_tcr_db_{}.fa".format(index_location,segment)
+        
+        #lines below suppress Igblast warning about not having an auxliary file. Taken from http://stackoverflow.com/questions/11269575/how-to-hide-output-of-subprocess-in-python-2-7
+        try:
+            from subprocess import DEVNULL # py3k
+        except ImportError:
+            DEVNULL = open(os.devnull, 'wb')
+        
+    
+        cmd = [igblast, '-germline_db_V', databases['v'], '-germline_db_D', databases['d'], '-germline_db_J', databases['j'], '-domain_system', 'imgt', '-ig_seqtype', ig_seqtype, '-show_translation', '-num_alignments_V', '5', '-num_alignments_D', '5', '-num_alignments_J', '5', '-outfmt', '7']
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+        igblast_out = p.communicate(seq)[0]
+        DEVNULL.close()
+        #pdb.set_trace()
+        igblast_out = StringIO.StringIO(igblast_out)
+        igblast_result_chunk = io.split_igblast_file(igblast_out)[0]
+        (query_name, chunk_details) = tracer_func.process_chunk(igblast_result_chunk)
+        
+        tg_identifier = tracer_func.extract_identifier_from_chunk(chunk_details, query_name, "TCR"+locus)
+        return(tg_identifier)
+
+
     summarize = summarise
 
     def test(self):
@@ -875,7 +993,7 @@ class Launcher(object):
 
             self.assemble(ncores=str(args.ncores), config_file=args.config_file, resume_with_existing_files=False,
                           species='Mmus', seq_method='imgt', fastq1=f1, fastq2=f2, cell_name=name, output_dir=out_dir,
-                          single_end=False, fragment_length=False, fragment_sd=False)
+                          single_end=False, fragment_length=False, fragment_sd=False, transgenic = False)
 
         self.summarise(config_file=args.config_file, use_unfiltered=False, keep_inkt=False, 
-                        graph_format=args.graph_format, no_networks=args.no_networks, root_dir=out_dir)
+                        graph_format=args.graph_format, no_networks=args.no_networks, root_dir=out_dir, transgenic=False)
