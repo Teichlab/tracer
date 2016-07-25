@@ -307,16 +307,26 @@ class Recombinant(object):
 
     def __str__(self):
         return ("{} {} {} {}".format(self.identifier, self.productive, self.TPM))
+        
+    
+
+        
+    
+
 
     def _get_cdr3(self, dna_seq):
         aaseq = Seq(str(dna_seq), generic_dna).translate()
         if re.findall('FG.G', str(aaseq)) and re.findall('C', str(aaseq)):
             indices = [i for i, x in enumerate(aaseq) if x == 'C']
             upper = str(aaseq).find(re.findall('FG.G', str(aaseq))[0])
+            lower = False
             for i in indices:
                 if i < upper:
                     lower = i
-            cdr3 = aaseq[lower:upper + 4]
+            if lower:
+                cdr3 = aaseq[lower:upper + 4]
+            else:
+                cdr3 = "Couldn't find conserved cysteine"
         elif re.findall('FG.G', str(aaseq)):
             cdr3 = "Couldn't find conserved cysteine"
         elif re.findall('C', str(aaseq)):

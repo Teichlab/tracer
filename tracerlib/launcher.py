@@ -423,7 +423,9 @@ class Launcher(object):
         successful_files = glob.glob("{}/Trinity_output/*.fasta".format(output_dir))
         unsuccessful_directories = next(os.walk("{}/Trinity_output".format(output_dir)))[1]
         for directory in unsuccessful_directories:
-            shutil.rmtree("{}/Trinity_output/{}".format(output_dir, directory))
+            p = os.path.join(output_dir, 'Trinity_output', directory)
+            if os.path.exists(p):
+                shutil.rmtree(p)
         successful_file_summary = "{}/Trinity_output/successful_trinity_assemblies.txt".format(output_dir)
         unsuccessful_file_summary = "{}/Trinity_output/unsuccessful_trinity_assemblies.txt".format(output_dir)
 
@@ -695,7 +697,9 @@ class Launcher(object):
         empty_cells = []
         NKT_cells = {}
         subdirectories = next(os.walk(root_dir))[1]
-
+        
+        Tg_detection = {}
+        
         if use_unfiltered:
             pkl_dir = "unfiltered_TCR_seqs"
             outdir = "{}/unfiltered_TCR_summary".format(root_dir)
@@ -728,7 +732,7 @@ class Launcher(object):
         count_of_cells_with_paired_recovered = 0
         
         
-        if args.transgenic:
+        if transgenic:
             transgenic_combinations = ['AB', 'Ab', 'aB','ab', 'A', 'a', 'B', 'b']
             
             count_of_cells_with_transgenic = dict.fromkeys(transgenic_combinations, 0)
@@ -736,21 +740,28 @@ class Launcher(object):
                 if ident:
                     count_of_cells_with_transgenic[locus] = 0
         
+        all_sorted_cell_names = sorted(list(cells.keys()))
         
         for cell_name, cell in six.iteritems(cells):
+
             prod_a_count = cell.count_productive_recombinants('A')
             prod_b_count = cell.count_productive_recombinants('B')
             productive_counts = {'A':prod_a_count, 'B':prod_b_count}  
             if transgenic:
                 transgenic_label = ""
+                Tg_detection[cell_name] = {"A":'False', "B":'False'}
                 for locus in ['A','B']:
                     prod_count = productive_counts[locus]
                     ident = transgenic_ids[locus]
                     if ident in cell.getAllRecombinantIdentifiersForLocus(locus) and prod_count>0:
                         transgenic_label = transgenic_label + locus
+
                     elif prod_count > 0 and not ident in cell.getAllRecombinantIdentifiersForLocus(locus):
                         transgenic_label = transgenic_label + locus.lower()
-                
+                    
+                    if ident in cell.getAllRecombinantIdentifiersForLocus(locus):
+                        Tg_detection[cell_name][locus] = 'True'
+                    
                 if len(transgenic_label) > 0:
                     count_of_cells_with_transgenic[transgenic_label] +=1
             
@@ -761,6 +772,7 @@ class Launcher(object):
             if prod_a_count > 0 and prod_b_count > 0:
                 count_of_cells_with_paired_recovered += 1
 
+        
         total_cells = len(cells)
 
         outfile.write(
@@ -924,7 +936,7 @@ class Launcher(object):
 
         # Write out recombinant details for each cell
         with open("{}/recombinants.txt".format(outdir), 'w') as f:
-            f.write("cell_name\tlocus\trecombinant_id\tproductive\treconstructed_length\n")
+            f.write("cell_name\tlocus\trecombinant_id\tall_equal_V\tV_e_value\tall_equal_J\tJ_e_value\treconstructed_seq\tproductive\treconstructed_length\n")
             sorted_cell_names = sorted(list(cells.keys()))
             for cell_name in sorted_cell_names:
                 cell = cells[cell_name]
@@ -932,17 +944,50 @@ class Launcher(object):
                     recombinants = cell.all_recombinants[locus]
                     if recombinants is not None:
                         for r in recombinants:
-                            f.write(
-                                "{name}\t{locus}\t{ident}\t{productive}\t{length}\n".format(
+                            all_poss_segments = self.get_all_poss_segments(r.all_poss_identifiers)
+                            e_values = self.get_e_values(r.hit_table)
+                            f.write("{name}\t{locus}\t{ident}\t{all_poss_V}\t{V_e_value}\t{all_poss_J}\t{J_e_value}\t{seq}\t{productive}\t{length}\n".format(
                                     name=cell_name, locus=locus, ident=r.identifier,
-                                    productive=r.productive, length=len(r.trinity_seq)))
+                                    productive=r.productive, length=len(r.trinity_seq), 
+                                    all_poss_V=all_poss_segments['V'], all_poss_J=all_poss_segments['J'],
+                                    V_e_value=e_values['V'], J_e_value=e_values['J'], seq=r.trinity_seq))
                 f.write("\n")
             f.write("\n\n")
             for cell_name in empty_cells:
                 f.write("{}\tNo TCRs found\n".format(cell_name))
 
         outfile.close()
-
+                
+        # Write out detection of Tg sequences
+        if transgenic:
+            with open("{}/Tg_detection.txt".format(outdir), 'w') as f:
+                f.write("cell_name\tTg_A\tTg_B\n")
+                
+                for cell_name in all_sorted_cell_names:
+                    found_Tg_A = Tg_detection[cell_name]['A']
+                    found_Tg_B = Tg_detection[cell_name]['B']
+                    f.write("{}\t{}\t{}\n".format(cell_name, found_Tg_A, found_Tg_B))
+    
+    def get_all_poss_segments(self, all_poss_identifiers):
+        all_poss_segments = {"V":set(), "J":set()}
+        for i in all_poss_identifiers:
+            i = i.split('_')
+            v = i[0]
+            j = i[2]
+            all_poss_segments['V'].add(v)
+            all_poss_segments['J'].add(j)
+        return(all_poss_segments)
+    
+    def get_e_values(self, hit_table):
+        e_values = {'V':10, 'J':10}
+        for h in hit_table:
+            locus = h[0]
+            if locus in e_values:
+                e = float(h[12])
+                if e < e_values[locus]:
+                    e_values[locus] = e
+        return(e_values)
+    
     def get_tg_identifier(self, seq, locus, igblast, index_location, ig_seqtype):
         seq = ">Tg_TCR{} len={}\n{}".format(locus, len(seq), seq)
         

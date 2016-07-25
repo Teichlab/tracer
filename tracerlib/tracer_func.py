@@ -27,7 +27,7 @@ from Bio.Alphabet import IUPAC
 from Bio.Seq import Seq
 
 from tracerlib.core import Cell, Recombinant
-
+import pdb
 
 def process_chunk(chunk):
     store_VDJ_rearrangement_summary = False
@@ -99,11 +99,10 @@ def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs, out
         data_for_locus = sample_dict[locus]
         if data_for_locus is not None:
             for query_name, query_data in six.iteritems(data_for_locus):
-                # pdb.set_trace()
                 processed_hit_table = process_hit_table(query_name, query_data, locus)
 
                 if processed_hit_table is not None:
-                    (returned_locus, good_hits, rearrangement_summary) = processed_hit_table
+                    (returned_locus, good_hits, rearrangement_summary, e_values) = processed_hit_table
                     junction_list = query_data['junction_details']
 
                     best_V = remove_allele_stars(rearrangement_summary[0].split(",")[0])
@@ -165,7 +164,9 @@ def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs, out
                         (is_productive, bestVJNames) = get_fasta_line_for_contig_assembly(trinity_seq, good_hits,
                                                                                           returned_locus, IMGT_seqs,
                                                                                           cell_name, query_name)
-
+                    
+                    e_values = get_e_values(good_hits)
+                    
                     if len(junc_string) < 50:
                         rec = Recombinant(contig_name=query_name, locus=returned_locus, identifier=identifier,
                                           all_poss_identifiers=all_poss_identifiers, productive=is_productive[0],
@@ -190,7 +191,6 @@ def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs, out
 
     # pdb.set_trace()
     return (cell)
-
 
 def get_coords(hit_table):
     found_V = False
@@ -221,7 +221,6 @@ def remove_allele_stars(segment):
 def process_hit_table(query_name, query_data, locus):
     hit_table = query_data['hit_table']
     rearrangement_summary = query_data['VDJ_rearrangement_summary']
-
     e_value_cutoff = 5e-3
 
     found_V = set()
@@ -247,6 +246,7 @@ def process_hit_table(query_name, query_data, locus):
                 if segment_type == "V":
                     found_V.add(locus)
                     good_hits.append(entry)
+                    
                 elif segment_type == "J":
                     found_J.add(locus)
                     good_hits.append(entry)
