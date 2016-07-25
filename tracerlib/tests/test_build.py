@@ -13,7 +13,6 @@ tempdir = gettempdir()
 
 
 class TestBuild(unittest.TestCase):
-
     species = 'PurpleSnoutedHeffalump'
 
     def setUp(self):

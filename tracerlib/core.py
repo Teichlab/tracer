@@ -7,6 +7,7 @@ from Bio.Seq import Seq
 
 import pdb
 
+
 class Cell(object):
 
     """Class to describe T cells containing A and B loci"""
@@ -15,11 +16,9 @@ class Cell(object):
         
         self.name = cell_name
         self.bgcolor = None
-        self.is_empty = self._check_is_empty()
         self.recombinants = self._process_recombinants(recombinants)
-        pdb.set_trace()
+        self.is_empty = self._check_is_empty()
         self.cdr3_comparisons = {'A': None, 'B': None, 'mean_both': None}
-        
 
         if not invariant_seqs:
             self.invariant_seqs = []
@@ -30,7 +29,7 @@ class Cell(object):
     
     def _process_recombinants(self, recombinants):
         if recombinants is None:
-            return(None)
+            return None
         else:
             recombinant_dict = defaultdict(dict)
             for r_name, r in six.iteritems(recombinants):
@@ -38,7 +37,7 @@ class Cell(object):
                 receptor = r_name[0]
                 locus = r_name[1]
                 recombinant_dict[receptor][locus] = r
-            return(dict(recombinant_dict))
+            return dict(recombinant_dict)
                 
     def _check_is_empty(self):
         if (self.recombinants is None or len(self.recombinants) == 0):
@@ -72,7 +71,7 @@ class Cell(object):
         if recombinants is not None:
             for recombinant in recombinants:
                 identifier_list.add(recombinant.identifier)
-        return (identifier_list)
+        return identifier_list
 
     def getAllRecombinantCDR3ForLocus(self, locus):
         recombinants = self.all_recombinants[locus]
