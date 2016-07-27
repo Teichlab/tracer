@@ -754,38 +754,37 @@ class Summariser(TracerTask):
         #        del cells[cell_name]
         
         
-        sys.exit()
         
         # make clonotype networks
-        component_groups = tracer_func.draw_network_from_cells(cells, outdir, self.graph_format, dot, neato,
-                                                               self.draw_graphs)
-
-        # Print component groups to the summary#
-        outfile.write(
-            "\n###Clonotype groups###\n"
-            "This is a text representation of the groups shown in clonotype_network_with_identifiers.pdf."
-            " It does not exclude cells that only share beta and not alpha.\n\n")
-        for g in component_groups:
-            outfile.write(", ".join(g))
-            outfile.write("\n\n")
-
-        # plot clonotype sizes
-        plt.figure()
-        clonotype_sizes = tracer_func.get_component_groups_sizes(cells)
-        w = 0.85
-        x_range = range(1, len(clonotype_sizes) + 1)
-        plt.bar(x_range, height=clonotype_sizes, width=w, color='black', align='center')
-        plt.gca().set_xticks(x_range)
-        plt.xlabel("Clonotype size")
-        plt.ylabel("Clonotype count")
-        plt.savefig("{}/clonotype_sizes.pdf".format(outdir))
-
-        # write clonotype sizes to text file
-        with open("{}/clonotype_sizes.txt".format(outdir), 'w') as f:
-            data = zip(x_range, clonotype_sizes)
-            f.write("clonotype_size\tclonotype_count\n")
-            for t in data:
-                f.write("{}\t{}\n".format(t[0], t[1]))
+        #####component_groups = tracer_func.draw_network_from_cells(cells, outdir, self.graph_format, dot, neato,
+        #####                                                       self.draw_graphs)
+        #####
+        ###### Print component groups to the summary#
+        #####outfile.write(
+        #####    "\n###Clonotype groups###\n"
+        #####    "This is a text representation of the groups shown in clonotype_network_with_identifiers.pdf."
+        #####    " It does not exclude cells that only share beta and not alpha.\n\n")
+        #####for g in component_groups:
+        #####    outfile.write(", ".join(g))
+        #####    outfile.write("\n\n")
+        #####
+        ###### plot clonotype sizes
+        #####plt.figure()
+        #####clonotype_sizes = tracer_func.get_component_groups_sizes(cells)
+        #####w = 0.85
+        #####x_range = range(1, len(clonotype_sizes) + 1)
+        #####plt.bar(x_range, height=clonotype_sizes, width=w, color='black', align='center')
+        #####plt.gca().set_xticks(x_range)
+        #####plt.xlabel("Clonotype size")
+        #####plt.ylabel("Clonotype count")
+        #####plt.savefig("{}/clonotype_sizes.pdf".format(outdir))
+        #####
+        ###### write clonotype sizes to text file
+        #####with open("{}/clonotype_sizes.txt".format(outdir), 'w') as f:
+        #####    data = zip(x_range, clonotype_sizes)
+        #####    f.write("clonotype_size\tclonotype_count\n")
+        #####    for t in data:
+        #####        f.write("{}\t{}\n".format(t[0], t[1]))
 
         # Write out recombinant details for each cell
         with open("{}/recombinants.txt".format(outdir), 'w') as f:
@@ -793,8 +792,8 @@ class Summariser(TracerTask):
             sorted_cell_names = sorted(list(cells.keys()))
             for cell_name in sorted_cell_names:
                 cell = cells[cell_name]
-                for locus in "AB":
-                    recombinants = cell.all_recombinants[locus]
+                for locus in self.loci:
+                    recombinants = cell.recombinants[self.receptor_name][locus]
                     if recombinants is not None:
                         for r in recombinants:
                             f.write(
