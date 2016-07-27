@@ -100,7 +100,7 @@ def process_chunk(chunk):
 
 
 def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs, output_dir, species, seq_method,
-                             invariant_seqs, loci_for_segments):
+                             invariant_seqs, loci_for_segments, receptor, loci):
     alignment_dict = defaultdict(dict)
     recombinants = {}
     for locus in locus_names:
@@ -123,7 +123,13 @@ def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs, out
                     junc_string = remove_NA(junc_string)
                     
                     locus_letter = returned_locus.split("_")[1]
+                    
                     if locus_letter in loci_for_segments['D']:
+                        has_D = True
+                    else:
+                        has_D = False
+                    
+                    if has_D:
                         best_J = remove_allele_stars(rearrangement_summary[2].split(",")[0])
                     else:
                         best_J = remove_allele_stars(rearrangement_summary[1].split(",")[0])
@@ -136,7 +142,7 @@ def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs, out
 
                     all_V_names = [remove_allele_stars(x) for x in rearrangement_summary[0].split(',')]
 
-                    if locus_letter in loci_for_segments['D']:
+                    if has_D:
                         all_J_names = [remove_allele_stars(x) for x in rearrangement_summary[2].split(',')]
                     else:
                         all_J_names = [remove_allele_stars(x) for x in rearrangement_summary[1].split(',')]
@@ -188,7 +194,8 @@ def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs, out
                                           dna_seq=fasta_line_for_contig, hit_table=good_hits,
                                           summary=rearrangement_summary, junction_details=junction_list,
                                           best_VJ_names=bestVJNames, alignment_summary=alignment_summary,
-                                          trinity_seq=trinity_seq, imgt_reconstructed_seq=imgt_reconstructed_seq)
+                                          trinity_seq=trinity_seq, imgt_reconstructed_seq=imgt_reconstructed_seq, 
+                                          has_D=has_D)
                         recombinants[locus].append(rec)
 
     if recombinants:
@@ -198,9 +205,11 @@ def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs, out
             recombinants[locus] = collapse_close_sequences(rs, locus)
 
         # cell_name, A_recombinants, B_recombinants, G_recombinants, D_recombinants, is_empty=False, species="Mmus")
-        cell = Cell(cell_name, recombinants, species=species, invariant_seqs=invariant_seqs)
+        cell = Cell(cell_name, recombinants, species=species, invariant_seqs=invariant_seqs, 
+                    receptor=receptor, loci=loci)
+        
     else:
-        cell = Cell(cell_name, None, species=species, invariant_seqs=invariant_seqs)
+        cell = Cell(cell_name, None, species=species, invariant_seqs=invariant_seqs, receptor=receptor, loci=loci)
 
     # pdb.set_trace()
     return (cell)
@@ -592,17 +601,20 @@ def collapse_close_sequences(recombinants, locus):
 
 
 def load_kallisto_counts(tsv_file):
-    counts = {'A': {}, 'B': {}, 'G': {}, 'D': {}}
+    counts = defaultdict(lambda: defaultdict(dict))
     with open(tsv_file) as tsvh:
         for line in tsvh:
-            if "TCR" in line:
+            if "TRACER" in line:
                 line = line.rstrip()
                 line = line.split("\t")
-                locus = line[0].split("|")[-1].split("_")[-1][2]
-                name = line[0].split("|")[1]
+                tags = line[0].split("|")
+                receptor = tags[1]
+                locus = tags[2]
+                contig_name = tags[3]
                 tpm = float(line[4])
-                counts[locus][name] = tpm
-    return counts
+                
+                counts[receptor][locus][contig_name] = tpm
+    return dict(counts)
 
 
 def make_cell_network_from_dna(cells, colorscheme, colours, keep_unlinked, shape, dot, neato):

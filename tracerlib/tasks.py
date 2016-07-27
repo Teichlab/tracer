@@ -73,32 +73,49 @@ class TracerTask(object):
             full_path = path
         return full_path
 
-    def print_cell_summary(self, cell, output_file):
+    def print_cell_summary(self, cell, output_file, receptor_name, loci):
         out_file = open(output_file, 'w')
         out_file.write('------------------\n{name}\n------------------\n'.format(name=cell.name))
-        out_file.write('TCRA recombinants: {}\n'.format(cell.summarise_productivity('A')))
-        out_file.write('TCRB recombinants: {}\n'.format(cell.summarise_productivity('B')))
+        
+        # summarise the productive/total recombinants
+        for l in loci:
+            out_file.write('{receptor}_{locus} recombinants: {summary}\n'.format(receptor=receptor_name, locus=l,
+                                                            summary=cell.summarise_productivity(receptor_name, l)))
+        
         out_file.write('\n\n')
-        out_file.write('#TCRA#\n')
-        if cell.A_recombinants is None:
-            out_file.write("No TCRA recombinants found\n\n")
-        else:
-            for rec in cell.A_recombinants:
-                out_file.write(rec.get_summary())
-                out_file.write("\n\n")
-        out_file.write('#TCRB#\n')
-
-        if cell.B_recombinants is None:
-            out_file.write("No TCRB recombinants found\n\n")
-        else:
-            for rec in cell.B_recombinants:
-                out_file.write(rec.get_summary())
-                out_file.write("\n\n")
+        
+        for l in loci:
+            out_file.write("#{receptor}_{locus}#\n".format(receptor=receptor_name, locus=l))
+            rs = cell.recombinants[receptor_name][l]
+            if rs is None:
+                out_file.write("No {receptor}_{locus} recombinants found\n\n".format(receptor=receptor_name, locus=l))
+            else:
+                for r in rs:
+                    out_file.write(r.get_summary())
+                    out_file.write("\n\n")
+        
+        
+        
+        #out_file.write('#TCRA#\n')
+        #if cell.A_recombinants is None:
+        #    out_file.write("No TCRA recombinants found\n\n")
+        #else:
+        #    for rec in cell.A_recombinants:
+        #        out_file.write(rec.get_summary())
+        #        out_file.write("\n\n")
+        #out_file.write('#TCRB#\n')
+        #
+        #if cell.B_recombinants is None:
+        #    out_file.write("No TCRB recombinants found\n\n")
+        #else:
+        #    for rec in cell.B_recombinants:
+        #        out_file.write(rec.get_summary())
+        #        out_file.write("\n\n")
         out_file.close()
 
     def die_with_empty_cell(self, cell_name, output_dir, species):
-        print("##No TCR recombinants found##")
-        cell = core.Cell(cell_name, None, None, None, None, is_empty=True, species=species)
+        print("##No recombinants found##")
+        cell = core.Cell(cell_name, None, is_empty=True, species=species)
         self.print_cell_summary(cell,
                                 "{output_dir}/unfiltered_TCR_seqs/unfiltered_TCRs.txt".format(output_dir=output_dir))
         with open("{output_dir}/unfiltered_TCR_seqs/{cell_name}.pkl".format(output_dir=output_dir,
@@ -246,8 +263,8 @@ class Assembler(TracerTask):
         io.makeOutputDir(self.output_dir)
 
         data_dirs = ['aligned_reads', 'Trinity_output', 'IgBLAST_output', 
-                     'unfiltered_{receptor}_seqs'.format(receptor = self.receptor_name),'expression_quantification', 
-                     'filtered_{receptor}_seqs'.format(receptor = self.receptor_name)]
+                     'unfiltered_{receptor}_seqs'.format(receptor=self.receptor_name),'expression_quantification', 
+                     'filtered_{receptor}_seqs'.format(receptor=self.receptor_name)]
         for d in data_dirs:
             io.makeOutputDir("{}/{}".format(self.output_dir, d))
 
@@ -256,26 +273,39 @@ class Assembler(TracerTask):
         self.de_novo_assemble()
         cell = self.ig_blast()
         self.quantify(cell)
-
-        self.print_cell_summary(
-            cell, "{output_dir}/unfiltered_{receptor}_seqs/unfiltered_{receptor}s.txt".format(output_dir=self.output_dir))
-
-        # Save cell in a pickle
-        with open("{output_dir}/unfiltered_{receptor}_seqs/{cell_name}.pkl".format(output_dir=self.output_dir,
-                                                                            cell_name=cell.name, receptor=self.receptor_name), 
-                                                                            'wb') as pf:
-            pickle.dump(cell, pf, protocol=0)
-        print("##Filtering by read count##")
-        cell.filter_recombinants()
-        fasta_filename = "{output_dir}/filtered_{receptor}seqs/{cell_name}_{receptor}seqs.fa".format(output_dir=self.output_dir,
+        
+        fasta_filename = "{output_dir}/unfiltered_{receptor}_seqs/{cell_name}_{receptor}seqs.fa".format(output_dir=self.output_dir,
                                                                                         cell_name=self.cell_name,
                                                                                         receptor=self.receptor_name)
         fasta_file = open(fasta_filename, 'w')
         fasta_file.write(cell.get_fasta_string())
         fasta_file.close()
-        self.print_cell_summary(cell, "{output_dir}/filtered_{receptor}_seqs/filtered_{receptor}s.txt".format(
-                                                                                            output_dir=self.output_dir),
-                                                                                            receptor=self.receptor_name)
+        
+        self.print_cell_summary(
+            cell, "{output_dir}/unfiltered_{receptor}_seqs/unfiltered_{receptor}s.txt".format(
+                                                                        output_dir=self.output_dir,
+                                                                        receptor=self.receptor_name),
+                                                                        self.receptor_name, self.loci)
+
+        # Save cell in a pickle
+        with open("{output_dir}/unfiltered_{receptor}_seqs/{cell_name}.pkl".format(output_dir=self.output_dir,
+                                                                            cell_name=cell.name, 
+                                                                            receptor=self.receptor_name), 'wb') as pf:
+            pickle.dump(cell, pf, protocol=0)
+        print("##Filtering by read count##")
+        cell.filter_recombinants()
+        fasta_filename = "{output_dir}/filtered_{receptor}_seqs/{cell_name}_{receptor}seqs.fa".format(output_dir=self.output_dir,
+                                                                                        cell_name=self.cell_name,
+                                                                                        receptor=self.receptor_name)
+        fasta_file = open(fasta_filename, 'w')
+        fasta_file.write(cell.get_fasta_string())
+        fasta_file.close()
+        self.print_cell_summary(
+            cell, "{output_dir}/filtered_{receptor}_seqs/filtered_{receptor}s.txt".format(
+                                                                            output_dir=self.output_dir,
+                                                                            receptor=self.receptor_name),
+                                                                            self.receptor_name, self.loci)
+                                                                            
         with open("{output_dir}/filtered_{receptor}_seqs/{cell_name}.pkl".format(output_dir=self.output_dir,
                                                                           cell_name=cell.name,
                                                                           receptor=self.receptor_name), 'wb') as pf:
@@ -369,12 +399,19 @@ class Assembler(TracerTask):
         print()
 
         counts = tracer_func.load_kallisto_counts("{}/expression_quantification/abundance.tsv".format(self.output_dir))
-
-        for locus, recombinants in six.iteritems(cell.all_recombinants):
-            if recombinants is not None:
-                for rec in recombinants:
-                    tpm = counts[locus][rec.contig_name]
-                    rec.TPM = tpm
+        
+        for receptor, locus_dict in six.iteritems(cell.recombinants):
+            for locus, recombinants in six.iteritems(locus_dict):
+                if recombinants is not None:
+                    for rec in recombinants:
+                        tpm = counts[receptor][locus][rec.contig_name]
+                        rec.TPM = tpm
+                    
+        #for locus, recombinants in six.iteritems(cell.all_recombinants):
+        #    if recombinants is not None:
+        #        for rec in recombinants:
+        #            tpm = counts[locus][rec.contig_name]
+        #            rec.TPM = tpm
 
 
 class Summariser(TracerTask):
@@ -691,9 +728,9 @@ class Tester(TracerTask):
                       single_end=False, fragment_length=False, fragment_sd=False, receptor_name='TCR',
                       loci=['A', 'B']).run()
 
-        Summariser(config_file=self.config_file, use_unfiltered=False, keep_inkt=False,
-                   graph_format=self.graph_format, no_networks=self.no_networks, root_dir=out_dir) \
-            .run()
+        #Summariser(config_file=self.config_file, use_unfiltered=False, keep_inkt=False,
+        #           graph_format=self.graph_format, no_networks=self.no_networks, root_dir=out_dir) \
+        #    .run()
 
 
 class Builder(TracerTask):
