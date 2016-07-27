@@ -4,6 +4,6 @@
 	"n_processed": 3846127,
 	"kallisto_version": "0.42.3",
 	"index_version": 10,
-	"start_time": "Thu Jun  2 11:32:13 2016",
-	"call": "/nfs/research2/teichmann/tools/kallisto/build/src/kallisto quant -i /nfs/research2/teichmann/mike/TCR/generating_tracer_test_data/cell2/expression_quantification/kallisto_index/cell2_transcriptome.idx -t 5 -o /nfs/research2/teichmann/mike/TCR/generating_tracer_test_data/cell2/expression_quantification /gpfs/nobackup/saraht/mstubb/TCR/Tapio/salmonella/stm01i/concatenated_fastq/12392_34_1.fastq /gpfs/nobackup/saraht/mstubb/TCR/Tapio/salmonella/stm01i/concatenated_fastq/12392_34_2.fastq"
+	"start_time": "Wed Jul 27 15:36:56 2016",
+	"call": "/nfs/research2/teichmann/tools/kallisto/build/src/kallisto quant -i /nfs/research2/teichmann/mike/tracer/test_data/results/cell2/expression_quantification/kallisto_index/cell2_transcriptome.idx -t 5 -o /nfs/research2/teichmann/mike/tracer/test_data/results/cell2/expression_quantification /hps/nobackup/teichmann/mstubb/tracer_data/test_data_original_files/cell2_1.fastq /hps/nobackup/teichmann/mstubb/tracer_data/test_data_original_files/cell2_2.fastq"
 }

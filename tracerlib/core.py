@@ -235,8 +235,8 @@ class Cell(object):
                         for rec in to_remove:
                             self.recombinants[receptor][locus].remove(rec)
 
-    def count_productive_recombinants(self, locus):
-        recs = self.all_recombinants[locus]
+    def count_productive_recombinants(self, receptor, locus):
+        recs = self.recombinants[receptor][locus]
         count = 0
         if recs is not None:
             for rec in recs:
@@ -244,20 +244,26 @@ class Cell(object):
                     count += 1
         return (count)
 
-    def count_total_recombinants(self, locus):
-        recs = self.all_recombinants[locus]
+    def count_total_recombinants(self, receptor, locus):
+        recs = self.recombinants[receptor][locus]
         count = 0
         if recs is not None:
             count = len(recs)
         return (count)
 
-    def get_trinity_lengths(self, locus):
-        recs = self.all_recombinants[locus]
+    def get_trinity_lengths(self, receptor, locus):
+        recs = self.recombinants[receptor][locus]
         lengths = []
         if recs is not None:
             for rec in recs:
                 lengths.append(len(rec.trinity_seq))
         return (lengths)
+        
+    def has_excess_recombinants(self, max_r=2):
+        for receptor, locus_dict in six.iteritems(self.recombinants):
+            for locus, recs in six.iteritems(locus):
+                if len(recs) > max_r:
+                    return(True)
 
 
 class Recombinant(object):

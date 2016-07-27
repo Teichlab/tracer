@@ -28,8 +28,9 @@ import pickle
 from prettytable import PrettyTable
 from Bio.Seq import Seq
 from Bio import SeqIO
-
+import itertools
 import pdb
+from numpy import percentile, array
 
 
 class TracerTask(object):
@@ -132,6 +133,11 @@ class TracerTask(object):
         resources_dir = os.path.join(base_dir, 'resources')
         resources_root = os.path.join(resources_dir, species)
         return(resources_root)
+    
+    def get_available_species(self):
+        resources_dir = os.path.join(base_dir, 'resources')
+        species_dirs = next(os.walk(resources_dir))[1]
+        return(species_dirs)
 
 
 class Assembler(TracerTask):
@@ -248,10 +254,7 @@ class Assembler(TracerTask):
 
         self.invariant_sequences = io.parse_invariant_seqs(invariant_sequences)
         
-    def get_available_species(self):
-        resources_dir = os.path.join(base_dir, 'resources')
-        species_dirs = next(os.walk(resources_dir))[1]
-        return(species_dirs)
+
         
     def run(self, **kwargs):
 
@@ -421,6 +424,14 @@ class Summariser(TracerTask):
         if not kwargs:
             parser = argparse.ArgumentParser(description="Summarise set of cells with reconstructed TCR sequences",
                                              parents=[self.base_parser])
+            parser.add_argument('--species', '-s',
+                                help='species from which T cells were isolated',
+                                choices=self.get_available_species(), default='Mmus')
+            parser.add_argument('--receptor_name',
+                                help="Name of receptor to summarise", default='TCR')
+            parser.add_argument('--loci',
+                                help="Space-separated list of loci to summarise for receptor", 
+                                default=['A','B'], nargs = '+')
             parser.add_argument('--use_unfiltered', '-u', help='use unfiltered recombinants', action="store_true")
             parser.add_argument('--keep_inkt', '-i', help='ignore iNKT cells when constructing networks',
                                 action="store_true")
@@ -436,6 +447,9 @@ class Summariser(TracerTask):
             self.keep_inkt = args.keep_inkt
             self.use_unfiltered = args.use_unfiltered
             self.draw_graphs = not args.no_networks
+            self.receptor_name = args.receptor_name
+            self.loci = args.loci
+            self.species = args.species
             config_file = args.config_file
         else:
             self.use_unfiltered = kwargs.get('use_unfiltered')
@@ -443,6 +457,9 @@ class Summariser(TracerTask):
             self.draw_graphs = not (kwargs.get('no_networks'))
             self.graph_format = kwargs.get('graph_format')
             self.keep_inkt = kwargs.get('keep_inkt')
+            self.receptor_name = kwargs.get('receptor_name')
+            self.loci = kwargs.get('loci')
+            self.species = kwargs.get('species')
             config_file = kwargs.get('config_file')
 
         # Read config file
@@ -476,21 +493,21 @@ class Summariser(TracerTask):
         subdirectories = next(os.walk(self.root_dir))[1]
 
         if self.use_unfiltered:
-            pkl_dir = "unfiltered_TCR_seqs"
-            outdir = "{}/unfiltered_TCR_summary".format(self.root_dir)
+            pkl_dir = "unfiltered_{}_seqs".format(self.receptor_name)
+            outdir = "{}/unfiltered_{}_summary".format(self.root_dir, self.receptor_name)
             # outfile = open("{root_dir}/unfiltered_TCR_summary.txt".format(root_dir=root_dir), 'w')
             # length_filename_root = "{}/unfiltered_reconstructed_lengths_TCR".format(root_dir)
 
         else:
-            pkl_dir = "filtered_TCR_seqs"
-            outdir = "{}/filtered_TCR_summary".format(self.root_dir)
+            pkl_dir = "filtered_{}_seqs".format(self.receptor_name)
+            outdir = "{}/filtered_{}_summary".format(self.root_dir, self.receptor_name)
             # outfile = open("{root_dir}/filtered_TCR_summary.txt".format(root_dir=root_dir), 'w')
             # length_filename_root = "{}/filtered_reconstructed_lengths_TCR".format(root_dir)
 
         io.makeOutputDir(outdir)
 
-        outfile = open("{}/TCR_summary.txt".format(outdir), 'w')
-        length_filename_root = "{}/reconstructed_lengths_TCR".format(outdir)
+        outfile = open("{}/{}_summary.txt".format(outdir, self.receptor_name), 'w')
+        length_filename_root = "{}/reconstructed_lengths_{}".format(outdir, self.receptor_name)
 
         for d in subdirectories:
             cell_pkl = "{root_dir}/{d}/{pkl_dir}/{d}.pkl".format(pkl_dir=pkl_dir, d=d, root_dir=self.root_dir)
@@ -500,50 +517,106 @@ class Summariser(TracerTask):
                 cells[d] = cl
                 if cl.is_empty:
                     empty_cells.append(d)
-                if cl.is_inkt:
-                    NKT_cells[d] = (cl.is_inkt, cl.getMainRecombinantIdentifiersForLocus('B'))
-        count_of_cells_with_alpha_recovered = 0
-        count_of_cells_with_beta_recovered = 0
-        count_of_cells_with_paired_recovered = 0
+                #if cl.is_inkt:
+                #    NKT_cells[d] = (cl.is_inkt, cl.getMainRecombinantIdentifiersForLocus('B'))
+        
+        cell_recovery_count = dict()
+        # count cells with productive chains for each locus and for each possible pair
+        for l in self.loci:
+            cell_recovery_count[l] = 0
+
+        possible_pairs = ["".join(x) for x in itertools.combinations(self.loci, 2)]
+        
+        for p in possible_pairs:
+            cell_recovery_count[p] = 0
+        
         for cell_name, cell in six.iteritems(cells):
-            prod_a_count = cell.count_productive_recombinants('A')
-            prod_b_count = cell.count_productive_recombinants('B')
-            if prod_a_count > 0:
-                count_of_cells_with_alpha_recovered += 1
-            if prod_b_count > 0:
-                count_of_cells_with_beta_recovered += 1
-            if prod_a_count > 0 and prod_b_count > 0:
-                count_of_cells_with_paired_recovered += 1
+            prod_counts = dict()
+            for l in self.loci:
+                prod_counts[l] = cell.count_productive_recombinants(self.receptor_name, l)
+                if prod_counts[l] > 0:
+                    cell_recovery_count[l] += 1
+            
+            for p in possible_pairs:
+                if prod_counts[p[0]] > 0 and prod_counts[p[1]] > 0:
+                    cell_recovery_count[p] += 1
+            
+        
+        
+        #count_of_cells_with_alpha_recovered = 0
+        #count_of_cells_with_beta_recovered = 0
+        #count_of_cells_with_paired_recovered = 0
+        #for cell_name, cell in six.iteritems(cells):
+        #    prod_a_count = cell.count_productive_recombinants('A')
+        #    prod_b_count = cell.count_productive_recombinants('B')
+        #    if prod_a_count > 0:
+        #        count_of_cells_with_alpha_recovered += 1
+        #    if prod_b_count > 0:
+        #        count_of_cells_with_beta_recovered += 1
+        #    if prod_a_count > 0 and prod_b_count > 0:
+        #        count_of_cells_with_paired_recovered += 1
 
         total_cells = len(cells)
 
-        outfile.write(
-            "TCRA reconstruction:\t{count_of_cells_with_alpha_recovered} / {total_cells} ({alpha_percent}%)\n"
-            "TCRB reconstruction:\t{count_of_cells_with_beta_recovered} / {total_cells} ({beta_percent}%)\n"
-            "Paired productive chains\t{count_of_cells_with_paired_recovered} / {total_cells} ({paired_percent}%)\n\n"
-            .format(
-                paired_percent=round((count_of_cells_with_paired_recovered / float(total_cells)) * 100, 1),
-                total_cells=total_cells,
-                alpha_percent=round((count_of_cells_with_alpha_recovered / float(total_cells)) * 100, 1),
-                beta_percent=round((count_of_cells_with_beta_recovered / float(total_cells)) * 100, 1),
-                count_of_cells_with_beta_recovered=count_of_cells_with_beta_recovered,
-                count_of_cells_with_paired_recovered=count_of_cells_with_paired_recovered,
-                count_of_cells_with_alpha_recovered=count_of_cells_with_alpha_recovered))
 
-        all_alpha_counter = Counter()
-        all_beta_counter = Counter()
-        prod_alpha_counter = Counter()
-        prod_beta_count = Counter()
-
-        counters = {'all_alpha': Counter(), 'all_beta': Counter(), 'prod_alpha': Counter(), 'prod_beta': Counter()}
-
+        for l in self.loci:
+            count = cell_recovery_count[l]
+            pc = round((count/float(total_cells))*100, 1)
+            outfile.write("{receptor}_{locus} reconstruction:\t{count} / {total} ({pc}%)\n".format(
+                                                                                    receptor=self.receptor_name,
+                                                                                    locus=l, count=count,
+                                                                                    total=total_cells, pc=pc))
+        outfile.write("\n")
+        
+        for p in possible_pairs:
+            count = cell_recovery_count[p]
+            pc = round((count/float(total_cells))*100, 1)
+            outfile.write("{p} productive reconstruction:\t{count} / {total} ({pc}%)\n".format(
+                                                                                    p=p,
+                                                                                    count=count,
+                                                                                    total=total_cells, pc=pc))
+        outfile.write("\n")
+        
+        #outfile.write(
+        #    "TCRA reconstruction:\t{count_of_cells_with_alpha_recovered} / {total_cells} ({alpha_percent}%)\n"
+        #    "TCRB reconstruction:\t{count_of_cells_with_beta_recovered} / {total_cells} ({beta_percent}%)\n"
+        #    "Paired productive chains\t{count_of_cells_with_paired_recovered} / {total_cells} ({paired_percent}%)\n\n"
+        #    .format(
+        #        paired_percent=round((count_of_cells_with_paired_recovered / float(total_cells)) * 100, 1),
+        #        total_cells=total_cells,
+        #        alpha_percent=round((count_of_cells_with_alpha_recovered / float(total_cells)) * 100, 1),
+        #        beta_percent=round((count_of_cells_with_beta_recovered / float(total_cells)) * 100, 1),
+        #        count_of_cells_with_beta_recovered=count_of_cells_with_beta_recovered,
+        #        count_of_cells_with_paired_recovered=count_of_cells_with_paired_recovered,
+        #        count_of_cells_with_alpha_recovered=count_of_cells_with_alpha_recovered))
+        
+        all_counters = defaultdict(Counter)
+        prod_counters = defaultdict(Counter)
+        
         for cell in cells.values():
-            counters['all_alpha'].update({cell.count_total_recombinants('A'): 1})
-            counters['all_beta'].update({cell.count_total_recombinants('B'): 1})
-            counters['prod_alpha'].update({cell.count_productive_recombinants('A'): 1})
-            counters['prod_beta'].update({cell.count_productive_recombinants('B'): 1})
-
-        max_recombinant_count = max(list(counters['all_alpha'].keys()) + list(counters['all_beta'].keys()))
+            for l in self.loci:
+                all_counters[l].update({cell.count_total_recombinants(self.receptor_name, l): 1})
+                prod_counters[l].update({cell.count_productive_recombinants(self.receptor_name, l): 1})
+        
+        #all_alpha_counter = Counter()
+        #all_beta_counter = Counter()
+        #prod_alpha_counter = Counter()
+        #prod_beta_count = Counter()
+        #
+        #counters = {'all_alpha': Counter(), 'all_beta': Counter(), 'prod_alpha': Counter(), 'prod_beta': Counter()}
+        #
+        #for cell in cells.values():
+        #    counters['all_alpha'].update({cell.count_total_recombinants('A'): 1})
+        #    counters['all_beta'].update({cell.count_total_recombinants('B'): 1})
+        #    counters['prod_alpha'].update({cell.count_productive_recombinants('A'): 1})
+        #    counters['prod_beta'].update({cell.count_productive_recombinants('B'): 1})
+        
+        all_recombinant_counts = []
+        for locus in all_counters:
+            all_recombinant_counts = all_recombinant_counts + all_counters[locus].keys()
+        max_recombinant_count = max(all_recombinant_counts)
+        
+        #max_recombinant_count = max(list(counters['all_alpha'].keys()) + list(counters['all_beta'].keys()))
         table_header = ['', '0 recombinants', '1 recombinant', '2 recombinants']
         recomb_range = range(0, 3)
         if max_recombinant_count > 2:
@@ -554,20 +627,30 @@ class Summariser(TracerTask):
         t = PrettyTable(table_header)
         t.padding_width = 1
         t.align = "l"
-        for label in ['all_alpha', 'all_beta', 'prod_alpha', 'prod_beta']:
-            counter = counters[label]
-            count_array = [counter[x] for x in recomb_range]
-            total_with_at_least_one = sum(count_array[1:])
-            if total_with_at_least_one > 0:
-                percentages = [''] + [" (" + str(round((float(x) / total_with_at_least_one) * 100)) + "%)" for x in
-                                      count_array[1:]]
-            else:
-                percentages = [''] + [" (N/A%)" for x in count_array[1:]]
-            row = []
-            for i in recomb_range:
-                row.append(str(count_array[i]) + percentages[i])
-
-            t.add_row([label] + row)
+        
+        #labels = ["all {}".format(x) for x in self.loci] + ["prod {}".format(y) for y in self.loci]
+        
+        #make all recombinant table
+        for counter_name in ['all_counters', 'prod_counters']:
+            counter_type = counter_name.split("_")[0]
+            counter_set = eval(counter_name)
+            for l in self.loci:
+                counter = counter_set[l]
+                count_array = [counter[x] for x in recomb_range]
+                total_with_at_least_one = sum(count_array[1:])
+                if total_with_at_least_one > 0:
+                    percentages = [''] + [" (" + str(round((float(x) / total_with_at_least_one) * 100)) + "%)" for x in
+                                          count_array[1:]]
+                else:
+                    percentages = [''] + [" (N/A%)" for x in count_array[1:]]
+                row = []
+                for i in recomb_range:
+                    row.append(str(count_array[i]) + percentages[i])
+                label = '{} {}'.format(counter_type, l)
+                t.add_row([label] + row)
+        
+        
+        
         outfile.write(t.get_string())
 
         # If using unfiltered, name cells with more than two recombinants#
@@ -575,70 +658,104 @@ class Summariser(TracerTask):
             outfile.write("\n\n#Cells with more than two recombinants for a locus#\n")
             found_multi = False
             for cell in cells.values():
-                if cell.count_total_recombinants('A') > 2 or cell.count_total_recombinants('B') > 2:
+                #if cell.count_total_recombinants('A') > 2 or cell.count_total_recombinants('B') > 2:
+                if cell.has_excess_recombinants(2):
                     outfile.write("###{}###\n".format(cell.name))
-                    outfile.write("TCRA:\t{}\nTCRB:\t{}\n\n".format(cell.count_total_recombinants('A'),
-                                                                    cell.count_total_recombinants('B')))
+                    for l in self.loci:
+                        count = cell.count_total_recombinants(self.receptor_name, l)
+                        outfile.write("{receptor}_{l}:\t{count}\n".format(receptor=self.receptor_name, l=l, count=count))
+                    outfile.write("\n")
+                    
+                    #outfile.write("TCRA:\t{}\nTCRB:\t{}\n\n".format(cell.count_total_recombinants('A'),
+                    #                                                cell.count_total_recombinants('B')))
                     found_multi = True
             if not found_multi:
                 outfile.write("None\n\n")
 
         # Reporting iNKT cells
-        iNKT_count = len(NKT_cells)
-        if iNKT_count == 1:
-            cell_word = 'cell'
-        else:
-            cell_word = 'cells'
-        outfile.write("\n\n#iNKT cells#\nFound {iNKT_count} iNKT {cell_word}\n".format(iNKT_count=iNKT_count,
-                                                                                       cell_word=cell_word))
-        if iNKT_count > 0:
-            for cell_name, ids in six.iteritems(NKT_cells):
-                outfile.write("###{cell_name}###\n".format(cell_name=cell_name))
-                outfile.write("TCRA:\t{}\nTCRB\t{}\n\n".format(ids[0], ids[1]))
-
+        #iNKT_count = len(NKT_cells)
+        #if iNKT_count == 1:
+        #    cell_word = 'cell'
+        #else:
+        #    cell_word = 'cells'
+        #outfile.write("\n\n#iNKT cells#\nFound {iNKT_count} iNKT {cell_word}\n".format(iNKT_count=iNKT_count,
+        #                                                                               cell_word=cell_word))
+        #if iNKT_count > 0:
+        #    for cell_name, ids in six.iteritems(NKT_cells):
+        #        outfile.write("###{cell_name}###\n".format(cell_name=cell_name))
+        #        outfile.write("TCRA:\t{}\nTCRB\t{}\n\n".format(ids[0], ids[1]))
+        #
+        
         # plot lengths of reconstructed sequences
-        lengths = {'A': [], 'B': []}
+        lengths = defaultdict(list)
         for cell in cells.values():
-            for locus in lengths.keys():
-                lengths[locus] = lengths[locus] + cell.get_trinity_lengths(locus)
+            for l in self.loci:
+                lengths[l].extend(cell.get_trinity_lengths(self.receptor_name, l))
 
-        # plot TCRA length distributions
-        if len(lengths['A']) > 1:
-            plt.figure()
-            plt.axvline(334, linestyle="--", color='k')
-            plt.axvline(344, linestyle="--", color='k')
-            sns.distplot(lengths['A'])
-            sns.despine()
-            plt.xlabel("TCRa reconstructed length (bp)")
-            plt.ylabel("Density")
-            plt.savefig("{}A.pdf".format(length_filename_root))
-        if len(lengths['A']) > 0:
-            with open("{}A.txt".format(length_filename_root), 'w') as f:
-                for l in sorted(lengths['A']):
-                    f.write("{}\n".format(l))
-
-        # plot TCRB length distributions
-        if len(lengths['B']) > 1:
-            plt.figure()
-            plt.axvline(339, linestyle="--", color='k')
-            plt.axvline(345, linestyle="--", color='k')
-            sns.distplot(lengths['B'])
-            sns.despine()
-            plt.xlabel("TCRb reconstructed length (bp)")
-            plt.ylabel("Density")
-            plt.savefig("{}B.pdf".format(length_filename_root))
-        if len(lengths['B']) > 0:
-            with open("{}B.txt".format(length_filename_root), 'w') as f:
-                for l in sorted(lengths['B']):
-                    f.write("{}\n".format(l))
+        # plot length distributions
+        quartiles = dict()
+        for l in self.loci:
+            q = self.get_quartiles(self.species, self.receptor_name, l)
+            quartiles[l] = q
+            
+        for l in self.loci:
+            q = quartiles[l]
+            lns = lengths[l]
+            if len(lns) > 1:
+                plt.figure()
+                plt.axvline(q[0], linestyle="--", color='k')
+                plt.axvline(q[1], linestyle="--", color='k')
+                sns.distplot(lns)
+                sns.despine()
+                plt.xlabel("{receptor}_{locus} reconstructed length (bp)".format(receptor=self.receptor_name,
+                                                                                 locus=l))
+                plt.ylabel("Density")
+                plt.savefig("{}_{}.pdf".format(length_filename_root, l))
+            if len(lns) > 0:
+                with open("{}_{}.txt".format(length_filename_root,l), 'w') as f:
+                        for l in sorted(lns):
+                            f.write("{}\n".format(l))
+                        
+        
+        #if len(lengths['A']) > 1:
+        #    plt.figure()
+        #    plt.axvline(334, linestyle="--", color='k')
+        #    plt.axvline(344, linestyle="--", color='k')
+        #    sns.distplot(lengths['A'])
+        #    sns.despine()
+        #    plt.xlabel("TCRa reconstructed length (bp)")
+        #    plt.ylabel("Density")
+        #    plt.savefig("{}A.pdf".format(length_filename_root))
+        #if len(lengths['A']) > 0:
+        #    with open("{}A.txt".format(length_filename_root), 'w') as f:
+        #        for l in sorted(lengths['A']):
+        #            f.write("{}\n".format(l))
+        #
+        ## plot TCRB length distributions
+        #if len(lengths['B']) > 1:
+        #    plt.figure()
+        #    plt.axvline(339, linestyle="--", color='k')
+        #    plt.axvline(345, linestyle="--", color='k')
+        #    sns.distplot(lengths['B'])
+        #    sns.despine()
+        #    plt.xlabel("TCRb reconstructed length (bp)")
+        #    plt.ylabel("Density")
+        #    plt.savefig("{}B.pdf".format(length_filename_root))
+        #if len(lengths['B']) > 0:
+        #    with open("{}B.txt".format(length_filename_root), 'w') as f:
+        #        for l in sorted(lengths['B']):
+        #            f.write("{}\n".format(l))
 
         for cell_name in empty_cells:
             del cells[cell_name]
 
-        if not self.keep_inkt:
-            for cell_name in NKT_cells.keys():
-                del cells[cell_name]
-
+        #if not self.keep_inkt:
+        #    for cell_name in NKT_cells.keys():
+        #        del cells[cell_name]
+        
+        
+        sys.exit()
+        
         # make clonotype networks
         component_groups = tracer_func.draw_network_from_cells(cells, outdir, self.graph_format, dot, neato,
                                                                self.draw_graphs)
@@ -690,6 +807,16 @@ class Summariser(TracerTask):
                 f.write("{}\tNo TCRs found\n".format(cell_name))
 
         outfile.close()
+    
+    def get_quartiles(self, species, receptor, locus):
+        species_dir = self.get_resources_root(species)
+        fasta = os.path.join(species_dir, 'combinatorial_recombinomes','{receptor}_{locus}.fa'.format(
+                                                                            receptor=receptor,locus=locus))
+        lengths = array([len(rec) for rec in SeqIO.parse(fasta, "fasta")])
+        quartiles = (percentile(lengths, 25), percentile(lengths, 75))
+        return(quartiles)
+            
+        
 
 
 class Tester(TracerTask):
@@ -723,14 +850,14 @@ class Tester(TracerTask):
             f1 = "{}/{}_1.fastq".format(test_dir, name)
             f2 = "{}/{}_2.fastq".format(test_dir, name)
 
-            Assembler(ncores=str(self.ncores), config_file=self.config_file, resume_with_existing_files=True,
-                      species='Mmus', seq_method='imgt', fastq1=f1, fastq2=f2, cell_name=name, output_dir=out_dir,
-                      single_end=False, fragment_length=False, fragment_sd=False, receptor_name='TCR',
-                      loci=['A', 'B']).run()
+            #Assembler(ncores=str(self.ncores), config_file=self.config_file, resume_with_existing_files=True,
+            #          species='Mmus', seq_method='imgt', fastq1=f1, fastq2=f2, cell_name=name, output_dir=out_dir,
+            #          single_end=False, fragment_length=False, fragment_sd=False, receptor_name='TCR',
+            #          loci=['A', 'B']).run()
 
-        #Summariser(config_file=self.config_file, use_unfiltered=False, keep_inkt=False,
-        #           graph_format=self.graph_format, no_networks=self.no_networks, root_dir=out_dir) \
-        #    .run()
+        Summariser(config_file=self.config_file, use_unfiltered=False, keep_inkt=False,
+                   graph_format=self.graph_format, no_networks=self.no_networks, root_dir=out_dir, receptor_name='TCR',
+                   loci=['A', 'B'], species='Mmus').run()
 
 
 class Builder(TracerTask):
