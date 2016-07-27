@@ -811,8 +811,24 @@ class Summariser(TracerTask):
     def get_quartiles(self, species, receptor, locus):
         species_dir = self.get_resources_root(species)
         fasta = os.path.join(species_dir, 'combinatorial_recombinomes','{receptor}_{locus}.fa'.format(
-                                                                            receptor=receptor,locus=locus))
-        lengths = array([len(rec) for rec in SeqIO.parse(fasta, "fasta")])
+                                                                            receptor=receptor, locus=locus))
+        
+        # need to remove the start N padding and end C sequence from the lengths
+        constant_fasta = os.path.join(species_dir, 'raw_seqs', '{receptor}_{locus}_C.fa'.format(
+                                                                            receptor=receptor, locus=locus))
+        C_len = len(next(SeqIO.parse(constant_fasta, "fasta")))
+
+        seq = str(next(SeqIO.parse(fasta, "fasta")).seq)
+        if seq.startswith("N"):
+            r = re.compile(r"^N+")
+            N_len = r.search(seq).end()
+        else:
+            N_len = 0
+        
+        
+        adj = C_len+N_len                                                               
+                                                                            
+        lengths = array([len(rec)-adj for rec in SeqIO.parse(fasta, "fasta")])
         quartiles = (percentile(lengths, 25), percentile(lengths, 75))
         return(quartiles)
             
