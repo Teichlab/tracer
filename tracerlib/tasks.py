@@ -540,21 +540,6 @@ class Summariser(TracerTask):
             for p in possible_pairs:
                 if prod_counts[p[0]] > 0 and prod_counts[p[1]] > 0:
                     cell_recovery_count[p] += 1
-            
-        
-        
-        #count_of_cells_with_alpha_recovered = 0
-        #count_of_cells_with_beta_recovered = 0
-        #count_of_cells_with_paired_recovered = 0
-        #for cell_name, cell in six.iteritems(cells):
-        #    prod_a_count = cell.count_productive_recombinants('A')
-        #    prod_b_count = cell.count_productive_recombinants('B')
-        #    if prod_a_count > 0:
-        #        count_of_cells_with_alpha_recovered += 1
-        #    if prod_b_count > 0:
-        #        count_of_cells_with_beta_recovered += 1
-        #    if prod_a_count > 0 and prod_b_count > 0:
-        #        count_of_cells_with_paired_recovered += 1
 
         total_cells = len(cells)
 
@@ -577,18 +562,6 @@ class Summariser(TracerTask):
                                                                                     total=total_cells, pc=pc))
         outfile.write("\n")
         
-        #outfile.write(
-        #    "TCRA reconstruction:\t{count_of_cells_with_alpha_recovered} / {total_cells} ({alpha_percent}%)\n"
-        #    "TCRB reconstruction:\t{count_of_cells_with_beta_recovered} / {total_cells} ({beta_percent}%)\n"
-        #    "Paired productive chains\t{count_of_cells_with_paired_recovered} / {total_cells} ({paired_percent}%)\n\n"
-        #    .format(
-        #        paired_percent=round((count_of_cells_with_paired_recovered / float(total_cells)) * 100, 1),
-        #        total_cells=total_cells,
-        #        alpha_percent=round((count_of_cells_with_alpha_recovered / float(total_cells)) * 100, 1),
-        #        beta_percent=round((count_of_cells_with_beta_recovered / float(total_cells)) * 100, 1),
-        #        count_of_cells_with_beta_recovered=count_of_cells_with_beta_recovered,
-        #        count_of_cells_with_paired_recovered=count_of_cells_with_paired_recovered,
-        #        count_of_cells_with_alpha_recovered=count_of_cells_with_alpha_recovered))
         
         all_counters = defaultdict(Counter)
         prod_counters = defaultdict(Counter)
@@ -598,18 +571,6 @@ class Summariser(TracerTask):
                 all_counters[l].update({cell.count_total_recombinants(self.receptor_name, l): 1})
                 prod_counters[l].update({cell.count_productive_recombinants(self.receptor_name, l): 1})
         
-        #all_alpha_counter = Counter()
-        #all_beta_counter = Counter()
-        #prod_alpha_counter = Counter()
-        #prod_beta_count = Counter()
-        #
-        #counters = {'all_alpha': Counter(), 'all_beta': Counter(), 'prod_alpha': Counter(), 'prod_beta': Counter()}
-        #
-        #for cell in cells.values():
-        #    counters['all_alpha'].update({cell.count_total_recombinants('A'): 1})
-        #    counters['all_beta'].update({cell.count_total_recombinants('B'): 1})
-        #    counters['prod_alpha'].update({cell.count_productive_recombinants('A'): 1})
-        #    counters['prod_beta'].update({cell.count_productive_recombinants('B'): 1})
         
         all_recombinant_counts = []
         for locus in all_counters:
@@ -627,8 +588,7 @@ class Summariser(TracerTask):
         t = PrettyTable(table_header)
         t.padding_width = 1
         t.align = "l"
-        
-        #labels = ["all {}".format(x) for x in self.loci] + ["prod {}".format(y) for y in self.loci]
+
         
         #make all recombinant table
         for counter_name in ['all_counters', 'prod_counters']:
@@ -665,9 +625,6 @@ class Summariser(TracerTask):
                         count = cell.count_total_recombinants(self.receptor_name, l)
                         outfile.write("{receptor}_{l}:\t{count}\n".format(receptor=self.receptor_name, l=l, count=count))
                     outfile.write("\n")
-                    
-                    #outfile.write("TCRA:\t{}\nTCRB:\t{}\n\n".format(cell.count_total_recombinants('A'),
-                    #                                                cell.count_total_recombinants('B')))
                     found_multi = True
             if not found_multi:
                 outfile.write("None\n\n")
@@ -716,35 +673,6 @@ class Summariser(TracerTask):
                         for l in sorted(lns):
                             f.write("{}\n".format(l))
                         
-        
-        #if len(lengths['A']) > 1:
-        #    plt.figure()
-        #    plt.axvline(334, linestyle="--", color='k')
-        #    plt.axvline(344, linestyle="--", color='k')
-        #    sns.distplot(lengths['A'])
-        #    sns.despine()
-        #    plt.xlabel("TCRa reconstructed length (bp)")
-        #    plt.ylabel("Density")
-        #    plt.savefig("{}A.pdf".format(length_filename_root))
-        #if len(lengths['A']) > 0:
-        #    with open("{}A.txt".format(length_filename_root), 'w') as f:
-        #        for l in sorted(lengths['A']):
-        #            f.write("{}\n".format(l))
-        #
-        ## plot TCRB length distributions
-        #if len(lengths['B']) > 1:
-        #    plt.figure()
-        #    plt.axvline(339, linestyle="--", color='k')
-        #    plt.axvline(345, linestyle="--", color='k')
-        #    sns.distplot(lengths['B'])
-        #    sns.despine()
-        #    plt.xlabel("TCRb reconstructed length (bp)")
-        #    plt.ylabel("Density")
-        #    plt.savefig("{}B.pdf".format(length_filename_root))
-        #if len(lengths['B']) > 0:
-        #    with open("{}B.txt".format(length_filename_root), 'w') as f:
-        #        for l in sorted(lengths['B']):
-        #            f.write("{}\n".format(l))
 
         for cell_name in empty_cells:
             del cells[cell_name]
@@ -754,38 +682,6 @@ class Summariser(TracerTask):
         #        del cells[cell_name]
         
         
-        
-        # make clonotype networks
-        #####component_groups = tracer_func.draw_network_from_cells(cells, outdir, self.graph_format, dot, neato,
-        #####                                                       self.draw_graphs)
-        #####
-        ###### Print component groups to the summary#
-        #####outfile.write(
-        #####    "\n###Clonotype groups###\n"
-        #####    "This is a text representation of the groups shown in clonotype_network_with_identifiers.pdf."
-        #####    " It does not exclude cells that only share beta and not alpha.\n\n")
-        #####for g in component_groups:
-        #####    outfile.write(", ".join(g))
-        #####    outfile.write("\n\n")
-        #####
-        ###### plot clonotype sizes
-        #####plt.figure()
-        #####clonotype_sizes = tracer_func.get_component_groups_sizes(cells)
-        #####w = 0.85
-        #####x_range = range(1, len(clonotype_sizes) + 1)
-        #####plt.bar(x_range, height=clonotype_sizes, width=w, color='black', align='center')
-        #####plt.gca().set_xticks(x_range)
-        #####plt.xlabel("Clonotype size")
-        #####plt.ylabel("Clonotype count")
-        #####plt.savefig("{}/clonotype_sizes.pdf".format(outdir))
-        #####
-        ###### write clonotype sizes to text file
-        #####with open("{}/clonotype_sizes.txt".format(outdir), 'w') as f:
-        #####    data = zip(x_range, clonotype_sizes)
-        #####    f.write("clonotype_size\tclonotype_count\n")
-        #####    for t in data:
-        #####        f.write("{}\t{}\n".format(t[0], t[1]))
-
         # Write out recombinant details for each cell
         with open("{}/recombinants.txt".format(outdir), 'w') as f:
             f.write("cell_name\tlocus\trecombinant_id\tproductive\treconstructed_length\n")
@@ -804,6 +700,37 @@ class Summariser(TracerTask):
             f.write("\n\n")
             for cell_name in empty_cells:
                 f.write("{}\tNo TCRs found\n".format(cell_name))
+                
+        # make clonotype networks
+        component_groups = tracer_func.draw_network_from_cells(cells, outdir, self.graph_format, dot, neato,
+                                                               self.draw_graphs)
+        
+        # Print component groups to the summary#
+        outfile.write(
+            "\n###Clonotype groups###\n"
+            "This is a text representation of the groups shown in clonotype_network_with_identifiers.pdf."
+            " It does not exclude cells that only share beta and not alpha.\n\n")
+        for g in component_groups:
+            outfile.write(", ".join(g))
+            outfile.write("\n\n")
+        
+        # plot clonotype sizes
+        plt.figure()
+        clonotype_sizes = tracer_func.get_component_groups_sizes(cells)
+        w = 0.85
+        x_range = range(1, len(clonotype_sizes) + 1)
+        plt.bar(x_range, height=clonotype_sizes, width=w, color='black', align='center')
+        plt.gca().set_xticks(x_range)
+        plt.xlabel("Clonotype size")
+        plt.ylabel("Clonotype count")
+        plt.savefig("{}/clonotype_sizes.pdf".format(outdir))
+        
+        # write clonotype sizes to text file
+        with open("{}/clonotype_sizes.txt".format(outdir), 'w') as f:
+            data = zip(x_range, clonotype_sizes)
+            f.write("clonotype_size\tclonotype_count\n")
+            for t in data:
+                f.write("{}\t{}\n".format(t[0], t[1]))
 
         outfile.close()
     
