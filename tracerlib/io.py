@@ -15,6 +15,7 @@ from Bio import SeqIO
 
 from tracerlib.tracer_func import process_chunk, find_possible_alignments
 import glob
+import pdb
 
 def makeOutputDir(output_dir_path):
     if not os.path.exists(output_dir_path):
@@ -171,3 +172,35 @@ def parse_invariant_seqs(filename):
                 invariant_sequences.append(row)
 
     return invariant_sequences
+
+def read_colour_file(filename, return_used_list=False, receptor_name=None):
+    colour_map = dict()
+    used_colours = set()
+    with open(filename) as f:
+        for line in f:
+            line = line.rstrip()
+            receptor, locus, prod_colour, nonprod_colour = line.split(",")
+            d = {locus : (prod_colour, nonprod_colour)}
+            
+            if receptor in colour_map:
+                colour_map[receptor].update(d)
+            else:
+                colour_map[receptor] = d
+            if receptor_name is not None and receptor == receptor_name:
+                used_colours.add(prod_colour)
+            elif receptor_name is None:
+                used_colours.add(prod_colour)
+    if return_used_list:
+        t = (colour_map, used_colours)
+        return t
+    else:
+        return colour_map
+            
+def write_colour_file(filename, colour_map):
+    sorted_receptors = sorted(colour_map.keys())
+    with open(filename, 'w') as f:
+        for receptor in sorted_receptors:
+            sorted_loci = sorted(colour_map[receptor].keys())
+            for l in sorted_loci:
+                colours = colour_map[receptor][l]
+                f.write("{},{},{},{}\n".format(receptor, l, colours[0], colours[1]))

@@ -31,7 +31,10 @@ from Bio import SeqIO
 import itertools
 import pdb
 from numpy import percentile, array
-
+from matplotlib.colors import hex2color, rgb2hex
+import random
+import copy
+import colorsys
 
 class TracerTask(object):
 
@@ -817,12 +820,16 @@ class Builder(TracerTask):
             parser.add_argument('locus_name', metavar="<LOCUS_NAME>", help='name of locus (eg A)')
             parser.add_argument('N_padding', metavar="<N_PADDING>", 
                                  help='number of ambiguous N nucleotides between V and J', type=int)
+            parser.add_argument('colour', metavar="<COLOUR>", default = 'random', 
+                                help='colour for productive recombinants. Specify as HTML (eg E41A1C)\
+                                or use "random"', type = self.check_colour)
             parser.add_argument('V_seqs', metavar="<V_SEQS>", help='fasta file containing V gene sequences')
             parser.add_argument('J_seqs', metavar="<J_SEQS>", help='fasta file containing J gene sequences')
             parser.add_argument('C_seq', metavar="<C_SEQ>", 
                                 help='fasta file containing single constant region sequence')
             parser.add_argument('D_seqs', metavar="<D_SEQS>", nargs='?', default=False,
                                 help='fasta file containing D gene sequences (optional)')
+            
             
             args = parser.parse_args(sys.argv[2:])
             
@@ -837,6 +844,7 @@ class Builder(TracerTask):
             self.raw_seq_files['V'] = args.V_seqs
             self.raw_seq_files['J'] = args.J_seqs
             self.raw_seq_files['C'] = args.C_seq
+            self.prod_colour = args.colour
             if args.D_seqs:
                 self.raw_seq_files['D'] = args.D_seqs
             config_file = args.config_file
@@ -852,6 +860,7 @@ class Builder(TracerTask):
             self.raw_seq_files['V'] = kwargs.get('V_seqs')
             self.raw_seq_files['J'] = kwargs.get('J_seqs')
             self.raw_seq_files['C'] = kwargs.get('C_seq')
+            self.prod_colour = kwargs.get('colour')
             if kwargs.get('D_seqs'):
                 self.raw_seq_files['D'] = kwargs.get('D_seqs')
             
@@ -859,15 +868,19 @@ class Builder(TracerTask):
 
         self.config = self.read_config(config_file)
         self.species_dir = self.get_resources_root(self.species)
+        
+        
 
     def run(self):
 
         # Check that there will not be git conflicts with inbuilt species
-        assert self.species not in ('Mmus', 'Hsap'), \
-            "Cannot overwrite inbuilt species. Please choose a unique name " \
-            "e.g. 'Mmus_1'"
-
+        #assert self.species not in ('Mmus', 'Hsap'), \
+        #    "Cannot overwrite inbuilt species. Please choose a unique name " \
+        #    "e.g. 'Mmus_1'"
+        #
         self.init_dirs()
+        
+        self.calculate_colours(self.prod_colour)
         VDJC_files = self.copy_raw_files()
         recombinome_fasta = self.make_recombinomes(VDJC_files)
         self.make_bowtie2_index(recombinome_fasta)
@@ -876,6 +889,71 @@ class Builder(TracerTask):
             print("\nIMPORTANT: there is no IgBLAST database for {receptor}_{segment}\n"\
                   "Run build with {segment} segments for {receptor} before using tracer assemble\n"
                   .format(receptor = self.receptor_name, segment=s))
+    
+    def check_colour(self, c):
+        if c == 'random':
+            return(c)
+        else:
+            try:
+                if not c.startswith("#"):
+                    c = "#" + c
+                hex2color(c)
+                return(c)
+            except ValueError:
+                msg = "{c} is not a valid html colour. Specify as xxXXxx".format(c=c)
+                raise argparse.ArgumentTypeError(msg)
+                
+    def calculate_colours(self, c):
+        c = c.lower()
+        pal = ['#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00', '#ffff33', '#a65628', '#f781bf']
+        allowed_pal = copy.copy(pal)
+        colour_file = os.path.join(self.species_dir, "colours.csv")
+        if os.path.exists(colour_file):
+            colour_map, used_colours = io.read_colour_file(colour_file, return_used_list=True, 
+                                                            receptor_name = self.receptor_name)     
+            if len(used_colours) < len(pal):
+                for uc in used_colours:
+                    if uc in pal:
+                        allowed_pal.remove(uc)
+        else:
+            used_colours = None
+            colour_map = {}
+        if c == 'random':
+            prod_colour = random.choice(allowed_pal)
+
+        else:
+            if used_colours is not None:
+                if (self.receptor_name in colour_map and 
+                   self.locus_name in colour_map[self.receptor_name]
+                   and not colour_map[self.receptor_name][self.locus_name][0] == c):
+                        if c in used_colours and c not in allowed_pal:
+                            msg = "{c} already in use. Please specify a different colour.".format(c=c)
+                            raise argparse.ArgumentTypeError(msg)
+            
+            prod_colour = c
+        
+        prod_rgb = hex2color(prod_colour)
+        h, s, v = colorsys.rgb_to_hsv(*prod_rgb)
+        
+        nonprod_rgb = colorsys.hsv_to_rgb(h, s*0.5, self.adj_v(v))
+        nonprod_colour = str(rgb2hex(nonprod_rgb))
+        
+        d1 = {self.locus_name : (prod_colour, nonprod_colour)}
+        
+        if self.receptor_name in colour_map:
+            colour_map[self.receptor_name].update(d1)
+        else:
+            colour_map[self.receptor_name] = d1
+        
+        io.write_colour_file(colour_file, colour_map)
+        
+                
+        
+    def adj_v(self, v):
+        new_v = v * 1.3
+        if new_v > 1:
+            new_v = 1
+        return(new_v)
 
     def check_duplicate(self, new_path, segment=None, descriptor="Resource"):
         error_string = "{descriptor} already exists for {receptor}_{locus}" \
@@ -895,6 +973,7 @@ class Builder(TracerTask):
         io.makeOutputDir(self.species_dir)
         for d in subdirs:
             io.makeOutputDir(os.path.join(self.species_dir, d))
+            
 
     def copy_raw_files(self):
 
