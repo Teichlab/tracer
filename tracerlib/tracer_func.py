@@ -617,42 +617,43 @@ def load_kallisto_counts(tsv_file):
     return dict(counts)
 
 
-def make_cell_network_from_dna(cells, colorscheme, colours, keep_unlinked, shape, dot, neato):
+def make_cell_network_from_dna(cells, keep_unlinked, shape, dot, neato, receptor, loci, 
+                               network_colours):
     G = nx.MultiGraph()
     # initialise all cells as nodes
 
     if shape == 'circle':
         for cell in cells:
-            G.add_node(cell, shape=shape, label=cell.html_style_label_for_circles(), sep=0.4, fontname="helvetica neue")
+            G.add_node(cell, shape=shape, label=cell.html_style_label_for_circles(receptor, loci, network_colours), 
+                        sep=0.4, fontname="helvetica neue")
     else:
         for cell in cells:
-            G.add_node(cell, shape=shape, label=cell.html_style_label_dna(), fontname="helvetica neue")
+            G.add_node(cell, shape=shape, label=cell.html_style_label_dna(receptor, loci, network_colours), 
+                        fontname="helvetica neue")
     # make edges:
     for i in range(len(cells)):
         current_cell = cells[i]
         comparison_cells = cells[i + 1:]
 
-        for locus in ['A', 'B', 'D', 'G']:
-            col = colours[locus]
+        for locus in loci:
+            col = network_colours[receptor][locus][0]
 
             # current_identifiers = current_cell.getMainRecombinantIdentifiersForLocus(locus)
             for comparison_cell in comparison_cells:
                 shared_identifiers = 0
-                if current_cell.all_recombinants[locus] is not None:
-                    for current_recombinant in current_cell.all_recombinants[locus]:
+                if current_cell.recombinants[receptor][locus] is not None:
+                    for current_recombinant in current_cell.recombinants[receptor][locus]:
                         current_id_set = current_recombinant.all_poss_identifiers
-                        if comparison_cell.all_recombinants[locus] is not None:
-                            for comparison_recombinant in comparison_cell.all_recombinants[locus]:
+                        if comparison_cell.recombinants[receptor][locus] is not None:
+                            for comparison_recombinant in comparison_cell.recombinants[receptor][locus]:
                                 comparison_id_set = comparison_recombinant.all_poss_identifiers
                                 if len(current_id_set.intersection(comparison_id_set)) > 0:
                                     shared_identifiers += 1
 
-                # comparison_identifiers = comparison_cell.getAllRecombinantIdentifiersForLocus(locus)
-                # common_identifiers = current_identifiers.intersection(comparison_identifiers)
                 if shared_identifiers > 0:
                     width = shared_identifiers * 2
                     G.add_edge(current_cell, comparison_cell, locus, penwidth=width, color=col,
-                               weight=shared_identifiers, colorscheme=colorscheme)
+                               weight=shared_identifiers)
 
     deg = G.degree()
 
@@ -694,12 +695,10 @@ def make_cell_network_from_dna(cells, colorscheme, colours, keep_unlinked, shape
     return (G, drawing_tool, component_groups)
 
 
-def draw_network_from_cells(cells, output_dir, output_format, dot, neato, draw_graphs):
+def draw_network_from_cells(cells, output_dir, output_format, dot, neato, draw_graphs, receptor, loci, network_colours):
     cells = list(cells.values())
-    colorscheme = 'set15'
-    colours = {'A': '1', 'B': '2', 'G': '3', 'D': '5', 'mean_both': '#a8a8a8bf'}
-    network, draw_tool, component_groups = make_cell_network_from_dna(cells, colorscheme, colours, False, "box", dot,
-                                                                      neato)
+    network, draw_tool, component_groups = make_cell_network_from_dna(cells, False, "box", dot,
+                                                                      neato, receptor, loci, network_colours)
     network_file = "{}/clonotype_network_with_identifiers.dot".format(output_dir)
     try:
         nx.write_dot(network, network_file)
@@ -711,7 +710,8 @@ def draw_network_from_cells(cells, output_dir, output_format, dot, neato, draw_g
             output_dir=output_dir, output_format=output_format), "-T", output_format, network_file]
         subprocess.check_call(command)
 
-    network, draw_tool, cgx = make_cell_network_from_dna(cells, colorscheme, colours, False, "circle", dot, neato)
+    network, draw_tool, cgx = make_cell_network_from_dna(cells, False, "circle", dot, 
+                                                         neato, receptor, loci, network_colours)
     network_file = "{}/clonotype_network_without_identifiers.dot".format(output_dir)
     try:
         nx.write_dot(network, network_file)
@@ -725,7 +725,7 @@ def draw_network_from_cells(cells, output_dir, output_format, dot, neato, draw_g
     return (component_groups)
 
 
-def get_component_groups_sizes(cells):
+def get_component_groups_sizes(cells, receptor, loci):
     cells = list(cells.values())
     G = nx.MultiGraph()
     # initialise all cells as nodes
@@ -736,16 +736,16 @@ def get_component_groups_sizes(cells):
         current_cell = cells[i]
         comparison_cells = cells[i + 1:]
 
-        for locus in ['A', 'B', 'D', 'G']:
+        for locus in loci:
 
             # current_identifiers = current_cell.getMainRecombinantIdentifiersForLocus(locus)
             for comparison_cell in comparison_cells:
                 shared_identifiers = 0
-                if current_cell.all_recombinants[locus] is not None:
-                    for current_recombinant in current_cell.all_recombinants[locus]:
+                if current_cell.recombinants[receptor][locus] is not None:
+                    for current_recombinant in current_cell.recombinants[receptor][locus]:
                         current_id_set = current_recombinant.all_poss_identifiers
-                        if comparison_cell.all_recombinants[locus] is not None:
-                            for comparison_recombinant in comparison_cell.all_recombinants[locus]:
+                        if comparison_cell.recombinants[receptor][locus] is not None:
+                            for comparison_recombinant in comparison_cell.recombinants[receptor][locus]:
                                 comparison_id_set = comparison_recombinant.all_poss_identifiers
                                 if len(current_id_set.intersection(comparison_id_set)) > 0:
                                     shared_identifiers += 1

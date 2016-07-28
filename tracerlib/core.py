@@ -4,7 +4,6 @@ from collections import Counter, defaultdict
 import six
 from Bio.Alphabet import generic_dna
 from Bio.Seq import Seq
-
 import pdb
 
 
@@ -19,6 +18,7 @@ class Cell(object):
         self.bgcolor = None
         self.recombinants = self._process_recombinants(recombinants, receptor, loci)
         self.is_empty = self._check_is_empty()
+        self.species = species
         #self.cdr3_comparisons = {'A': None, 'B': None, 'mean_both': None}
 
         if not invariant_seqs:
@@ -89,27 +89,29 @@ class Cell(object):
     #                identifier_list.add(cdr3)
     #    return (identifier_list)
 
-    def html_style_label_dna(self):
-        colours = {'A': {'productive': '#E41A1C', 'non-productive': "#ff8c8e"},
-                   'B': {'productive': '#377eb8', 'non-productive': "#95c1e5"},
-                   'G': {'productive': '#4daf4a', 'non-productive': "#aee5ac"},
-                   'D': {'productive': '#984ea3', 'non-productive': "#deace5"}}
-        locus_names = ['A', 'B', 'G', 'D']
+    def html_style_label_dna(self, receptor, loci, colours):
+        #colours = {'A': {'productive': '#E41A1C', 'non-productive': "#ff8c8e"},
+        #           'B': {'productive': '#377eb8', 'non-productive': "#95c1e5"},
+        #           'G': {'productive': '#4daf4a', 'non-productive': "#aee5ac"},
+        #           'D': {'productive': '#984ea3', 'non-productive': "#deace5"}}
+        #locus_names = ['A', 'B', 'G', 'D']
+        
+
         recombinants = dict()
         final_string = '<<FONT POINT-SIZE="16"><B>' + self.name + "</B></FONT>"
-        for locus, recombinant_list in six.iteritems(self.all_recombinants):
+        for locus, recombinant_list in six.iteritems(self.recombinants[receptor]):
             recombinant_set = set()
             if recombinant_list is not None:
                 for recombinant in recombinant_list:
                     if recombinant.productive:
-                        prod = "productive"
+                        i = 0
                     else:
-                        prod = "non-productive"
+                        i = 1
                     recombinant_set.add("<BR/>" + '<FONT COLOR = "{}">'.format(
-                        colours[locus][prod]) + recombinant.identifier + '</FONT>')
+                        colours[receptor][locus][i]) + recombinant.identifier + '</FONT>')
 
                 recombinants[locus] = recombinant_set
-        for locus in locus_names:
+        for locus in loci:
             if locus in recombinants.keys():
                 id_string = "".join(recombinants[locus])
                 final_string = final_string + id_string
@@ -117,29 +119,33 @@ class Cell(object):
         return (final_string)
         # return(self.name)
 
-    def html_style_label_for_circles(self):
-        colours = {'A': {'productive': '#E41A1C', 'non-productive': "#ff8c8e"},
-                   'B': {'productive': '#377eb8', 'non-productive': "#95c1e5"},
-                   'G': {'productive': '#4daf4a', 'non-productive': "#aee5ac"},
-                   'D': {'productive': '#984ea3', 'non-productive': "#deace5"}}
-        locus_names = ['A', 'B', 'G', 'D']
+    def html_style_label_for_circles(self, receptor, loci, colours):
+        
+        #colours = {'A': {'productive': '#E41A1C', 'non-productive': "#ff8c8e"},
+        #           'B': {'productive': '#377eb8', 'non-productive': "#95c1e5"},
+        #           'G': {'productive': '#4daf4a', 'non-productive': "#aee5ac"},
+        #           'D': {'productive': '#984ea3', 'non-productive': "#deace5"}}
+        #locus_names = ['A', 'B', 'G', 'D']
+        
+        
+        
         recombinants = dict()
         final_string = '<<table cellspacing="6px" border="0" cellborder="0">'
         # final_string = "<"
-        for locus, recombinant_list in six.iteritems(self.all_recombinants):
+        for locus, recombinant_list in six.iteritems(self.recombinants[receptor]):
             recombinant_set = set()
             if recombinant_list is not None:
                 for recombinant in recombinant_list:
                     if recombinant.productive:
-                        prod = "productive"
+                        i = 0
                     else:
-                        prod = "non-productive"
+                        i = 1
                     recombinant_set.add(
-                        '<tr><td height="10" width="40" bgcolor="{}"></td></tr>'.format(colours[locus][prod]))
+                        '<tr><td height="10" width="40" bgcolor="{}"></td></tr>'.format(colours[receptor][locus][i]))
 
                 recombinants[locus] = recombinant_set
         strings = []
-        for locus in locus_names:
+        for locus in loci:
             if locus in recombinants.keys():
                 strings.append("".join(recombinants[locus]))
 

@@ -467,7 +467,9 @@ class Summariser(TracerTask):
 
         # Read config file
         self.config = self.read_config(config_file)
-
+        
+        self.species_dir = self.get_resources_root(self.species)
+        
     def run(self):
 
         if self.draw_graphs:
@@ -615,6 +617,7 @@ class Summariser(TracerTask):
         
         
         outfile.write(t.get_string())
+        outfile.write("\n")
 
         # If using unfiltered, name cells with more than two recombinants#
         if self.use_unfiltered:
@@ -655,7 +658,7 @@ class Summariser(TracerTask):
         # plot length distributions
         quartiles = dict()
         for l in self.loci:
-            q = self.get_quartiles(self.species, self.receptor_name, l)
+            q = self.get_quartiles(self.receptor_name, l)
             quartiles[l] = q
             
         for l in self.loci:
@@ -705,21 +708,23 @@ class Summariser(TracerTask):
                 f.write("{}\tNo TCRs found\n".format(cell_name))
                 
         # make clonotype networks
+        network_colours = io.read_colour_file(os.path.join(self.species_dir, "colours.csv"))
         component_groups = tracer_func.draw_network_from_cells(cells, outdir, self.graph_format, dot, neato,
-                                                               self.draw_graphs)
+                                                               self.draw_graphs, self.receptor_name, self.loci,
+                                                               network_colours)
         
         # Print component groups to the summary#
         outfile.write(
             "\n###Clonotype groups###\n"
-            "This is a text representation of the groups shown in clonotype_network_with_identifiers.pdf."
-            " It does not exclude cells that only share beta and not alpha.\n\n")
+            "This is a text representation of the groups shown in clonotype_network_with_identifiers.pdf.\n"
+            "It does not exclude cells that only share beta and not alpha.\n\n")
         for g in component_groups:
             outfile.write(", ".join(g))
             outfile.write("\n\n")
         
         # plot clonotype sizes
         plt.figure()
-        clonotype_sizes = tracer_func.get_component_groups_sizes(cells)
+        clonotype_sizes = tracer_func.get_component_groups_sizes(cells, self.receptor_name, self.loci)
         w = 0.85
         x_range = range(1, len(clonotype_sizes) + 1)
         plt.bar(x_range, height=clonotype_sizes, width=w, color='black', align='center')
@@ -737,13 +742,13 @@ class Summariser(TracerTask):
 
         outfile.close()
     
-    def get_quartiles(self, species, receptor, locus):
-        species_dir = self.get_resources_root(species)
-        fasta = os.path.join(species_dir, 'combinatorial_recombinomes','{receptor}_{locus}.fa'.format(
+    def get_quartiles(self, receptor, locus):
+        
+        fasta = os.path.join(self.species_dir, 'combinatorial_recombinomes','{receptor}_{locus}.fa'.format(
                                                                             receptor=receptor, locus=locus))
         
         # need to remove the start N padding and end C sequence from the lengths
-        constant_fasta = os.path.join(species_dir, 'raw_seqs', '{receptor}_{locus}_C.fa'.format(
+        constant_fasta = os.path.join(self.species_dir, 'raw_seqs', '{receptor}_{locus}_C.fa'.format(
                                                                             receptor=receptor, locus=locus))
         C_len = len(next(SeqIO.parse(constant_fasta, "fasta")))
 
