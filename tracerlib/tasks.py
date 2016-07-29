@@ -238,7 +238,7 @@ class Assembler(TracerTask):
             config_file = kwargs.get('config_file')
 
         self.config = self.read_config(config_file)
-        self.locus_names = ["TCRA", "TCRB"]
+        #self.locus_names = ["TCRA", "TCRB"]
 
         # Check the fastq config is correct
         if not self.single_end:
@@ -534,8 +534,12 @@ class Summariser(TracerTask):
                 with open(cell_pkl, 'rb') as pkl:
                     cl = pickle.load(pkl)
                 cells[d] = cl
-                if cl.is_empty:
+                if cl.is_empty or cl.missing_loci_of_interest(self.receptor_name, self.loci):
                     empty_cells.append(d)
+               
+                
+                
+                
                 #if cl.is_inkt:
                 #    NKT_cells[d] = (cl.is_inkt, cl.getMainRecombinantIdentifiersForLocus('B'))
         
@@ -719,7 +723,9 @@ class Summariser(TracerTask):
                 f.write("\n")
             f.write("\n\n")
             for cell_name in empty_cells:
-                f.write("{}\tNo TCRs found\n".format(cell_name))
+                f.write("{cell_name}\tNo seqs found for {receptor}_{loci}\n".format(cell_name=cell_name,
+                                                                                    receptor=self.receptor_name,
+                                                                                    loci=self.loci))
                 
         # make clonotype networks
         network_colours = io.read_colour_file(os.path.join(self.species_dir, "colours.csv"))

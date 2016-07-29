@@ -45,7 +45,22 @@ class Cell(object):
                 
     def _check_is_empty(self):
         if (self.recombinants is None or len(self.recombinants) == 0):
-            return (True)
+            return True
+        else:
+            return False
+    
+    def missing_loci_of_interest(self, receptor_name, loci):
+        recombinants = self.recombinants[receptor_name]
+        loci_of_interest = set(loci)
+        loci_in_cell = set()
+        for l in loci:
+            if l in recombinants and (recombinants[l] is not None and len(recombinants[l])>0):
+                loci_in_cell.add(l)
+        if len(loci_of_interest.intersection(loci_in_cell)) == 0:
+            return True
+        else:
+            return False
+        
 
     #def _check_if_inkt(self):
     #    A_recombs = self.getMainRecombinantIdentifiersForLocus("A")
