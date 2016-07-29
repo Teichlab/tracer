@@ -29,21 +29,19 @@ class Cell(object):
         #self.is_inkt = self._check_if_inkt()
     
     def _process_recombinants(self, recombinants, receptor, loci):
-        if recombinants is None:
-            return None
-        else:
-            recombinant_dict = defaultdict(dict)
+        recombinant_dict = defaultdict(dict)
+        if recombinants is not None:
             for r_name, r in six.iteritems(recombinants):
                 r_name = r_name.split("_")
                 receptor = r_name[0]
                 locus = r_name[1]
                 recombinant_dict[receptor][locus] = r
             
-            #normalise this to put None in cases where no receptors found
-            for l in loci:
-                if l not in recombinant_dict[receptor]:
-                    recombinant_dict[receptor][l] = None
-            return dict(recombinant_dict)
+        #normalise this to put None in cases where no receptors found
+        for l in loci:
+            if l not in recombinant_dict[receptor]:
+                recombinant_dict[receptor][l] = None
+        return dict(recombinant_dict)
                 
     def _check_is_empty(self):
         if (self.recombinants is None or len(self.recombinants) == 0):
@@ -213,7 +211,8 @@ class Cell(object):
         return ("\n".join(seq_string + ["\n"]))
 
     def summarise_productivity(self, receptor, locus):
-        if locus not in self.recombinants[receptor] or self.recombinants[receptor][locus] is None:
+        if (self.recombinants is None or locus not in self.recombinants[receptor] or 
+            self.recombinants[receptor][locus] is None):
             return("0/0")
         else:
             recs = self.recombinants[receptor][locus]
@@ -267,7 +266,7 @@ class Cell(object):
         
     def has_excess_recombinants(self, max_r=2):
         for receptor, locus_dict in six.iteritems(self.recombinants):
-            for locus, recs in six.iteritems(locus):
+            for locus, recs in six.iteritems(locus_dict):
                 if len(recs) > max_r:
                     return(True)
 

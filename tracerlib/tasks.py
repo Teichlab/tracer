@@ -119,17 +119,31 @@ class TracerTask(object):
 
     def die_with_empty_cell(self, cell_name, output_dir, species):
         print("##No recombinants found##")
-        cell = core.Cell(cell_name, None, is_empty=True, species=species)
-        self.print_cell_summary(cell,
-                                "{output_dir}/unfiltered_TCR_seqs/unfiltered_TCRs.txt".format(output_dir=output_dir))
-        with open("{output_dir}/unfiltered_TCR_seqs/{cell_name}.pkl".format(output_dir=output_dir,
-                                                                            cell_name=cell.name), 'wb') as pf:
+        cell = core.Cell(cell_name, None, is_empty=True, species=species, receptor=self.receptor_name, loci=self.loci)
+        
+        self.print_cell_summary(
+            cell, "{output_dir}/unfiltered_{receptor}_seqs/unfiltered_{receptor}s.txt".format(
+                                                                        output_dir=self.output_dir,
+                                                                        receptor=self.receptor_name),
+                                                                        self.receptor_name, self.loci)
+
+        # Save cell in a pickle
+        with open("{output_dir}/unfiltered_{receptor}_seqs/{cell_name}.pkl".format(output_dir=self.output_dir,
+                                                                            cell_name=cell.name, 
+                                                                            receptor=self.receptor_name), 'wb') as pf:
             pickle.dump(cell, pf, protocol=0)
         cell.filter_recombinants()
-        self.print_cell_summary(cell, "{output_dir}/filtered_TCR_seqs/filtered_TCRs.txt".format(output_dir=output_dir))
-        with open("{output_dir}/filtered_TCR_seqs/{cell_name}.pkl".format(output_dir=output_dir,
-                                                                          cell_name=cell.name), 'wb') as pf:
+        self.print_cell_summary(
+            cell, "{output_dir}/filtered_{receptor}_seqs/filtered_{receptor}s.txt".format(
+                                                                            output_dir=self.output_dir,
+                                                                            receptor=self.receptor_name),
+                                                                            self.receptor_name, self.loci)
+                                                                            
+        with open("{output_dir}/filtered_{receptor}_seqs/{cell_name}.pkl".format(output_dir=self.output_dir,
+                                                                          cell_name=cell.name,
+                                                                          receptor=self.receptor_name), 'wb') as pf:
             pickle.dump(cell, pf, protocol=0)
+        
         exit(0)
     
     def get_resources_root(self, species):
