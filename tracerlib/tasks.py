@@ -263,13 +263,13 @@ class Assembler(TracerTask):
                 raise OSError('2', 'FASTQ file not found', self.fastq2)
 
         # Get Invariant Sequences
-        if not invariant_sequences:
-            invariant_sequences = self.resolve_relative_path(os.path.join('resources', self.species,
-                                                                          'invariant_seqs.csv'))
-        if not os.path.isfile(invariant_sequences):
-            raise OSError('2', 'Invariant Sequence file not found', invariant_sequences)
-
-        self.invariant_sequences = io.parse_invariant_seqs(invariant_sequences)
+       #if not invariant_sequences:
+       #    invariant_sequences = self.resolve_relative_path(os.path.join('resources', self.species,
+       #                                                                  'invariant_seqs.csv'))
+       #if not os.path.isfile(invariant_sequences):
+       #    raise OSError('2', 'Invariant Sequence file not found', invariant_sequences)
+       #
+       #self.invariant_sequences = io.parse_invariant_seqs(invariant_sequences)
         
 
         
@@ -395,8 +395,10 @@ class Assembler(TracerTask):
         
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
+            #cell = io.parse_IgBLAST(self.receptor_name, self.loci, self.output_dir, self.cell_name, imgt_seq_location, 
+            #                        self.species, self.seq_method, self.invariant_sequences)
             cell = io.parse_IgBLAST(self.receptor_name, self.loci, self.output_dir, self.cell_name, imgt_seq_location, 
-                                    self.species, self.seq_method, self.invariant_sequences)
+                                    self.species, self.seq_method)
             if cell.is_empty:
                 self.die_with_empty_cell(self.cell_name, self.output_dir, self.species)
 

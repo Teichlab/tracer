@@ -61,7 +61,7 @@ def load_IMGT_seqs(file):
     return (seqs)
 
 
-def parse_IgBLAST(receptor, loci, output_dir, cell_name, raw_seq_dir, species, seq_method, invariant_seqs):
+def parse_IgBLAST(receptor, loci, output_dir, cell_name, raw_seq_dir, species, seq_method, invariant_seqs=None):
     
     IMGT_seqs = dict()
     #expecting_D = dict()
