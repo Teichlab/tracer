@@ -171,7 +171,7 @@ class Assembler(TracerTask):
                                 help='look for existing intermediate files and use those instead of starting from scratch',
                                 action="store_true")
             parser.add_argument('--species', '-s',
-                                help='species from which T cells were isolated - important to determination of iNKT cells',
+                                help='Species to use for reconstruction',
                                 choices=self.get_available_species(), default='Mmus')
             parser.add_argument('--receptor_name',
                                 help="Name of receptor to reconstruct", default='TCR')
@@ -450,7 +450,7 @@ class Summariser(TracerTask):
             parser = argparse.ArgumentParser(description="Summarise set of cells with reconstructed TCR sequences",
                                              parents=[self.base_parser])
             parser.add_argument('--species', '-s',
-                                help='species from which T cells were isolated',
+                                help='Species to use for reconstruction',
                                 choices=self.get_available_species(), default='Mmus')
             parser.add_argument('--receptor_name',
                                 help="Name of receptor to summarise", default='TCR')
