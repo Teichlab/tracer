@@ -195,6 +195,10 @@ class Assembler(TracerTask):
             parser.add_argument('--invariant_sequences',
                                 help="Custom invariant sequence file. "
                                      "Use the example in 'resources/Mmus/invariant_seqs.csv'")
+            parser.add_argument('--max_junc_len',
+                                help="Maximum permitted length of junction string in recombinant identifier. "
+                                     "Used to filter out artefacts. May need to be longer for TCRdelta.",
+                                default=50)
 
             parser.add_argument('fastq1', metavar="<FASTQ1>", help='first fastq file')
             parser.add_argument('fastq2', metavar="<FASTQ2>", help='second fastq file', nargs='?')
@@ -217,6 +221,7 @@ class Assembler(TracerTask):
             self.output_dir = args.output_dir
             self.receptor_name = args.receptor_name
             self.loci = args.loci
+            self.max_junc_len = args.max_junc_len
             invariant_sequences = args.invariant_sequences
             config_file = args.config_file
 
@@ -234,6 +239,7 @@ class Assembler(TracerTask):
             self.fragment_sd = kwargs.get('fragment_sd')
             self.receptor_name = kwargs.get('receptor_name')
             self.loci = kwargs.get('loci')
+            self.max_junc_len = kwargs.get('max_jun_len')
             invariant_sequences = kwargs.get('invariant_sequences')
             config_file = kwargs.get('config_file')
 
@@ -398,7 +404,7 @@ class Assembler(TracerTask):
             #cell = io.parse_IgBLAST(self.receptor_name, self.loci, self.output_dir, self.cell_name, imgt_seq_location, 
             #                        self.species, self.seq_method, self.invariant_sequences)
             cell = io.parse_IgBLAST(self.receptor_name, self.loci, self.output_dir, self.cell_name, imgt_seq_location, 
-                                    self.species, self.seq_method)
+                                    self.species, self.seq_method, self.max_junc_len)
             if cell.is_empty:
                 self.die_with_empty_cell(self.cell_name, self.output_dir, self.species)
 
@@ -822,10 +828,10 @@ class Tester(TracerTask):
             f1 = "{}/{}_1.fastq".format(test_dir, name)
             f2 = "{}/{}_2.fastq".format(test_dir, name)
 
-            #Assembler(ncores=str(self.ncores), config_file=self.config_file, resume_with_existing_files=True,
-            #          species='Mmus', seq_method='imgt', fastq1=f1, fastq2=f2, cell_name=name, output_dir=out_dir,
-            #          single_end=False, fragment_length=False, fragment_sd=False, receptor_name='TCR',
-            #          loci=['A', 'B']).run()
+            Assembler(ncores=str(self.ncores), config_file=self.config_file, resume_with_existing_files=True,
+                      species='Mmus', seq_method='imgt', fastq1=f1, fastq2=f2, cell_name=name, output_dir=out_dir,
+                      single_end=False, fragment_length=False, fragment_sd=False, receptor_name='TCR',
+                      loci=['A', 'B'], max_junc_len=50).run()
 
         Summariser(config_file=self.config_file, use_unfiltered=False, keep_inkt=False,
                    graph_format=self.graph_format, no_networks=self.no_networks, root_dir=out_dir, receptor_name='TCR',

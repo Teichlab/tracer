@@ -100,7 +100,7 @@ def process_chunk(chunk):
 
 
 def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs, output_dir, species, seq_method,
-                             invariant_seqs, loci_for_segments, receptor, loci):
+                             invariant_seqs, loci_for_segments, receptor, loci, max_junc_string_length):
     alignment_dict = defaultdict(dict)
     recombinants = {}
     for locus in locus_names:
@@ -187,7 +187,7 @@ def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs, out
                                                                                           cell_name, query_name,
                                                                                           loci_for_segments)
 
-                    if len(junc_string) < 50:
+                    if len(junc_string) < max_junc_string_length:
                         rec = Recombinant(contig_name=query_name, locus=returned_locus, identifier=identifier,
                                           all_poss_identifiers=all_poss_identifiers, productive=is_productive[0],
                                           stop_codon=is_productive[1], in_frame=is_productive[2], TPM=0.0,

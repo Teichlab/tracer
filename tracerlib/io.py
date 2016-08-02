@@ -61,7 +61,8 @@ def load_IMGT_seqs(file):
     return (seqs)
 
 
-def parse_IgBLAST(receptor, loci, output_dir, cell_name, raw_seq_dir, species, seq_method, invariant_seqs=None):
+def parse_IgBLAST(receptor, loci, output_dir, cell_name, raw_seq_dir, species, seq_method, max_junc_len,
+                    invariant_seqs=None):
     
     IMGT_seqs = dict()
     #expecting_D = dict()
@@ -104,7 +105,7 @@ def parse_IgBLAST(receptor, loci, output_dir, cell_name, raw_seq_dir, species, s
 
 
     cell = find_possible_alignments(all_locus_data, locus_names, cell_name, IMGT_seqs, output_dir, species, seq_method,
-                                     invariant_seqs, loci_for_segments, receptor, loci)
+                                     invariant_seqs, loci_for_segments, receptor, loci, max_junc_len)
     return (cell)
 
 
