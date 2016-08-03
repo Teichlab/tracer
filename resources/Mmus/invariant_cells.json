@@ -1,0 +1,29 @@
+[
+    {
+        "cell_name" : "iNKT",
+        "receptor_type" : "TCR",
+        "recombinants":
+            {
+                "A":
+                [
+                    {"V":"TRAV11", "J":"TRAJ18"}
+                ]
+            }
+    },
+    {
+        "cell_name" : "MAIT",
+        "receptor_type" : "TCR",
+        "recombinants":
+            {
+                "A":
+                [
+                    {"V":"TRAV1-2", "J":"TRAJ33"}
+                ],
+                "B":
+                [
+                    {"V":"TRBV6", "J":"*"},
+                    {"V":"TRBV20", "J":"*"}
+                ]
+            }
+    }
+]

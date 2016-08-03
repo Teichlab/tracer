@@ -17,6 +17,8 @@ from tracerlib.tracer_func import process_chunk, find_possible_alignments
 import glob
 import pdb
 
+import json
+
 def makeOutputDir(output_dir_path):
     if not os.path.exists(output_dir_path):
         os.mkdir(output_dir_path)
@@ -163,16 +165,14 @@ def check_binary(name, user_path=None):
                   .format(name=name))
 
 
-def parse_invariant_seqs(filename):
+def parse_invariant_cells(filename):
 
-    invariant_sequences = []
+    invariant_cells = []
     with open(filename) as fh:
-        reader = csv.DictReader(fh)
-        for row in reader:
-            if len(row):
-                invariant_sequences.append(row)
-
-    return invariant_sequences
+        json_dict = json.load(fh)
+        for c in json_dict:
+            invariant_cells.append(core.Invar_cell(c))
+    return invariant_cells
 
 def read_colour_file(filename, return_used_list=False, receptor_name=None):
     colour_map = dict()

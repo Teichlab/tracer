@@ -359,4 +359,11 @@ class Recombinant(object):
             summary_string = summary_string + "\t".join(line) + "\n"
         return (summary_string)
 
-
+class Invar_cell(object):
+    
+    """Class to describe invariant cells and their specific sequences"""
+    
+    def __init__(self, d):
+        self.recombinants = {}
+        
+        
