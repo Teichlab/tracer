@@ -192,9 +192,6 @@ class Assembler(TracerTask):
                                 help='Estimated standard deviation of average fragment length in the sequencing library.'
                                      ' Used for Kallisto quantification. REQUIRED for single-end data.',
                                 default=False)
-            parser.add_argument('--invariant_sequences',
-                                help="Custom invariant sequence file. "
-                                     "Use the example in 'resources/Mmus/invariant_seqs.csv'")
             parser.add_argument('--max_junc_len',
                                 help="Maximum permitted length of junction string in recombinant identifier. "
                                      "Used to filter out artefacts. May need to be longer for TCRdelta.",
@@ -222,7 +219,6 @@ class Assembler(TracerTask):
             self.receptor_name = args.receptor_name
             self.loci = args.loci
             self.max_junc_len = args.max_junc_len
-            invariant_sequences = args.invariant_sequences
             config_file = args.config_file
 
         else:
@@ -240,7 +236,6 @@ class Assembler(TracerTask):
             self.receptor_name = kwargs.get('receptor_name')
             self.loci = kwargs.get('loci')
             self.max_junc_len = kwargs.get('max_jun_len')
-            invariant_sequences = kwargs.get('invariant_sequences')
             config_file = kwargs.get('config_file')
 
         self.config = self.read_config(config_file)
@@ -268,14 +263,13 @@ class Assembler(TracerTask):
             if not os.path.isfile(self.fastq2):
                 raise OSError('2', 'FASTQ file not found', self.fastq2)
 
-        # Get Invariant Sequences
-       #if not invariant_sequences:
-       #    invariant_sequences = self.resolve_relative_path(os.path.join('resources', self.species,
-       #                                                                  'invariant_seqs.csv'))
-       #if not os.path.isfile(invariant_sequences):
-       #    raise OSError('2', 'Invariant Sequence file not found', invariant_sequences)
-       #
-       #self.invariant_sequences = io.parse_invariant_seqs(invariant_sequences)
+       invariant_sequences = self.resolve_relative_path(os.path.join('resources', self.species,
+                                                                         'invariant_seqs.csv'))
+       if not os.path.isfile(invariant_sequences):
+           raise OSError('2', 'Invariant Sequence file not found', invariant_sequences)
+       
+       
+       self.invariant_sequences = io.parse_invariant_seqs(invariant_sequences)
         
 
         
