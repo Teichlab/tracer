@@ -378,7 +378,7 @@ class Invar_cell(object):
         
         #check for expected recombinants for defining locus
         cell_recs = cell.recombinants[self.receptor_type][locus]
-        defining_recs = self.invariant_recombinants[self.defining_locus]
+        invariant_recs = self.invariant_recombinants[locus]
         if cell_recs is not None:
             for rec in cell_recs:
                 if rec.productive:
@@ -386,8 +386,8 @@ class Invar_cell(object):
                         ident = ident.split("_")
                         v = ident[0]
                         j = ident[2]
-                        for dr in defining_recs:
-                            if (v in dr['V'] or dr['V']=='*') and (j in dr['J'] or dr['J']=='*'):
+                        for ivr in invariant_recs:
+                            if (v in ivr['V'] or ivr['V']=='*') and (j in ivr['J'] or ivr['J']=='*'):
                                 found_locus = True
                                 found_identifiers.add("_".join(ident))
         

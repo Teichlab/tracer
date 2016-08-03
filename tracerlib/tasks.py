@@ -712,7 +712,7 @@ class Summariser(TracerTask):
                     outfile.write("### {} ###\n".format(n))
                     ivc_details = found_ivcs[n]
                     for l in ivc_loci:
-                        outfile.write("{}_{}: {}\n\n".format(ivc.receptor_type, l, ivc_details[l]))
+                        outfile.write("{}_{}: {}\n".format(ivc.receptor_type, l, ivc_details[l]))
                 outfile.write("\n")
             
         
@@ -784,7 +784,7 @@ class Summariser(TracerTask):
         
         # Print component groups to the summary#
         outfile.write(
-            "\n###Clonotype groups###\n"
+            "\n#Clonotype groups#\n"
             "This is a text representation of the groups shown in clonotype_network_with_identifiers.pdf.\n"
             "It does not exclude cells that only share beta and not alpha.\n\n")
         for g in component_groups:
