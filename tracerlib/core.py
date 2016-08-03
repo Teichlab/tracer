@@ -320,10 +320,14 @@ class Recombinant(object):
         if re.findall('FG.G', str(aaseq)) and re.findall('C', str(aaseq)):
             indices = [i for i, x in enumerate(aaseq) if x == 'C']
             upper = str(aaseq).find(re.findall('FG.G', str(aaseq))[0])
+            lower = False
             for i in indices:
                 if i < upper:
                     lower = i
+        if lower:
             cdr3 = aaseq[lower:upper + 4]
+        else:
+            cdr3 = "Couldn't find conserved cysteine"
         elif re.findall('FG.G', str(aaseq)):
             cdr3 = "Couldn't find conserved cysteine"
         elif re.findall('C', str(aaseq)):
