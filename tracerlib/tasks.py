@@ -263,13 +263,10 @@ class Assembler(TracerTask):
             if not os.path.isfile(self.fastq2):
                 raise OSError('2', 'FASTQ file not found', self.fastq2)
 
-       invariant_sequences = self.resolve_relative_path(os.path.join('resources', self.species,
-                                                                         'invariant_seqs.csv'))
-       if not os.path.isfile(invariant_sequences):
-           raise OSError('2', 'Invariant Sequence file not found', invariant_sequences)
-       
-       
-       self.invariant_sequences = io.parse_invariant_seqs(invariant_sequences)
+       invariant_cells = self.resolve_relative_path(os.path.join('resources', self.species,
+                                                                         'invariant_cells.csv'))
+       if os.path.isfile(invariant_cells):
+           self.invariant_cells = io.parse_invariant_seqs(invariant_cells)
         
 
         
