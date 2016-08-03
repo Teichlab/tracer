@@ -14,6 +14,7 @@ import sys
 from Bio import SeqIO
 
 from tracerlib.tracer_func import process_chunk, find_possible_alignments
+from tracerlib.core import Invar_cell
 import glob
 import pdb
 
@@ -171,7 +172,7 @@ def parse_invariant_cells(filename):
     with open(filename) as fh:
         json_dict = json.load(fh)
         for c in json_dict:
-            invariant_cells.append(core.Invar_cell(c))
+            invariant_cells.append(Invar_cell(c))
     return invariant_cells
 
 def read_colour_file(filename, return_used_list=False, receptor_name=None):

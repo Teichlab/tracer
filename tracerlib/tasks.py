@@ -263,10 +263,7 @@ class Assembler(TracerTask):
             if not os.path.isfile(self.fastq2):
                 raise OSError('2', 'FASTQ file not found', self.fastq2)
 
-        invariant_cells = self.resolve_relative_path(os.path.join('resources', self.species,
-                                                                         'invariant_cells.csv'))
-        if os.path.isfile(invariant_cells):
-            self.invariant_cells = io.parse_invariant_cells(invariant_cells)
+        
         
 
         
@@ -449,7 +446,7 @@ class Summariser(TracerTask):
                                 help="Space-separated list of loci to summarise for receptor", 
                                 default=['A','B'], nargs = '+')
             parser.add_argument('--use_unfiltered', '-u', help='use unfiltered recombinants', action="store_true")
-            parser.add_argument('--keep_inkt', '-i', help='ignore iNKT cells when constructing networks',
+            parser.add_argument('--keep_invariant', '-i', help='ignore invariant cells when constructing networks',
                                 action="store_true")
             parser.add_argument('--graph_format', '-f', metavar="<GRAPH_FORMAT>", help='graphviz output format [pdf]',
                                 default='pdf')
@@ -460,7 +457,7 @@ class Summariser(TracerTask):
 
             self.root_dir = os.path.abspath(args.dir)
             self.graph_format = args.graph_format
-            self.keep_inkt = args.keep_inkt
+            self.keep_invariant = args.keep_invariant
             self.use_unfiltered = args.use_unfiltered
             self.draw_graphs = not args.no_networks
             self.receptor_name = args.receptor_name
@@ -472,7 +469,7 @@ class Summariser(TracerTask):
             self.root_dir = os.path.abspath(kwargs.get('root_dir'))
             self.draw_graphs = not (kwargs.get('no_networks'))
             self.graph_format = kwargs.get('graph_format')
-            self.keep_inkt = kwargs.get('keep_inkt')
+            self.keep_invariant = kwargs.get('keep_invariant')
             self.receptor_name = kwargs.get('receptor_name')
             self.loci = kwargs.get('loci')
             self.species = kwargs.get('species')
@@ -482,6 +479,11 @@ class Summariser(TracerTask):
         self.config = self.read_config(config_file)
         
         self.species_dir = self.get_resources_root(self.species)
+        
+        invariant_cells = self.resolve_relative_path(os.path.join('resources', self.species,
+                                                                         'invariant_cells.json'))
+        if os.path.isfile(invariant_cells):
+            self.invariant_cells = io.parse_invariant_cells(invariant_cells)
         
     def run(self):
 
@@ -507,7 +509,6 @@ class Summariser(TracerTask):
 
         cells = {}
         empty_cells = []
-        NKT_cells = {}
         subdirectories = next(os.walk(self.root_dir))[1]
 
         if self.use_unfiltered:
@@ -666,6 +667,55 @@ class Summariser(TracerTask):
         #        outfile.write("TCRA:\t{}\nTCRB\t{}\n\n".format(ids[0], ids[1]))
         #
         
+        # reporting invariant cells
+        invariant_cells = []
+        for ivc in self.invariant_cells:
+            ivc_loci = []
+            found_ivcs = {}
+            defining_locus = ivc.defining_locus
+            ivc_loci.append(defining_locus)
+            for cell in cells.values():
+                found_idents = {}
+                found_defining_locus, defining_id = ivc.check_for_match(cell, defining_locus)
+                if found_defining_locus:
+                    found_idents[ivc.defining_locus] = defining_id
+                    
+                    for l in ivc.invariant_recombinants.keys():
+                        if not l==defining_locus:
+                            ivc_loci.append(l)
+                            if l in cell.recombinants[ivc.receptor_type] and \
+                            cell.recombinants[ivc.receptor_type][l] is not None:
+                                found_other_locus, invar_id = ivc.check_for_match(cell, l)
+                                if found_other_locus:
+                                    pass
+                                else:
+                                    invar_id = "Invariant recombinant not found for {}_{}. {} found in total ({})".format(
+                                        ivc.receptor_type, l, len(cell.recombinants[ivc.receptor_type][l]), 
+                                        cell.getMainRecombinantIdentifiersForLocus(ivc.receptor_type, l))
+                                    
+                            else:
+                                invar_id = "No sequences reconstructed for {}_{}".format(ivc.receptor_type, l)
+                            found_idents[l] = invar_id
+                                
+                            
+                    found_ivcs[cell.name] = found_idents
+                    invariant_cells.append(cell.name)
+
+            if len(found_ivcs) > 0:
+                outfile.write("\n#{} cells#\n".format(ivc.name))
+                
+                outfile.write("Expected: {}\n".format(ivc.expected_string))
+                outfile.write("Found {} possible cells.\n\n".format(len(found_ivcs)))
+                
+                sorted_names = sorted(list(found_ivcs.keys()))
+                for n in sorted_names:
+                    outfile.write("### {} ###\n".format(n))
+                    ivc_details = found_ivcs[n]
+                    for l in ivc_loci:
+                        outfile.write("{}_{}: {}\n\n".format(ivc.receptor_type, l, ivc_details[l]))
+                outfile.write("\n")
+            
+        
         # plot lengths of reconstructed sequences
         lengths = defaultdict(list)
         for cell in cells.values():
@@ -700,9 +750,9 @@ class Summariser(TracerTask):
         for cell_name in empty_cells:
             del cells[cell_name]
 
-        #if not self.keep_inkt:
-        #    for cell_name in NKT_cells.keys():
-        #        del cells[cell_name]
+        if not self.keep_invariant:
+            for cell_name in invariant_cells:
+                del cells[cell_name]
         
         
         # Write out recombinant details for each cell
@@ -824,7 +874,7 @@ class Tester(TracerTask):
                       single_end=False, fragment_length=False, fragment_sd=False, receptor_name='TCR',
                       loci=['A', 'B'], max_junc_len=50).run()
 
-        Summariser(config_file=self.config_file, use_unfiltered=False, keep_inkt=False,
+        Summariser(config_file=self.config_file, use_unfiltered=False, keep_invariant=False,
                    graph_format=self.graph_format, no_networks=self.no_networks, root_dir=out_dir, receptor_name='TCR',
                    loci=['A', 'B'], species='Mmus').run()
 

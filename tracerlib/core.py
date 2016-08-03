@@ -11,7 +11,7 @@ class Cell(object):
 
     """Class to describe T cells containing A and B loci"""
 
-    def __init__(self, cell_name, recombinants, is_empty=False, species="Mmus", invariant_seqs=None, 
+    def __init__(self, cell_name, recombinants, is_empty=False, species="Mmus", 
                     receptor=None, loci=None):
         
         self.name = cell_name
@@ -20,11 +20,13 @@ class Cell(object):
         self.is_empty = self._check_is_empty()
         self.species = species
         #self.cdr3_comparisons = {'A': None, 'B': None, 'mean_both': None}
-
-        if not invariant_seqs:
-            self.invariant_seqs = []
-        else:
-            self.invariant_seqs = invariant_seqs
+        #invariant_types = []
+        #if invariant_cells is not None:
+        #    for ic in invariant_cells:
+        #        itype = ic.check_for_match(self)
+        #        if itype is not None:
+        #            invariant_types.append(itype)
+        
 
         #self.is_inkt = self._check_if_inkt()
     
@@ -84,8 +86,8 @@ class Cell(object):
                     identifier_list.add(identifier)
         return (identifier_list)
 
-    def getMainRecombinantIdentifiersForLocus(self, locus):
-        recombinants = self.all_recombinants[locus]
+    def getMainRecombinantIdentifiersForLocus(self, receptor_name, locus):
+        recombinants = self.recombinants[receptor_name][locus]
         identifier_list = set()
         if recombinants is not None:
             for recombinant in recombinants:
@@ -364,6 +366,53 @@ class Invar_cell(object):
     """Class to describe invariant cells and their specific sequences"""
     
     def __init__(self, d):
-        self.recombinants = {}
+        self.name = d['cell_name']
+        self.receptor_type = d['receptor_type']
+        self.invariant_recombinants = d['recombinants']
+        self.defining_locus = d['defining_locus']
+        self.expected_string = self._get_expected_string()
+        
+    def check_for_match(self, cell, locus):
+        found_identifiers = set()
+        found_locus = False
+        
+        #check for expected recombinants for defining locus
+        cell_recs = cell.recombinants[self.receptor_type][locus]
+        defining_recs = self.invariant_recombinants[self.defining_locus]
+        if cell_recs is not None:
+            for rec in cell_recs:
+                if rec.productive:
+                    for ident in rec.all_poss_identifiers:
+                        ident = ident.split("_")
+                        v = ident[0]
+                        j = ident[2]
+                        for dr in defining_recs:
+                            if (v in dr['V'] or dr['V']=='*') and (j in dr['J'] or dr['J']=='*'):
+                                found_locus = True
+                                found_identifiers.add("_".join(ident))
+        
+        return found_locus, found_identifiers
+    
+    def _get_expected_string(self):
+        s = ""
+        defining_recs = self.invariant_recombinants[self.defining_locus]
+        r = defining_recs[0]
+        s = s + "-".join([r['V'], r['J']])
+        if len(defining_recs) > 1:
+            for r in defining_recs[1:]:
+                s = s + " | " + "-".join([r['V'], r['J']])
+        
+        for l in self.invariant_recombinants.keys():
+            if not l==self.defining_locus:
+                recs = self.invariant_recombinants[l]
+                r = recs[0]
+                s = s + "," +  "-".join([r['V'], r['J']])
+                if len(recs) > 1:
+                    for r in recs[1:]:
+                        s = s + " | " + "-".join([r['V'], r['J']])
+        
+        return s
+                
+                
         
         
