@@ -324,10 +324,10 @@ class Recombinant(object):
             for i in indices:
                 if i < upper:
                     lower = i
-        if lower:
-            cdr3 = aaseq[lower:upper + 4]
-        else:
-            cdr3 = "Couldn't find conserved cysteine"
+            if lower:
+                cdr3 = aaseq[lower:upper + 4]
+            else:
+                cdr3 = "Couldn't find conserved cysteine"
         elif re.findall('FG.G', str(aaseq)):
             cdr3 = "Couldn't find conserved cysteine"
         elif re.findall('C', str(aaseq)):
