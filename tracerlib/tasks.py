@@ -235,7 +235,7 @@ class Assembler(TracerTask):
             self.fragment_sd = kwargs.get('fragment_sd')
             self.receptor_name = kwargs.get('receptor_name')
             self.loci = kwargs.get('loci')
-            self.max_junc_len = kwargs.get('max_jun_len')
+            self.max_junc_len = kwargs.get('max_junc_len')
             config_file = kwargs.get('config_file')
 
         self.config = self.read_config(config_file)
@@ -847,17 +847,22 @@ class Tester(TracerTask):
             parser.add_argument('--graph_format', '-f', metavar="<GRAPH_FORMAT>", help='graphviz output format [pdf]',
                                 default='pdf')
             parser.add_argument('--no_networks', help='skip attempts to draw network graphs', action="store_true")
+            parser.add_argument('--resume_with_existing_files', '-r',
+                                help='look for existing intermediate files and use those instead of starting from scratch',
+                                action="store_true")
             args = parser.parse_args(sys.argv[2:])
 
             self.ncores = args.ncores
             self.config_file = args.config_file
             self.graph_format = args.graph_format
             self.no_networks = args.no_networks
+            self.resume = args.resume_with_existing_files
         else:
             self.ncores = kwargs.get('ncores')
             self.config_file = kwargs.get('config_file')
             self.graph_format = kwargs.get('graph_format', 'pdf')
             self.no_networks = kwargs.get('no_networks')
+            self.resume = kwargs.get('resume_with_existing_files')
 
     def run(self):
 
@@ -869,7 +874,7 @@ class Tester(TracerTask):
             f1 = "{}/{}_1.fastq".format(test_dir, name)
             f2 = "{}/{}_2.fastq".format(test_dir, name)
 
-            Assembler(ncores=str(self.ncores), config_file=self.config_file, resume_with_existing_files=False,
+            Assembler(ncores=str(self.ncores), config_file=self.config_file, resume_with_existing_files=self.resume,
                       species='Mmus', seq_method='imgt', fastq1=f1, fastq2=f2, cell_name=name, output_dir=out_dir,
                       single_end=False, fragment_length=False, fragment_sd=False, receptor_name='TCR',
                       loci=['A', 'B'], max_junc_len=50).run()
