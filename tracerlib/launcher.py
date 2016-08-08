@@ -365,12 +365,12 @@ class Launcher(object):
                 print("Resuming with existing Trinity output")
                 return
 
-        command = [trinity]
+        base_command = [trinity]
         if trinity_grid_conf:
-            command = command + ['--grid_conf', trinity_grid_conf]
+            base_command = base_command + ['--grid_conf', trinity_grid_conf]
 
         memory_string = '--max_memory' if (version == '2') else '--JM'
-        command = command + ['--seqType', 'fq', memory_string, JM, '--CPU', ncores, '--full_cleanup']
+        base_command = base_command + ['--seqType', 'fq', memory_string, JM, '--CPU', ncores, '--full_cleanup']
 
         for locus in locus_names:
             print("##{}##".format(locus))
@@ -379,11 +379,11 @@ class Launcher(object):
             if not single_end:
                 file1 = "{}_1.fastq".format(aligned_read_path)
                 file2 = "{}_2.fastq".format(aligned_read_path)
-                command = command + ["--left", file1, "--right", file2, "--output",
+                command = base_command + ["--left", file1, "--right", file2, "--output",
                                      '{}/Trinity_output/Trinity_{}_{}'.format(output_dir, cell_name, locus)]
             else:
                 file = "{}.fastq".format(aligned_read_path)
-                command = command + ["--single", file, "--output",
+                command = base_command + ["--single", file, "--output",
                                      '{}/Trinity_output/Trinity_{}_{}'.format(output_dir, cell_name, locus)]
             try:
                 subprocess.check_call(command)
