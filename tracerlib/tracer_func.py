@@ -47,6 +47,7 @@ def process_chunk(chunk):
     looking_for_end = False
     return_dict = defaultdict(list)
     for line_x in chunk:
+        
 
         if store_VDJ_rearrangement_summary:
             VDJ_rearrangement_summary = line_x.split("\t")
@@ -73,7 +74,7 @@ def process_chunk(chunk):
                     return_dict['hit_table'].append(line_x)
                     looking_for_end = True
             else:
-                if line_x.startswith("#"):
+                if line_x.startswith("#") or line_x.startswith("\n"):
                     store_hit_table = False
                 else:
                     return_dict['hit_table'].append(line_x)
@@ -95,7 +96,6 @@ def process_chunk(chunk):
 
         elif line_x.startswith('# Hit table'):
             store_hit_table = True
-
     return (query_name, return_dict)
 
 
@@ -256,30 +256,32 @@ def process_hit_table(query_name, query_data, locus):
     locus_name = locus.split("_")[1]
     
     for entry in hit_table:
-        entry = entry.split("\t")
-        segment = entry[2]
-        if segment_locus_pattern.search(segment):
-            segment_locus = "AD"
-        else:
-            segment_locus = segment[2]
-        segment_type = segment[3]
-        e_value = float(entry[12])
-
-        if locus_name in segment_locus:
-            if e_value < e_value_cutoff:
-                if segment_type == "V":
-                    found_V.add(locus)
-                    good_hits.append(entry)
-                elif segment_type == "J":
-                    found_J.add(locus)
-                    good_hits.append(entry)
+        if not entry == "":
+          
+            entry = entry.split("\t")
+            segment = entry[2]
+            if segment_locus_pattern.search(segment):
+                segment_locus = "AD"
             else:
-                if segment_type == "D":
-                    percent_identity = float(entry[3])
-                    if percent_identity == 100:
-                        found_D.add(locus)
+                segment_locus = segment[2]
+            segment_type = segment[3]
+            e_value = float(entry[12])
+            
+            if locus_name in segment_locus:
+                if e_value < e_value_cutoff:
+                    if segment_type == "V":
+                        found_V.add(locus)
                         good_hits.append(entry)
-                        
+                    elif segment_type == "J":
+                        found_J.add(locus)
+                        good_hits.append(entry)
+                else:
+                    if segment_type == "D":
+                        percent_identity = float(entry[3])
+                        if percent_identity == 100:
+                            found_D.add(locus)
+                            good_hits.append(entry)
+                            
     if locus in found_V and locus in found_J:
         return (locus, good_hits, rearrangement_summary)
     else:

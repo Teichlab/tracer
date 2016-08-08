@@ -118,12 +118,14 @@ def split_igblast_file(filename):
     with open(filename) as fh:
         for line in fh:
             line = line.rstrip()
-            if line.startswith(token) and current_chunk:
+                
+            if line.startswith(token) and current_chunk and not line.startswith("Total queries"):
                 # if line starts with token and the current chunk is not empty
                 chunks.append(current_chunk[:])  # add not empty chunk to chunks
                 current_chunk = []  # make current chunk blank
             # just append a line to the current chunk on each iteration
-            current_chunk.append(line)
+            if not line.startswith("Total queries"):
+                current_chunk.append(line)
 
         chunks.append(current_chunk)  # append the last chunk outside the loop
     return (chunks)
