@@ -65,7 +65,7 @@ def process_chunk(chunk):
                     return_dict['hit_table'].append(line_x)
                     looking_for_end = True
             else:
-                if line_x.startswith("#"):
+                if line_x.startswith("#") or line_x.startswith("\n"):
                     store_hit_table = False
                 else:
                     return_dict['hit_table'].append(line_x)
@@ -233,29 +233,30 @@ def process_hit_table(query_name, query_data, locus):
     segment_locus_pattern = re.compile(r"TRAV.+DV.+")
 
     for entry in hit_table:
-        entry = entry.split("\t")
-        segment = entry[2]
-        if segment_locus_pattern.search(segment):
-            segment_locus = "AD"
-        else:
-            segment_locus = segment[2]
-        segment_type = segment[3]
-        e_value = float(entry[12])
-
-        if locus[3] in segment_locus:
-            if e_value < e_value_cutoff:
-                if segment_type == "V":
-                    found_V.add(locus)
-                    good_hits.append(entry)
-                elif segment_type == "J":
-                    found_J.add(locus)
-                    good_hits.append(entry)
+        if not entry == "":
+            entry = entry.split("\t")
+            segment = entry[2]
+            if segment_locus_pattern.search(segment):
+                segment_locus = "AD"
             else:
-                if segment_type == "D":
-                    percent_identity = float(entry[3])
-                    if percent_identity == 100:
-                        found_D.add(locus)
+                segment_locus = segment[2]
+            segment_type = segment[3]
+            e_value = float(entry[12])
+            
+            if locus[3] in segment_locus:
+                if e_value < e_value_cutoff:
+                    if segment_type == "V":
+                        found_V.add(locus)
                         good_hits.append(entry)
+                    elif segment_type == "J":
+                        found_J.add(locus)
+                        good_hits.append(entry)
+                else:
+                    if segment_type == "D":
+                        percent_identity = float(entry[3])
+                        if percent_identity == 100:
+                            found_D.add(locus)
+                            good_hits.append(entry)
 
     if locus == "TCRA":
         if "TCRA" in found_V and "TCRA" in found_J:
