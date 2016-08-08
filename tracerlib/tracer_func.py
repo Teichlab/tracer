@@ -186,7 +186,6 @@ def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs, out
                                                                                           returned_locus, IMGT_seqs,
                                                                                           cell_name, query_name,
                                                                                           loci_for_segments)
-
                     if len(junc_string) < max_junc_string_length:
                         rec = Recombinant(contig_name=query_name, locus=returned_locus, identifier=identifier,
                                           all_poss_identifiers=all_poss_identifiers, productive=is_productive[0],
@@ -922,12 +921,12 @@ def assemble_with_trinity(trinity, receptor, loci, output_dir, cell_name, ncores
             successful_files = glob.glob("{}/Trinity_output/*.fasta".format(output_dir))
             return(successful_files)
 
-    command = [trinity]
+    base_command = [trinity]
     if trinity_grid_conf:
-        command = command + ['--grid_conf', trinity_grid_conf]
+        base_command = base_command + ['--grid_conf', trinity_grid_conf]
 
     memory_string = '--max_memory' if (version == '2') else '--JM'
-    command = command + ['--seqType', 'fq', memory_string, JM, '--CPU', ncores, '--full_cleanup']
+    base_command = base_command + ['--seqType', 'fq', memory_string, JM, '--CPU', ncores, '--full_cleanup']
     
     locus_names = ["_".join([receptor,x]) for x in loci]
     
@@ -938,11 +937,11 @@ def assemble_with_trinity(trinity, receptor, loci, output_dir, cell_name, ncores
         if not single_end:
             file1 = "{}_1.fastq".format(aligned_read_path)
             file2 = "{}_2.fastq".format(aligned_read_path)
-            command = command + ["--left", file1, "--right", file2, "--output",
+            command = base_command + ["--left", file1, "--right", file2, "--output",
                                  '{}/Trinity_output/Trinity_{}_{}'.format(output_dir, cell_name, locus)]
         else:
             file = "{}.fastq".format(aligned_read_path)
-            command = command + ["--single", file, "--output",
+            command = base_command + ["--single", file, "--output",
                                  '{}/Trinity_output/Trinity_{}_{}'.format(output_dir, cell_name, locus)]
         try:
             subprocess.check_call(command)

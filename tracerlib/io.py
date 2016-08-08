@@ -74,7 +74,6 @@ def parse_IgBLAST(receptor, loci, output_dir, cell_name, raw_seq_dir, species, s
     
     #for locus in loci:
     #    expecting_D[locus] = False
-    
     for locus in loci:
         seq_files = glob.glob(os.path.join(raw_seq_dir, "{receptor}_{locus}_*.fa".format(receptor=receptor, 
                                                                                     locus=locus)))
@@ -105,8 +104,6 @@ def parse_IgBLAST(receptor, loci, output_dir, cell_name, raw_seq_dir, species, s
                 all_locus_data[locus][query_name] = chunk_details
         else:
             all_locus_data[locus] = None
-
-
     cell = find_possible_alignments(all_locus_data, locus_names, cell_name, IMGT_seqs, output_dir, species, seq_method,
                                      invariant_seqs, loci_for_segments, receptor, loci, max_junc_len)
     return (cell)
