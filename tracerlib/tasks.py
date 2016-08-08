@@ -869,7 +869,7 @@ class Tester(TracerTask):
             f1 = "{}/{}_1.fastq".format(test_dir, name)
             f2 = "{}/{}_2.fastq".format(test_dir, name)
 
-            Assembler(ncores=str(self.ncores), config_file=self.config_file, resume_with_existing_files=True,
+            Assembler(ncores=str(self.ncores), config_file=self.config_file, resume_with_existing_files=False,
                       species='Mmus', seq_method='imgt', fastq1=f1, fastq2=f2, cell_name=name, output_dir=out_dir,
                       single_end=False, fragment_length=False, fragment_sd=False, receptor_name='TCR',
                       loci=['A', 'B'], max_junc_len=50).run()
