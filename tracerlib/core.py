@@ -284,8 +284,9 @@ class Cell(object):
     def has_excess_recombinants(self, max_r=2):
         for receptor, locus_dict in six.iteritems(self.recombinants):
             for locus, recs in six.iteritems(locus_dict):
-                if len(recs) > max_r:
-                    return(True)
+                if recs is not None:
+                    if len(recs) > max_r:
+                        return(True)
 
 
 class Recombinant(object):
