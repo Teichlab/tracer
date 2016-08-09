@@ -484,6 +484,8 @@ class Summariser(TracerTask):
                                                                          'invariant_cells.json'))
         if os.path.isfile(invariant_cells):
             self.invariant_cells = io.parse_invariant_cells(invariant_cells)
+        else:
+            self.invariant_cells = None
         
     def run(self):
 
@@ -669,52 +671,54 @@ class Summariser(TracerTask):
         
         # reporting invariant cells
         invariant_cells = []
-        for ivc in self.invariant_cells:
-            ivc_loci = []
-            found_ivcs = {}
-            defining_locus = ivc.defining_locus
-            ivc_loci.append(defining_locus)
-            for cell in cells.values():
-                found_idents = {}
-                found_defining_locus, defining_id = ivc.check_for_match(cell, defining_locus)
-                if found_defining_locus:
-                    found_idents[ivc.defining_locus] = defining_id
-                    
-                    for l in ivc.invariant_recombinants.keys():
-                        if not l==defining_locus:
-                            ivc_loci.append(l)
-                            if l in cell.recombinants[ivc.receptor_type] and \
-                            cell.recombinants[ivc.receptor_type][l] is not None:
-                                found_other_locus, invar_id = ivc.check_for_match(cell, l)
-                                if found_other_locus:
-                                    pass
-                                else:
-                                    invar_id = "Invariant recombinant not found for {}_{}. {} found in total ({})".format(
-                                        ivc.receptor_type, l, len(cell.recombinants[ivc.receptor_type][l]), 
-                                        cell.getMainRecombinantIdentifiersForLocus(ivc.receptor_type, l))
-                                    
-                            else:
-                                invar_id = "No sequences reconstructed for {}_{}".format(ivc.receptor_type, l)
-                            found_idents[l] = invar_id
-                                
-                            
-                    found_ivcs[cell.name] = found_idents
-                    invariant_cells.append(cell.name)
-
-            if len(found_ivcs) > 0:
-                outfile.write("\n#{} cells#\n".format(ivc.name))
-                
-                outfile.write("Expected: {}\n".format(ivc.expected_string))
-                outfile.write("Found {} possible cells.\n\n".format(len(found_ivcs)))
-                
-                sorted_names = sorted(list(found_ivcs.keys()))
-                for n in sorted_names:
-                    outfile.write("### {} ###\n".format(n))
-                    ivc_details = found_ivcs[n]
-                    for l in ivc_loci:
-                        outfile.write("{}_{}: {}\n".format(ivc.receptor_type, l, ivc_details[l]))
-                outfile.write("\n")
-            
+        
+        if self.invariant_cells is not None:
+             for ivc in self.invariant_cells:
+                 ivc_loci = []
+                 found_ivcs = {}
+                 defining_locus = ivc.defining_locus
+                 ivc_loci.append(defining_locus)
+                 for cell in cells.values():
+                     found_idents = {}
+                     found_defining_locus, defining_id = ivc.check_for_match(cell, defining_locus)
+                     if found_defining_locus:
+                         found_idents[ivc.defining_locus] = defining_id
+                         
+                         for l in ivc.invariant_recombinants.keys():
+                             if not l==defining_locus:
+                                 ivc_loci.append(l)
+                                 if l in cell.recombinants[ivc.receptor_type] and \
+                                 cell.recombinants[ivc.receptor_type][l] is not None:
+                                     found_other_locus, invar_id = ivc.check_for_match(cell, l)
+                                     if found_other_locus:
+                                         pass
+                                     else:
+                                         invar_id = "Invariant recombinant not found for {}_{}. {} found in total ({})".format(
+                                             ivc.receptor_type, l, len(cell.recombinants[ivc.receptor_type][l]), 
+                                             cell.getMainRecombinantIdentifiersForLocus(ivc.receptor_type, l))
+                                         
+                                 else:
+                                     invar_id = "No sequences reconstructed for {}_{}".format(ivc.receptor_type, l)
+                                 found_idents[l] = invar_id
+                                     
+                                 
+                         found_ivcs[cell.name] = found_idents
+                         invariant_cells.append(cell.name)
+             
+                 if len(found_ivcs) > 0:
+                     outfile.write("\n#{} cells#\n".format(ivc.name))
+                     
+                     outfile.write("Expected: {}\n".format(ivc.expected_string))
+                     outfile.write("Found {} possible cells.\n\n".format(len(found_ivcs)))
+                     
+                     sorted_names = sorted(list(found_ivcs.keys()))
+                     for n in sorted_names:
+                         outfile.write("### {} ###\n".format(n))
+                         ivc_details = found_ivcs[n]
+                         for l in ivc_loci:
+                             outfile.write("{}_{}: {}\n".format(ivc.receptor_type, l, ivc_details[l]))
+                     outfile.write("\n")
+                 
         
         # plot lengths of reconstructed sequences
         lengths = defaultdict(list)
