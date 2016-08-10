@@ -30,6 +30,8 @@ class TestInstall(unittest.TestCase):
             recombinants.dropna(how='all', inplace=True)
             recombinants.sort_values(by='recombinant_id', inplace=True)
             recombinants.reset_index(inplace=True, drop=True)
+            # recombinants['recombinant_id'] = recombinants['recombinant_id'] \
+            #     .apply(lambda x: x.replace('(', '').replace(')', ''))
 
             # Reconstructed lengths differ as trinity is stochastic
             recombinants.drop(['reconstructed_length'], axis=1, inplace=True)

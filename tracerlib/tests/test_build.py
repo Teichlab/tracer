@@ -9,7 +9,8 @@ import shutil
 from tracerlib.tasks import Builder
 from tempfile import gettempdir
 
-tempdir = gettempdir()
+tempdir = os.path.join(gettempdir(), 'tracer_test')
+os.makedirs(tempdir, exist_ok=True)
 
 
 class TestBuild(unittest.TestCase):
@@ -52,6 +53,7 @@ class TestBuild(unittest.TestCase):
             assert 'aaatttgggcccNNN' in tcr
 
     def test_bowtie2_index(self):
+        self.builder.make_recombinomes(self.vdjc_files)
         # Read in recombinome data
         recombinome_file = os.path.join(
             self.builder.species_dir, 'combinatorial_recombinomes',
