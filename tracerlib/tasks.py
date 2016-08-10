@@ -599,7 +599,8 @@ class Summariser(TracerTask):
         
         all_recombinant_counts = []
         for locus in all_counters:
-            all_recombinant_counts = all_recombinant_counts + all_counters[locus].keys()
+            all_recombinant_counts = all_recombinant_counts + \
+                                     list(all_counters[locus].keys())
         max_recombinant_count = max(all_recombinant_counts)
         
         #max_recombinant_count = max(list(counters['all_alpha'].keys()) + list(counters['all_beta'].keys()))

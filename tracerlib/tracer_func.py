@@ -371,8 +371,7 @@ def get_fasta_line_for_contig_imgt(rearrangement_summary, junction_details, hit_
 
     junction = "".join(junction)
     
-
-    constant_seq = IMGT_seqs["_".join([locus, 'C'])].values()[0]
+    constant_seq = list(IMGT_seqs["_".join([locus, 'C'])].values())[0]
 
     # Editing IMGT V and J sequences to include any alterations from the junction details
     V_end_seq = junction_details[0]
