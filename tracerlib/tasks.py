@@ -515,13 +515,13 @@ class Summariser(TracerTask):
 
         if self.use_unfiltered:
             pkl_dir = "unfiltered_{}_seqs".format(self.receptor_name)
-            outdir = "{}/unfiltered_{}_summary".format(self.root_dir, self.receptor_name)
+            outdir = "{}/unfiltered_{}_summary".format(self.root_dir, self.receptor_name+"".join(self.loci))
             # outfile = open("{root_dir}/unfiltered_TCR_summary.txt".format(root_dir=root_dir), 'w')
             # length_filename_root = "{}/unfiltered_reconstructed_lengths_TCR".format(root_dir)
 
         else:
             pkl_dir = "filtered_{}_seqs".format(self.receptor_name)
-            outdir = "{}/filtered_{}_summary".format(self.root_dir, self.receptor_name)
+            outdir = "{}/filtered_{}_summary".format(self.root_dir, self.receptor_name+"".join(self.loci))
             # outfile = open("{root_dir}/filtered_TCR_summary.txt".format(root_dir=root_dir), 'w')
             # length_filename_root = "{}/filtered_reconstructed_lengths_TCR".format(root_dir)
 
