@@ -250,9 +250,11 @@ class Launcher(object):
             pickle.dump(cell, pf, protocol=0)
 
     def resolve_relative_path(self, path):
-        if not path.startswith("/"):
+        if not os.path.isabs(path):
             base_directory = os.path.abspath(os.path.dirname(__file__))
-            full_path = os.path.normpath("/{}/../{}".format(base_directory, path))
+            base_diretory = os.path.dirname(base_diretory)
+            #full_path = os.path.normpath("/{}/../{}".format(base_directory, path))
+            full_path = os.path.join(base_directory, path)
         else:
             full_path = path
         return full_path
