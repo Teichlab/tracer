@@ -252,8 +252,6 @@ class Launcher(object):
     def resolve_relative_path(self, path):
         if not os.path.isabs(path):
             base_directory = os.path.abspath(os.path.dirname(__file__))
-            base_diretory = os.path.dirname(base_diretory)
-            #full_path = os.path.normpath("/{}/../{}".format(base_directory, path))
             full_path = os.path.join(base_directory, path)
         else:
             full_path = path
@@ -594,7 +592,7 @@ class Launcher(object):
                                 action="store_true")
             parser.add_argument('--graph_format', '-f', metavar="<GRAPH_FORMAT>", help='graphviz output format [pdf]',
                                 default='pdf')
-            parser.add_argument('--no_networks', help='skip attempts to draw network graphs', action = "store_true")                    
+            parser.add_argument('--no_networks', help='skip attempts to draw network graphs', action = "store_true")
             parser.add_argument('dir', metavar="<DIR>",
                                 help='directory containing subdirectories for each cell to be summarised')
             args = parser.parse_args(sys.argv[2:])
@@ -622,7 +620,7 @@ class Launcher(object):
         if draw_graphs:
             dot = self.resolve_relative_path(config.get('tool_locations', 'dot_path'))
             neato = self.resolve_relative_path(config.get('tool_locations', 'neato_path'))
-            
+
             # check that executables from config file can be used
             not_executable = []
             for name, x in six.iteritems({"dot": dot, "neato": neato}):
@@ -879,5 +877,5 @@ class Launcher(object):
                           species='Mmus', seq_method='imgt', fastq1=f1, fastq2=f2, cell_name=name, output_dir=out_dir,
                           single_end=False, fragment_length=False, fragment_sd=False)
 
-        self.summarise(config_file=args.config_file, use_unfiltered=False, keep_inkt=False, 
+        self.summarise(config_file=args.config_file, use_unfiltered=False, keep_inkt=False,
                         graph_format=args.graph_format, no_networks=args.no_networks, root_dir=out_dir)
