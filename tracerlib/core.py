@@ -148,14 +148,14 @@ class Cell(object):
         final_string = '<<table cellspacing="6px" border="0" cellborder="0">'
         # final_string = "<"
         for locus, recombinant_list in six.iteritems(self.recombinants[receptor]):
-            recombinant_set = set()
+            recombinant_set = list()
             if recombinant_list is not None:
                 for recombinant in recombinant_list:
                     if recombinant.productive:
                         i = 0
                     else:
                         i = 1
-                    recombinant_set.add(
+                    recombinant_set.append(
                         '<tr><td height="10" width="40" bgcolor="{}"></td></tr>'.format(colours[receptor][locus][i]))
 
                 recombinants[locus] = recombinant_set
