@@ -27,6 +27,11 @@ from Bio.Seq import Seq
 #import pdb
 
 
+def run_tracer():
+    launcher = Launcher()
+    launcher.launch()
+
+
 class Launcher(object):
 
     def launch(self):
