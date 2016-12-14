@@ -80,14 +80,14 @@ class TracerTask(object):
     def print_cell_summary(self, cell, output_file, receptor_name, loci):
         out_file = open(output_file, 'w')
         out_file.write('------------------\n{name}\n------------------\n'.format(name=cell.name))
-        
+
         # summarise the productive/total recombinants
         for l in loci:
             out_file.write('{receptor}_{locus} recombinants: {summary}\n'.format(receptor=receptor_name, locus=l,
                                                             summary=cell.summarise_productivity(receptor_name, l)))
-        
+
         out_file.write('\n\n')
-        
+
         for l in loci:
             out_file.write("#{receptor}_{locus}#\n".format(receptor=receptor_name, locus=l))
             rs = cell.recombinants[receptor_name][l]
@@ -97,9 +97,9 @@ class TracerTask(object):
                 for r in rs:
                     out_file.write(r.get_summary())
                     out_file.write("\n\n")
-        
-        
-        
+
+
+
         #out_file.write('#TCRA#\n')
         #if cell.A_recombinants is None:
         #    out_file.write("No TCRA recombinants found\n\n")
@@ -120,7 +120,7 @@ class TracerTask(object):
     def die_with_empty_cell(self, cell_name, output_dir, species):
         print("##No recombinants found##")
         cell = core.Cell(cell_name, None, is_empty=True, species=species, receptor=self.receptor_name, loci=self.loci)
-        
+
         self.print_cell_summary(
             cell, "{output_dir}/unfiltered_{receptor}_seqs/unfiltered_{receptor}s.txt".format(
                                                                         output_dir=self.output_dir,
@@ -129,7 +129,7 @@ class TracerTask(object):
 
         # Save cell in a pickle
         with open("{output_dir}/unfiltered_{receptor}_seqs/{cell_name}.pkl".format(output_dir=self.output_dir,
-                                                                            cell_name=cell.name, 
+                                                                            cell_name=cell.name,
                                                                             receptor=self.receptor_name), 'wb') as pf:
             pickle.dump(cell, pf, protocol=0)
         cell.filter_recombinants()
@@ -138,19 +138,19 @@ class TracerTask(object):
                                                                             output_dir=self.output_dir,
                                                                             receptor=self.receptor_name),
                                                                             self.receptor_name, self.loci)
-                                                                            
+
         with open("{output_dir}/filtered_{receptor}_seqs/{cell_name}.pkl".format(output_dir=self.output_dir,
                                                                           cell_name=cell.name,
                                                                           receptor=self.receptor_name), 'wb') as pf:
             pickle.dump(cell, pf, protocol=0)
-        
+
         exit(0)
-    
+
     def get_resources_root(self, species):
         resources_dir = os.path.join(base_dir, 'resources')
         resources_root = os.path.join(resources_dir, species)
         return(resources_root)
-    
+
     def get_available_species(self):
         resources_dir = os.path.join(base_dir, 'resources')
         species_dirs = next(os.walk(resources_dir))[1]
@@ -161,11 +161,11 @@ class Assembler(TracerTask):
 
     def __init__(self, **kwargs):
         if not kwargs:
-            
+
             # get list of all available species in resources
-            
+
             parser = argparse.ArgumentParser(
-                description="Reconstruct TCR sequences from RNAseq reads for a single cell", 
+                description="Reconstruct TCR sequences from RNAseq reads for a single cell",
                 parents=[self.base_parser], formatter_class=argparse.ArgumentDefaultsHelpFormatter)
             parser.add_argument('--resume_with_existing_files', '-r',
                                 help='look for existing intermediate files and use those instead of starting from scratch',
@@ -176,7 +176,7 @@ class Assembler(TracerTask):
             parser.add_argument('--receptor_name',
                                 help="Name of receptor to reconstruct", default='TCR')
             parser.add_argument('--loci',
-                                help="Space-separated list of loci to reconstruct for receptor", 
+                                help="Space-separated list of loci to reconstruct for receptor",
                                 default=['A','B'], nargs = '+')
             parser.add_argument('--seq_method', '-m',
                                 help='Method for constructing sequence to assess productivity, \
@@ -263,10 +263,10 @@ class Assembler(TracerTask):
             if not os.path.isfile(self.fastq2):
                 raise OSError('2', 'FASTQ file not found', self.fastq2)
 
-        
-        
 
-        
+
+
+
     def run(self, **kwargs):
 
         # Set-up output directories
@@ -276,8 +276,8 @@ class Assembler(TracerTask):
 
         io.makeOutputDir(self.output_dir)
 
-        data_dirs = ['aligned_reads', 'Trinity_output', 'IgBLAST_output', 
-                     'unfiltered_{receptor}_seqs'.format(receptor=self.receptor_name),'expression_quantification', 
+        data_dirs = ['aligned_reads', 'Trinity_output', 'IgBLAST_output',
+                     'unfiltered_{receptor}_seqs'.format(receptor=self.receptor_name),'expression_quantification',
                      'filtered_{receptor}_seqs'.format(receptor=self.receptor_name)]
         for d in data_dirs:
             io.makeOutputDir("{}/{}".format(self.output_dir, d))
@@ -287,14 +287,14 @@ class Assembler(TracerTask):
         self.de_novo_assemble()
         cell = self.ig_blast()
         self.quantify(cell)
-        
+
         fasta_filename = "{output_dir}/unfiltered_{receptor}_seqs/{cell_name}_{receptor}seqs.fa".format(output_dir=self.output_dir,
                                                                                         cell_name=self.cell_name,
                                                                                         receptor=self.receptor_name)
         fasta_file = open(fasta_filename, 'w')
         fasta_file.write(cell.get_fasta_string())
         fasta_file.close()
-        
+
         self.print_cell_summary(
             cell, "{output_dir}/unfiltered_{receptor}_seqs/unfiltered_{receptor}s.txt".format(
                                                                         output_dir=self.output_dir,
@@ -303,7 +303,7 @@ class Assembler(TracerTask):
 
         # Save cell in a pickle
         with open("{output_dir}/unfiltered_{receptor}_seqs/{cell_name}.pkl".format(output_dir=self.output_dir,
-                                                                            cell_name=cell.name, 
+                                                                            cell_name=cell.name,
                                                                             receptor=self.receptor_name), 'wb') as pf:
             pickle.dump(cell, pf, protocol=0)
         print("##Filtering by read count##")
@@ -319,7 +319,7 @@ class Assembler(TracerTask):
                                                                             output_dir=self.output_dir,
                                                                             receptor=self.receptor_name),
                                                                             self.receptor_name, self.loci)
-                                                                            
+
         with open("{output_dir}/filtered_{receptor}_seqs/{cell_name}.pkl".format(output_dir=self.output_dir,
                                                                           cell_name=cell.name,
                                                                           receptor=self.receptor_name), 'wb') as pf:
@@ -336,13 +336,16 @@ class Assembler(TracerTask):
         synthetic_genome_path = self.get_index_location('combinatorial_recombinomes')
         # Align with bowtie
         tracer_func.bowtie2_alignment(
-            bowtie2, self.ncores, self.receptor_name, self.loci, self.output_dir, self.cell_name, 
+            bowtie2, self.ncores, self.receptor_name, self.loci, self.output_dir, self.cell_name,
             synthetic_genome_path, self.fastq1, self.fastq2, self.resume_with_existing_files, self.single_end)
         print()
 
     def de_novo_assemble(self):
 
-        trinity = self.get_binary('trinity')
+        try:
+            trinity = self.get_binary('trinity')
+        except OSError:
+            trinity = self.get_binary('Trinity')
 
         # Trinity version
         if not self.config.has_option('trinity_options', 'trinity_version'):
@@ -363,7 +366,7 @@ class Assembler(TracerTask):
         trinity_JM = self.config.get('trinity_options', 'max_jellyfish_memory')
         trinity_version = self.config.get('trinity_options', 'trinity_version')
         successful_files = tracer_func.assemble_with_trinity(
-            trinity, self.receptor_name, self.loci, self.output_dir, self.cell_name, self.ncores, trinity_grid_conf, 
+            trinity, self.receptor_name, self.loci, self.output_dir, self.cell_name, self.ncores, trinity_grid_conf,
             trinity_JM, trinity_version, self.resume_with_existing_files, self.single_end, self.species)
         if len(successful_files) == 0:
             print("No successful Trinity assemblies")
@@ -385,13 +388,13 @@ class Assembler(TracerTask):
         tracer_func.run_IgBlast(igblastn, self.receptor_name, self.loci, self.output_dir, self.cell_name, igblast_index_location,
                                 igblast_seqtype, self.species, self.resume_with_existing_files)
         print()
-        
-        
+
+
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            #cell = io.parse_IgBLAST(self.receptor_name, self.loci, self.output_dir, self.cell_name, imgt_seq_location, 
+            #cell = io.parse_IgBLAST(self.receptor_name, self.loci, self.output_dir, self.cell_name, imgt_seq_location,
             #                        self.species, self.seq_method, self.invariant_sequences)
-            cell = io.parse_IgBLAST(self.receptor_name, self.loci, self.output_dir, self.cell_name, imgt_seq_location, 
+            cell = io.parse_IgBLAST(self.receptor_name, self.loci, self.output_dir, self.cell_name, imgt_seq_location,
                                     self.species, self.seq_method, self.max_junc_len)
             if cell.is_empty:
                 self.die_with_empty_cell(self.cell_name, self.output_dir, self.species)
@@ -400,7 +403,7 @@ class Assembler(TracerTask):
 
     def quantify(self, cell):
         kallisto = self.get_binary('kallisto')
-        
+
         if not self.config.has_option('kallisto_transcriptomes', self.species):
             raise OSError("No transcriptome reference specified for {species}. Please specify location in config file."
                           .format(species = self.species))
@@ -415,14 +418,14 @@ class Assembler(TracerTask):
         print()
 
         counts = tracer_func.load_kallisto_counts("{}/expression_quantification/abundance.tsv".format(self.output_dir))
-        
+
         for receptor, locus_dict in six.iteritems(cell.recombinants):
             for locus, recombinants in six.iteritems(locus_dict):
                 if recombinants is not None:
                     for rec in recombinants:
                         tpm = counts[receptor][locus][rec.contig_name]
                         rec.TPM = tpm
-                    
+
         #for locus, recombinants in six.iteritems(cell.all_recombinants):
         #    if recombinants is not None:
         #        for rec in recombinants:
@@ -443,7 +446,7 @@ class Summariser(TracerTask):
             parser.add_argument('--receptor_name',
                                 help="Name of receptor to summarise", default='TCR')
             parser.add_argument('--loci',
-                                help="Space-separated list of loci to summarise for receptor", 
+                                help="Space-separated list of loci to summarise for receptor",
                                 default=['A','B'], nargs = '+')
             parser.add_argument('--use_unfiltered', '-u', help='use unfiltered recombinants', action="store_true")
             parser.add_argument('--keep_invariant', '-i', help='ignore invariant cells when constructing networks',
@@ -477,21 +480,23 @@ class Summariser(TracerTask):
 
         # Read config file
         self.config = self.read_config(config_file)
-        
+
         self.species_dir = self.get_resources_root(self.species)
-        
+
         invariant_cells = self.resolve_relative_path(os.path.join('resources', self.species,
                                                                          'invariant_cells.json'))
         if os.path.isfile(invariant_cells):
             self.invariant_cells = io.parse_invariant_cells(invariant_cells)
         else:
             self.invariant_cells = None
-        
+
     def run(self):
 
         if self.draw_graphs:
-            dot = self.resolve_relative_path(self.config.get('tool_locations', 'dot_path'))
-            neato = self.resolve_relative_path(self.config.get('tool_locations', 'neato_path'))
+            # dot = self.resolve_relative_path(self.config.get('tool_locations', 'dot_path'))
+            # neato = self.resolve_relative_path(self.config.get('tool_locations', 'neato_path'))
+            dot = self.get_binary('dot')
+            neato = self.get_binary('neato')
 
             # check that executables from config file can be used
             not_executable = []
@@ -538,30 +543,30 @@ class Summariser(TracerTask):
                 cells[d] = cl
                 if cl.is_empty or cl.missing_loci_of_interest(self.receptor_name, self.loci):
                     empty_cells.append(d)
-               
-                
-                
-                
+
+
+
+
                 #if cl.is_inkt:
                 #    NKT_cells[d] = (cl.is_inkt, cl.getMainRecombinantIdentifiersForLocus('B'))
-        
+
         cell_recovery_count = dict()
         # count cells with productive chains for each locus and for each possible pair
         for l in self.loci:
             cell_recovery_count[l] = 0
 
         possible_pairs = ["".join(x) for x in itertools.combinations(self.loci, 2)]
-        
+
         for p in possible_pairs:
             cell_recovery_count[p] = 0
-        
+
         for cell_name, cell in six.iteritems(cells):
             prod_counts = dict()
             for l in self.loci:
                 prod_counts[l] = cell.count_productive_recombinants(self.receptor_name, l)
                 if prod_counts[l] > 0:
                     cell_recovery_count[l] += 1
-            
+
             for p in possible_pairs:
                 if prod_counts[p[0]] > 0 and prod_counts[p[1]] > 0:
                     cell_recovery_count[p] += 1
@@ -577,7 +582,7 @@ class Summariser(TracerTask):
                                                                                     locus=l, count=count,
                                                                                     total=total_cells, pc=pc))
         outfile.write("\n")
-        
+
         for p in possible_pairs:
             count = cell_recovery_count[p]
             pc = round((count/float(total_cells))*100, 1)
@@ -586,23 +591,23 @@ class Summariser(TracerTask):
                                                                                     count=count,
                                                                                     total=total_cells, pc=pc))
         outfile.write("\n")
-        
-        
+
+
         all_counters = defaultdict(Counter)
         prod_counters = defaultdict(Counter)
-        
+
         for cell in cells.values():
             for l in self.loci:
                 all_counters[l].update({cell.count_total_recombinants(self.receptor_name, l): 1})
                 prod_counters[l].update({cell.count_productive_recombinants(self.receptor_name, l): 1})
-        
-        
+
+
         all_recombinant_counts = []
         for locus in all_counters:
             all_recombinant_counts = all_recombinant_counts + \
                                      list(all_counters[locus].keys())
         max_recombinant_count = max(all_recombinant_counts)
-        
+
         #max_recombinant_count = max(list(counters['all_alpha'].keys()) + list(counters['all_beta'].keys()))
         table_header = ['', '0 recombinants', '1 recombinant', '2 recombinants']
         recomb_range = range(0, 3)
@@ -615,7 +620,7 @@ class Summariser(TracerTask):
         t.padding_width = 1
         t.align = "l"
 
-        
+
         #make all recombinant table
         for counter_name in ['all_counters', 'prod_counters']:
             counter_type = counter_name.split("_")[0]
@@ -634,9 +639,9 @@ class Summariser(TracerTask):
                     row.append(str(count_array[i]) + percentages[i])
                 label = '{} {}'.format(counter_type, l)
                 t.add_row([label] + row)
-        
-        
-        
+
+
+
         outfile.write(t.get_string())
         outfile.write("\n")
 
@@ -669,49 +674,50 @@ class Summariser(TracerTask):
         #        outfile.write("###{cell_name}###\n".format(cell_name=cell_name))
         #        outfile.write("TCRA:\t{}\nTCRB\t{}\n\n".format(ids[0], ids[1]))
         #
-        
+
         # reporting invariant cells
         invariant_cells = []
-        
+
         if self.invariant_cells is not None:
              for ivc in self.invariant_cells:
                  ivc_loci = []
                  found_ivcs = {}
                  defining_locus = ivc.defining_locus
-                 ivc_loci.append(defining_locus)
-                 for cell in cells.values():
-                     found_idents = {}
-                     found_defining_locus, defining_id = ivc.check_for_match(cell, defining_locus)
-                     if found_defining_locus:
-                         found_idents[ivc.defining_locus] = defining_id
-                         
-                         for l in ivc.invariant_recombinants.keys():
-                             if not l==defining_locus:
-                                 ivc_loci.append(l)
-                                 if l in cell.recombinants[ivc.receptor_type] and \
-                                 cell.recombinants[ivc.receptor_type][l] is not None:
-                                     found_other_locus, invar_id = ivc.check_for_match(cell, l)
-                                     if found_other_locus:
-                                         pass
-                                     else:
-                                         invar_id = "Invariant recombinant not found for {}_{}. {} found in total ({})".format(
-                                             ivc.receptor_type, l, len(cell.recombinants[ivc.receptor_type][l]), 
-                                             cell.getMainRecombinantIdentifiersForLocus(ivc.receptor_type, l))
-                                         
-                                 else:
-                                     invar_id = "No sequences reconstructed for {}_{}".format(ivc.receptor_type, l)
-                                 found_idents[l] = invar_id
-                                     
-                                 
-                         found_ivcs[cell.name] = found_idents
-                         invariant_cells.append(cell.name)
-             
+                 if defining_locus in self.loci:
+                    ivc_loci.append(defining_locus)
+                    for cell in cells.values():
+                        found_idents = {}
+                        found_defining_locus, defining_id = ivc.check_for_match(cell, defining_locus)
+                        if found_defining_locus:
+                            found_idents[ivc.defining_locus] = defining_id
+
+                            for l in ivc.invariant_recombinants.keys():
+                                if not l==defining_locus:
+                                    ivc_loci.append(l)
+                                    if l in cell.recombinants[ivc.receptor_type] and \
+                                    cell.recombinants[ivc.receptor_type][l] is not None:
+                                        found_other_locus, invar_id = ivc.check_for_match(cell, l)
+                                        if found_other_locus:
+                                            pass
+                                        else:
+                                            invar_id = "Invariant recombinant not found for {}_{}. {} found in total ({})".format(
+                                                ivc.receptor_type, l, len(cell.recombinants[ivc.receptor_type][l]),
+                                                cell.getMainRecombinantIdentifiersForLocus(ivc.receptor_type, l))
+
+                                    else:
+                                        invar_id = "No sequences reconstructed for {}_{}".format(ivc.receptor_type, l)
+                                    found_idents[l] = invar_id
+
+
+                            found_ivcs[cell.name] = found_idents
+                            invariant_cells.append(cell.name)
+
                  if len(found_ivcs) > 0:
                      outfile.write("\n#{} cells#\n".format(ivc.name))
-                     
+
                      outfile.write("Expected: {}\n".format(ivc.expected_string))
                      outfile.write("Found {} possible cells.\n\n".format(len(found_ivcs)))
-                     
+
                      sorted_names = sorted(list(found_ivcs.keys()))
                      for n in sorted_names:
                          outfile.write("### {} ###\n".format(n))
@@ -719,8 +725,8 @@ class Summariser(TracerTask):
                          for l in ivc_loci:
                              outfile.write("{}_{}: {}\n".format(ivc.receptor_type, l, ivc_details[l]))
                      outfile.write("\n")
-                 
-        
+
+
         # plot lengths of reconstructed sequences
         lengths = defaultdict(list)
         for cell in cells.values():
@@ -732,7 +738,7 @@ class Summariser(TracerTask):
         for l in self.loci:
             q = self.get_quartiles(self.receptor_name, l)
             quartiles[l] = q
-            
+
         for l in self.loci:
             q = quartiles[l]
             lns = lengths[l]
@@ -750,7 +756,7 @@ class Summariser(TracerTask):
                 with open("{}_{}.txt".format(length_filename_root,l), 'w') as f:
                         for l in sorted(lns):
                             f.write("{}\n".format(l))
-                        
+
 
         for cell_name in empty_cells:
             del cells[cell_name]
@@ -758,8 +764,8 @@ class Summariser(TracerTask):
         if not self.keep_invariant:
             for cell_name in invariant_cells:
                 del cells[cell_name]
-        
-        
+
+
         # Write out recombinant details for each cell
         with open("{}/recombinants.txt".format(outdir), 'w') as f:
             f.write("cell_name\tlocus\trecombinant_id\tproductive\treconstructed_length\n")
@@ -780,13 +786,13 @@ class Summariser(TracerTask):
                 f.write("{cell_name}\tNo seqs found for {receptor}_{loci}\n".format(cell_name=cell_name,
                                                                                     receptor=self.receptor_name,
                                                                                     loci=self.loci))
-                
+
         # make clonotype networks
         network_colours = io.read_colour_file(os.path.join(self.species_dir, "colours.csv"))
         component_groups = tracer_func.draw_network_from_cells(cells, outdir, self.graph_format, dot, neato,
                                                                self.draw_graphs, self.receptor_name, self.loci,
                                                                network_colours)
-        
+
         # Print component groups to the summary#
         outfile.write(
             "\n#Clonotype groups#\n"
@@ -795,7 +801,7 @@ class Summariser(TracerTask):
         for g in component_groups:
             outfile.write(", ".join(g))
             outfile.write("\n\n")
-        
+
         # plot clonotype sizes
         plt.figure()
         clonotype_sizes = tracer_func.get_component_groups_sizes(cells, self.receptor_name, self.loci)
@@ -806,7 +812,7 @@ class Summariser(TracerTask):
         plt.xlabel("Clonotype size")
         plt.ylabel("Clonotype count")
         plt.savefig("{}/clonotype_sizes.pdf".format(outdir))
-        
+
         # write clonotype sizes to text file
         with open("{}/clonotype_sizes.txt".format(outdir), 'w') as f:
             data = zip(x_range, clonotype_sizes)
@@ -815,12 +821,12 @@ class Summariser(TracerTask):
                 f.write("{}\t{}\n".format(t[0], t[1]))
 
         outfile.close()
-    
+
     def get_quartiles(self, receptor, locus):
-        
+
         fasta = os.path.join(self.species_dir, 'combinatorial_recombinomes','{receptor}_{locus}.fa'.format(
                                                                             receptor=receptor, locus=locus))
-        
+
         # need to remove the start N padding and end C sequence from the lengths
         constant_fasta = os.path.join(self.species_dir, 'raw_seqs', '{receptor}_{locus}_C.fa'.format(
                                                                             receptor=receptor, locus=locus))
@@ -832,15 +838,15 @@ class Summariser(TracerTask):
             N_len = r.search(seq).end()
         else:
             N_len = 0
-        
-        
-        adj = C_len+N_len                                                               
-                                                                            
+
+
+        adj = C_len+N_len
+
         lengths = array([len(rec)-adj for rec in SeqIO.parse(fasta, "fasta")])
         quartiles = (percentile(lengths, 25), percentile(lengths, 75))
         return(quartiles)
-            
-        
+
+
 
 
 class Tester(TracerTask):
@@ -902,28 +908,28 @@ class Builder(TracerTask):
             parser.add_argument('species', metavar="<SPECIES>", help='species (eg Mmus)')
             parser.add_argument('receptor_name', metavar="<RECEPTOR_NAME>", help='name of receptor (eg TCR)')
             parser.add_argument('locus_name', metavar="<LOCUS_NAME>", help='name of locus (eg A)')
-            parser.add_argument('N_padding', metavar="<N_PADDING>", 
+            parser.add_argument('N_padding', metavar="<N_PADDING>",
                                  help='number of ambiguous N nucleotides between V and J', type=int)
-            parser.add_argument('colour', metavar="<COLOUR>", default = 'random', 
+            parser.add_argument('colour', metavar="<COLOUR>", default = 'random',
                                 help='colour for productive recombinants. Specify as HTML (eg E41A1C)\
                                 or use "random"', type = self.check_colour)
             parser.add_argument('V_seqs', metavar="<V_SEQS>", help='fasta file containing V gene sequences')
             parser.add_argument('J_seqs', metavar="<J_SEQS>", help='fasta file containing J gene sequences')
-            parser.add_argument('C_seq', metavar="<C_SEQ>", 
+            parser.add_argument('C_seq', metavar="<C_SEQ>",
                                 help='fasta file containing single constant region sequence')
             parser.add_argument('D_seqs', metavar="<D_SEQS>", nargs='?', default=False,
                                 help='fasta file containing D gene sequences (optional)')
-            
-            
+
+
             args = parser.parse_args(sys.argv[2:])
-            
+
             self.ncores = args.ncores
             self.force_overwrite = args.force_overwrite
             self.species = args.species
             self.receptor_name = args.receptor_name
             self.locus_name = args.locus_name
             self.N_padding = args.N_padding
-            
+
             self.raw_seq_files = {}
             self.raw_seq_files['V'] = args.V_seqs
             self.raw_seq_files['J'] = args.J_seqs
@@ -932,7 +938,7 @@ class Builder(TracerTask):
             if args.D_seqs:
                 self.raw_seq_files['D'] = args.D_seqs
             config_file = args.config_file
-            
+
         else:
             self.ncores = kwargs.get('ncores')
             self.force_overwrite = kwargs.get('force_overwrite')
@@ -947,13 +953,13 @@ class Builder(TracerTask):
             self.prod_colour = kwargs.get('colour')
             if kwargs.get('D_seqs'):
                 self.raw_seq_files['D'] = kwargs.get('D_seqs')
-            
+
             config_file = kwargs.get('config_file')
 
         self.config = self.read_config(config_file)
         self.species_dir = self.get_resources_root(self.species)
-        
-        
+
+
 
     def run(self):
 
@@ -963,7 +969,7 @@ class Builder(TracerTask):
         #    "e.g. 'Mmus_1'"
         #
         self.init_dirs()
-        
+
         self.calculate_colours(self.prod_colour)
         VDJC_files = self.copy_raw_files()
         recombinome_fasta = self.make_recombinomes(VDJC_files)
@@ -973,7 +979,7 @@ class Builder(TracerTask):
             print("\nIMPORTANT: there is no IgBLAST database for {receptor}_{segment}\n"\
                   "Run build with {segment} segments for {receptor} before using tracer assemble\n"
                   .format(receptor = self.receptor_name, segment=s))
-    
+
     def check_colour(self, c):
         if c == 'random':
             return(c)
@@ -986,15 +992,15 @@ class Builder(TracerTask):
             except ValueError:
                 msg = "{c} is not a valid html colour. Specify as xxXXxx".format(c=c)
                 raise argparse.ArgumentTypeError(msg)
-                
+
     def calculate_colours(self, c):
         c = c.lower()
         pal = ['#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00', '#ffff33', '#a65628', '#f781bf']
         allowed_pal = copy.copy(pal)
         colour_file = os.path.join(self.species_dir, "colours.csv")
         if os.path.exists(colour_file):
-            colour_map, used_colours = io.read_colour_file(colour_file, return_used_list=True, 
-                                                            receptor_name = self.receptor_name)     
+            colour_map, used_colours = io.read_colour_file(colour_file, return_used_list=True,
+                                                            receptor_name = self.receptor_name)
             if len(used_colours) < len(pal):
                 for uc in used_colours:
                     if uc in pal:
@@ -1007,32 +1013,32 @@ class Builder(TracerTask):
 
         else:
             if used_colours is not None:
-                if (self.receptor_name in colour_map and 
+                if (self.receptor_name in colour_map and
                    self.locus_name in colour_map[self.receptor_name]
                    and not colour_map[self.receptor_name][self.locus_name][0] == c):
                         if c in used_colours and c not in allowed_pal:
                             msg = "{c} already in use. Please specify a different colour.".format(c=c)
                             raise argparse.ArgumentTypeError(msg)
-            
+
             prod_colour = c
-        
+
         prod_rgb = hex2color(prod_colour)
         h, s, v = colorsys.rgb_to_hsv(*prod_rgb)
-        
+
         nonprod_rgb = colorsys.hsv_to_rgb(h, s*0.5, self.adj_v(v))
         nonprod_colour = str(rgb2hex(nonprod_rgb))
-        
+
         d1 = {self.locus_name : (prod_colour, nonprod_colour)}
-        
+
         if self.receptor_name in colour_map:
             colour_map[self.receptor_name].update(d1)
         else:
             colour_map[self.receptor_name] = d1
-        
+
         io.write_colour_file(colour_file, colour_map)
-        
-                
-        
+
+
+
     def adj_v(self, v):
         new_v = v * 1.3
         if new_v > 1:
@@ -1057,16 +1063,16 @@ class Builder(TracerTask):
         io.makeOutputDir(self.species_dir)
         for d in subdirs:
             io.makeOutputDir(os.path.join(self.species_dir, d))
-            
+
 
     def copy_raw_files(self):
 
         """ Move user-specified files to internal resources file system """
-        
+
         gene_segs = 'VJC'
-        
+
         VDJC_files = {}
-        
+
         if 'D' in self.raw_seq_files:
             gene_segs += 'D'
 
@@ -1080,7 +1086,7 @@ class Builder(TracerTask):
             shutil.copy(self.raw_seq_files[s], out_file)
 
         return VDJC_files
-     
+
     def load_segment_seqs(self, filename):
         seqs = {}
         with open(filename, 'rU') as fn:
@@ -1088,18 +1094,18 @@ class Builder(TracerTask):
                 seqs[record.id] = str(record.seq)
 
         return seqs
-        
+
     def make_recombinomes(self, VDJC_files):
-        
+
         out_fasta = os.path.join(
             self.species_dir, 'combinatorial_recombinomes',
             '{receptor}_{locus}.fa'.format(receptor=self.receptor_name,
                                            locus=self.locus_name))
 
         self.check_duplicate(out_fasta, descriptor="Combinatorial recombinome")
-        
+
         seqs = {}
-        
+
         for s in 'VJC':
             in_file = VDJC_files[s]
             seqs[s] = self.load_segment_seqs(in_file)
@@ -1114,7 +1120,7 @@ class Builder(TracerTask):
         const_seq = list(seqs['C'].values())[0].upper()
         N_junction_string = "N" * self.N_padding
         N_leader_string = "N" * self.leader_padding
-        
+
         seqs_to_write = []
 
         # Compile sequences to write
@@ -1126,7 +1132,7 @@ class Builder(TracerTask):
                       J_seq.lower() + const_seq
                 seqs_to_write.append("{chr_name}\n{seq}\n"
                                      .format(seq=seq, chr_name=chr_name))
-        
+
         with open(out_fasta, 'w') as f:
             for seq in seqs_to_write:
                 f.write(seq)
@@ -1134,7 +1140,7 @@ class Builder(TracerTask):
         return out_fasta
 
     def make_bowtie2_index(self, recombinome_fasta):
-        
+
         bowtie2_build = self.get_binary('bowtie2-build')
         index_base = os.path.join(
             self.species_dir, 'combinatorial_recombinomes',
@@ -1142,17 +1148,17 @@ class Builder(TracerTask):
                                         locus=self.locus_name))
 
         self.check_duplicate(index_base + ".1.bt2", descriptor="Bowtie2 index")
-        
+
         command = [bowtie2_build, '-q', recombinome_fasta, index_base]
         try:
             subprocess.check_call(command)
         except subprocess.CalledProcessError:
             print("bowtie2-build failed")
-    
+
     def make_igblast_db(self, VDJC_files):
-        
+
         igblast_dir = os.path.join(self.species_dir, 'igblast_dbs')
-        
+
         makeblastdb = self.get_binary('makeblastdb')
         missing_dbs = []
         for s in 'VDJ':
@@ -1169,9 +1175,9 @@ class Builder(TracerTask):
                     existing_seqs = SeqIO.to_dict(SeqIO.parse(e, "fasta"))
                 with open(VDJC_files[s]) as n:
                     new_seqs = SeqIO.to_dict(SeqIO.parse(n, "fasta"))
-                
+
                 non_overwritten_seqs = []
-                
+
                 for seq_name, seq in six.iteritems(new_seqs):
                     if seq_name in existing_seqs:
                         if not self.force_overwrite:
@@ -1182,10 +1188,10 @@ class Builder(TracerTask):
                         existing_seqs.update({seq_name: seq})
                 with open(fasta_file, 'w') as f:
                     SeqIO.write(existing_seqs.values(), f, "fasta")
-                
+
                 if len(existing_seqs) == 0:
                     missing_dbs.append(s)
-            
+
                 if len(non_overwritten_seqs) > 0:
                     print('The follwing IgBLAST DB sequences for '
                           '{receptor}_{segment} already found in {file}.'
@@ -1195,7 +1201,7 @@ class Builder(TracerTask):
                           'Use --force_overwrite to replace with new ones')
                     for seq in non_overwritten_seqs:
                         print(seq)
-                
+
                 command = [makeblastdb, '-parse_seqids', '-dbtype', 'nucl',
                            '-in', fasta_file]
                 try:
@@ -1203,7 +1209,7 @@ class Builder(TracerTask):
                 except subprocess.CalledProcessError:
                     print("makeblastdb failed for {receptor}_{segment}"
                           .format(receptor=self.receptor_name, segment=s))
-                
+
             else:
                 with open(fasta_file) as e:
                     existing_seqs = SeqIO.to_dict(SeqIO.parse(e, "fasta"))
