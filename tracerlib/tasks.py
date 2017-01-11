@@ -4,6 +4,9 @@ import csv
 
 import six
 import matplotlib as mpl
+import pandas as pd
+import numpy as np
+from pprint import pprint
 
 from tracerlib import io, core
 from tracerlib.io import check_binary
@@ -195,7 +198,7 @@ class Assembler(TracerTask):
             parser.add_argument('--max_junc_len',
                                 help="Maximum permitted length of junction string in recombinant identifier. "
                                      "Used to filter out artefacts. May need to be longer for TCRdelta.",
-                                default=50)
+                                default=50, type=int)
 
             parser.add_argument('fastq1', metavar="<FASTQ1>", help='first fastq file')
             parser.add_argument('fastq2', metavar="<FASTQ2>", help='second fastq file', nargs='?')
@@ -493,10 +496,8 @@ class Summariser(TracerTask):
     def run(self):
 
         if self.draw_graphs:
-            # dot = self.resolve_relative_path(self.config.get('tool_locations', 'dot_path'))
-            # neato = self.resolve_relative_path(self.config.get('tool_locations', 'neato_path'))
-            dot = self.get_binary('dot')
-            neato = self.get_binary('neato')
+            dot = self.resolve_relative_path(self.config.get('tool_locations', 'dot_path'))
+            neato = self.resolve_relative_path(self.config.get('tool_locations', 'neato_path'))
 
             # check that executables from config file can be used
             not_executable = []
@@ -766,13 +767,17 @@ class Summariser(TracerTask):
                 del cells[cell_name]
 
 
+        recombinant_data = []
         # Write out recombinant details for each cell
         with open("{}/recombinants.txt".format(outdir), 'w') as f:
             f.write("cell_name\tlocus\trecombinant_id\tproductive\treconstructed_length\n")
             sorted_cell_names = sorted(list(cells.keys()))
             for cell_name in sorted_cell_names:
                 cell = cells[cell_name]
+                cell_data = {"cell_name": cell_name}
                 for locus in self.loci:
+                    cell_data.update({locus + "_unproductive": None,
+                                      locus + "_productive": None})
                     recombinants = cell.recombinants[self.receptor_name][locus]
                     if recombinants is not None:
                         for r in recombinants:
@@ -780,12 +785,19 @@ class Summariser(TracerTask):
                                 "{name}\t{locus}\t{ident}\t{productive}\t{length}\n".format(
                                     name=cell_name, locus=locus, ident=r.identifier,
                                     productive=r.productive, length=len(r.trinity_seq)))
+                            if r.productive:
+                                cell_data[locus + "_productive"] = r.identifier
+                            else:
+                                cell_data[locus + "_unproductive"] = r.identifier
                 f.write("\n")
+                recombinant_data.append(cell_data)
             f.write("\n\n")
             for cell_name in empty_cells:
                 f.write("{cell_name}\tNo seqs found for {receptor}_{loci}\n".format(cell_name=cell_name,
                                                                                     receptor=self.receptor_name,
                                                                                     loci=self.loci))
+
+        recombinant_data = pd.DataFrame(recombinant_data)
 
         # make clonotype networks
         network_colours = io.read_colour_file(os.path.join(self.species_dir, "colours.csv"))
@@ -801,6 +813,22 @@ class Summariser(TracerTask):
         for g in component_groups:
             outfile.write(", ".join(g))
             outfile.write("\n\n")
+
+        # Build group membership dictionary
+        group_membership = []
+        for index, group in enumerate(component_groups):
+            group_len = len(group)
+            for cell in group:
+                group_membership.append({"cell_name": cell,
+                                         "clonal_group": index,
+                                         "group_size": group_len})
+
+        group_membership = pd.DataFrame(group_membership)
+
+        cell_data = pd.merge(recombinant_data, group_membership, how='outer',
+                             on='cell_name')
+        cell_data.set_index("cell_name", inplace=True)
+        cell_data.to_csv(os.path.join(outdir, "cell_data.csv"))
 
         # plot clonotype sizes
         plt.figure()
@@ -845,8 +873,6 @@ class Summariser(TracerTask):
         lengths = array([len(rec)-adj for rec in SeqIO.parse(fasta, "fasta")])
         quartiles = (percentile(lengths, 25), percentile(lengths, 75))
         return(quartiles)
-
-
 
 
 class Tester(TracerTask):
