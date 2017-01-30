@@ -162,8 +162,8 @@ Location of the transcriptome fasta file to which the specific TCR sequences wil
 	libType = A
 	kmerLen = 31
 
-* Description of the type of sequencing library from which the reads come (containing, e.g., the relative orientation of paired end reads). As of version 0.7.0, Salmon also has the ability to automatically infer (i.e. guess) the library type based on how the first few thousand reads map to the transcriptome. Set libType = A for automatic detection.
-* Salmon builds the quasi-mapping-based index, using an auxiliary k-mer hash over k-mers of length <kmerLen>. While quasi-mapping will make used of arbitrarily long matches between the query and reference, the k size selected here will act as the minimum acceptable length for a valid match. Value for <kmerLen> must be odd; default and maximum value is 31. 
+* Description of the type of sequencing library from which the reads come (containing, e.g., the relative orientation of paired end reads). As of version 0.7.0, Salmon also has the ability to automatically infer (i.e. guess) the library type based on how the first few thousand reads map to the transcriptome. Set `libType = A` for automatic detection.
+* Salmon builds the quasi-mapping-based index, using an auxiliary k-mer hash over k-mers of length `kmerLen`. While quasi-mapping will make used of arbitrarily long matches between the query and reference, the k size selected here will act as the minimum acceptable length for a valid match. Value for `kmerLen` must be odd; default and maximum value is 31. 
 
 See salmon [documentation](http://salmon.readthedocs.io/en/latest/salmon.html) for more details.
 
