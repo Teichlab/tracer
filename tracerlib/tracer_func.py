@@ -616,6 +616,24 @@ def load_kallisto_counts(tsv_file):
     return dict(counts)
 
 
+def load_salmon_counts(sf_file):
+    counts = defaultdict(lambda: defaultdict(dict))
+    with open(sf_file) as sf:
+        for line in sf:
+            if "TRACER" in line:
+                line = line.rstrip()
+                line = line.split("\t")
+                tags = line[0].split("|")
+                receptor = tags[1]
+                locus = tags[2]
+                contig_name = tags[3]
+                tpm = float(line[3])
+                
+                counts[receptor][locus][contig_name] = tpm
+    return dict(counts)
+
+
+
 def make_cell_network_from_dna(cells, keep_unlinked, shape, dot, neato, receptor, loci, 
                                network_colours):
     G = nx.MultiGraph()
@@ -1109,3 +1127,65 @@ def quantify_with_kallisto(kallisto, cell, output_dir, cell_name, kallisto_base_
     # os.remove(output_transcriptome)
     shutil.rmtree("{}/expression_quantification/kallisto_index/".format(output_dir))
 
+
+
+
+
+def quantify_with_salmon(salmon, cell, output_dir, cell_name, salmon_base_transcriptome, fastq1, fastq2,
+                           ncores, should_resume, single_end, fragment_length, fragment_sd, libType, kmerLen):
+
+    print("##Running Salmon##")
+
+    if should_resume:
+        if os.path.isfile("{}/expression_quantification/quant.sf".format(output_dir)):
+            print("Resuming with existing Salmon output")
+            return
+    
+    print("\n##Making Salmon indices##")
+
+    salmon_dirs = ['salmon_index']
+    for d in salmon_dirs:
+        tracerlib.io.makeOutputDir("{}/expression_quantification/{}".format(output_dir, d))
+    fasta_filename = "{output_dir}/unfiltered_TCR_seqs/{cell_name}_TCRseqs.fa".format(output_dir=output_dir,
+                                                                                      cell_name=cell_name)
+    fasta_file = open(fasta_filename, 'w')
+    fasta_file.write(cell.get_fasta_string())
+    fasta_file.close()
+
+    output_transcriptome = "{}/expression_quantification/salmon_index/{}_transcriptome.fa".format(output_dir,
+                                                                                                    cell_name)
+    with open(output_transcriptome, 'w') as outfile:
+        for fname in [salmon_base_transcriptome, fasta_filename]:
+            with open(fname) as infile:
+                for line in infile:
+                    outfile.write(line)
+
+    idx_file = "{}/expression_quantification/salmon_index/{}_transcriptome.idx".format(output_dir, cell_name)
+
+    index_command = [salmon, 'index', '-t', output_transcriptome,'-i',idx_file, '-k', str(kmerLen)]
+    subprocess.check_call(index_command)
+
+    print("\n ##Quantifying with Salmon##")
+
+    if not single_end:
+        if not fragment_length:
+            salmon_command = [salmon, 'quant', '-i', idx_file, '-l', libType, '-p', ncores,
+                              '-1', fastq1,'-2', fastq2,'-o', "{}/expression_quantification".format(output_dir)]
+        else:
+            salmon_command = [salmon, 'quant', '-i', idx_file, '-l', libType, '-p', ncores,
+                              '--fldMean',fragment_length,'-1', fastq1,'-2', fastq2,
+                              '-o', "{}/expression_quantification".format(output_dir)]                     
+    else:
+        salmon_command = [salmon, 'quant', '-i', idx_file,'-l', libType, '-p', ncores,
+                          '--fldMean',fragment_length, '--fldSD', fragment_sd, '-r', fastq1,
+                          '-o', "{}/expression_quantification".format(output_dir)]
+
+    subprocess.check_call(salmon_command)
+       
+    # delete index file because it's huge and unecessary. Delete transcriptome file
+    # os.remove(idx_file)
+    # os.remove(output_transcriptome)
+
+    shutil.rmtree("{}/expression_quantification/salmon_index/".format(output_dir))
+
+    

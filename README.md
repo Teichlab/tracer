@@ -38,7 +38,9 @@ Note that TraCeR is compatible with both Python 2 and 3.
     - Please note that Trinity requires a working installation of [Bowtie v1](http://bowtie-bio.sourceforge.net).
 3. [IgBLAST](http://www.ncbi.nlm.nih.gov/igblast/faq.html#standalone) - required for analysis of assembled contigs. (ftp://ftp.ncbi.nih.gov/blast/executables/igblast/release/).
 4. [makeblastdb](ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/ ) - **optional** but required if you want to use TraCeR's `build` mode to make your own references.
-5. [Kallisto](http://pachterlab.github.io/kallisto/) - required for quantification of TCR expression.
+5. Software for quantification of TCR expression:
+    * [Kallisto](http://pachterlab.github.io/kallisto/), or alternatively
+    * [Salmon] (https://github.com/COMBINE-lab/salmon/releases).
 6. [Graphviz](http://www.graphviz.org) - Dot and Neato drawing programs required for visualisation of clonotype graphs. This is optional - see the [`--no_networks` option](#options-1) to [`summarise`](#summarise-summary-and-clonotype-networks).
 
 #####Installing IgBlast#####
@@ -91,10 +93,11 @@ Edit `~/.tracerrc` (or a copy) so that the paths within the `[tool_locations]` s
 	[tool_locations]
 	#paths to tools used by TraCeR for alignment, quantitation, etc
 	bowtie2_path = /path/to/bowtie2
-    bowtie2-build_path = /path/to/bowtie2-build
+        bowtie2-build_path = /path/to/bowtie2-build
 	igblast_path = /path/to/igblastn
-    makeblastdb_path = /path/to/makeblastdb
+        makeblastdb_path = /path/to/makeblastdb
 	kallisto_path = /path/to/kallisto
+	salmon_path = /path/to/salmon
 	trinity_path = /path/to/trinity
 	dot_path = /path/to/dot
 	neato_path = /path/to/neato
@@ -147,11 +150,22 @@ Path to fasta files with sequences for each V, D or J gene. Files are names `TR<
 
 Type of sequence to be analysed. Since TraCeR currently only works with TCR sequences, there's no need to change this. 
 
-####Kallisto options####
-	[kallisto_options]
-	base_transcriptome = /path/to/kallisto/transcriptome
+####Base transcriptomes for Kallisto/Salmon####
+	[base_transcriptomes]
+	Mmus = /path/to/kallisto/transcriptome_for_Mmus
+	Hsap = /path/to/kallisto/transcriptome_for_Hsap
 
 Location of the transcriptome fasta file to which the specific TCR sequences will be appended from each cell. Can be downloaded from http://bio.math.berkeley.edu/kallisto/transcriptomes/ and many other places. This must be a plain-text fasta file so decompress it if necessary (files from the Kallisto link are gzipped).
+
+####Salmon options####
+	[salmon_options]
+	libType = A
+	kmerLen = 31
+
+* Description of the type of sequencing library from which the reads come (containing, e.g., the relative orientation of paired end reads). As of version 0.7.0, Salmon also has the ability to automatically infer (i.e. guess) the library type based on how the first few thousand reads map to the transcriptome. Set libType = A for automatic detection.
+* Salmon builds the quasi-mapping-based index, using an auxiliary k-mer hash over k-mers of length <kmerLen>. While quasi-mapping will make used of arbitrarily long matches between the query and reference, the k size selected here will act as the minimum acceptable length for a valid match. Value for <kmerLen> must be odd; default and maximum value is 31. 
+
+See salmon [documentation](http://salmon.readthedocs.io/en/latest/salmon.html) for more details.
 
 
 ## Testing TraCeR ##
