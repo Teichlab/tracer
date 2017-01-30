@@ -93,14 +93,15 @@ Edit `~/.tracerrc` (or a copy) so that the paths within the `[tool_locations]` s
 	[tool_locations]
 	#paths to tools used by TraCeR for alignment, quantitation, etc
 	bowtie2_path = /path/to/bowtie2
-        bowtie2-build_path = /path/to/bowtie2-build
+	bowtie2-build_path = /path/to/bowtie2-build
 	igblast_path = /path/to/igblastn
-        makeblastdb_path = /path/to/makeblastdb
+	makeblastdb_path = /path/to/makeblastdb
 	kallisto_path = /path/to/kallisto
 	salmon_path = /path/to/salmon
 	trinity_path = /path/to/trinity
 	dot_path = /path/to/dot
 	neato_path = /path/to/neato
+		
 		
 ###Resource locations and necessary files###
 The tools used by TraCeR need a variety of additional files to work properly and to allow extraction of TCR-derived reads and expression quantification etc. The locations of these files are specified in the other sections of the configuration file and are detailed below.
