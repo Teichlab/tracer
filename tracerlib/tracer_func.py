@@ -1162,7 +1162,7 @@ def quantify_with_salmon(salmon, cell, output_dir, cell_name, salmon_base_transc
 
     idx_file = "{}/expression_quantification/salmon_index/{}_transcriptome.idx".format(output_dir, cell_name)
 
-    index_command = [salmon, 'index', '-t', output_transcriptome,'-i',idx_file, '-k', str(kmerLen)]
+    index_command = [salmon, 'index', '-t', output_transcriptome, '-i', idx_file, '-k', str(kmerLen), '-p', ncores]
     subprocess.check_call(index_command)
 
     print("\n ##Quantifying with Salmon##")
