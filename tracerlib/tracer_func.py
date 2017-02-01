@@ -1134,7 +1134,7 @@ def quantify_with_kallisto(kallisto, cell, output_dir, cell_name, kallisto_base_
 def quantify_with_salmon(salmon, cell, output_dir, cell_name, salmon_base_transcriptome, fastq1, fastq2,
                            ncores, should_resume, single_end, fragment_length, fragment_sd, libType, kmerLen):
 
-    print("##Running Salmon##")
+    ##### print("##Running Salmon##")
 
     if should_resume:
         if os.path.isfile("{}/expression_quantification/quant.sf".format(output_dir)):

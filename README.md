@@ -164,7 +164,7 @@ Location of the transcriptome fasta file to which the specific TCR sequences wil
 	kmerLen = 31
 
 * Description of the type of sequencing library from which the reads come (containing, e.g., the relative orientation of paired end reads). As of version 0.7.0, Salmon also has the ability to automatically infer (i.e. guess) the library type based on how the first few thousand reads map to the transcriptome. Set `libType = A` for automatic detection.
-* Salmon builds the quasi-mapping-based index, using an auxiliary k-mer hash over k-mers of length `kmerLen`. While quasi-mapping will make used of arbitrarily long matches between the query and reference, the k size selected here will act as the minimum acceptable length for a valid match. Value for `kmerLen` must be odd; default and maximum value is 31. 
+* Salmon builds the quasi-mapping-based index, using an auxiliary k-mer hash over k-mers of length `kmerLen`. While quasi-mapping will make used of arbitrarily long matches between the query and reference, the k size selected here will act as the minimum acceptable length for a valid match. The value for `kmerLen` must be odd; its default and maximum value is 31. 
 
 See salmon [documentation](http://salmon.readthedocs.io/en/latest/salmon.html) for more details.
 
@@ -208,7 +208,7 @@ Tracer has two modes *assemble* and *summarise*.
 
 #####Options#####
 
-`-p/--ncores <int>` : number of processor cores available. This is passed to Bowtie2 and Trinity. Default=1.
+`-p/--ncores <int>` : number of processor cores available. This is passed to Bowtie2, Trinity, and Kallisto or Salmon. Default=1.
 
 `-c/--config_file <conf_file>` : config file to use. Default = `~/.tracerrc`
 
@@ -248,7 +248,7 @@ For each cell, an `/<output_directory>/<cell_name>` directory will be created. T
     - `<cell_name>.pkl` : Python [pickle](https://docs.python.org/2/library/pickle.html) file containing the internal representation of the cell and its recombinants as used by TraCeR. This is used in the summarisation steps.
 
 5. `<output_directory>/<cell_name>/expression_quantification`  
-    Contains Kallisto output with expression quantification of the entire transcriptome *including* the reconstructed TCRs.
+    Contains Kallisto/Salmon output with expression quantification of the entire transcriptome *including* the reconstructed TCRs.
 
 6. `<output_directory>/<cell_name>/filtered_TCR_seqs`  
     Contains the same files as the unfiltered directory above but these recombinants have been filtered so that only the two most highly expressed from each locus are retained. This resolves biologically implausible situtations where more than two recombinants are detected for a locus. **This directory contains the final output with high-confidence TCR assignments**.

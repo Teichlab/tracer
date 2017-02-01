@@ -443,9 +443,6 @@ class Assembler(TracerTask):
 
             counts = tracer_func.load_salmon_counts("{}/expression_quantification/quant.sf".format(self.output_dir))
 
-
-            
-
         else:
             
             # Quantification with kallisto
