@@ -38,7 +38,9 @@ Note that TraCeR is compatible with both Python 2 and 3.
     - Please note that Trinity requires a working installation of [Bowtie v1](http://bowtie-bio.sourceforge.net).
 3. [IgBLAST](http://www.ncbi.nlm.nih.gov/igblast/faq.html#standalone) - required for analysis of assembled contigs. (ftp://ftp.ncbi.nih.gov/blast/executables/igblast/release/).
 4. [makeblastdb](ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/ ) - **optional** but required if you want to use TraCeR's `build` mode to make your own references.
-5. [Kallisto](http://pachterlab.github.io/kallisto/) - required for quantification of TCR expression.
+5. Software for quantification of TCR expression:
+    * [Kallisto](http://pachterlab.github.io/kallisto/), or alternatively
+    * [Salmon] (https://github.com/COMBINE-lab/salmon/releases).
 6. [Graphviz](http://www.graphviz.org) - Dot and Neato drawing programs required for visualisation of clonotype graphs. This is optional - see the [`--no_networks` option](#options-1) to [`summarise`](#summarise-summary-and-clonotype-networks).
 
 #####Installing IgBlast#####
@@ -91,13 +93,15 @@ Edit `~/.tracerrc` (or a copy) so that the paths within the `[tool_locations]` s
 	[tool_locations]
 	#paths to tools used by TraCeR for alignment, quantitation, etc
 	bowtie2_path = /path/to/bowtie2
-    bowtie2-build_path = /path/to/bowtie2-build
+	bowtie2-build_path = /path/to/bowtie2-build
 	igblast_path = /path/to/igblastn
-    makeblastdb_path = /path/to/makeblastdb
+	makeblastdb_path = /path/to/makeblastdb
 	kallisto_path = /path/to/kallisto
+	salmon_path = /path/to/salmon
 	trinity_path = /path/to/trinity
 	dot_path = /path/to/dot
 	neato_path = /path/to/neato
+		
 		
 ###Resource locations and necessary files###
 The tools used by TraCeR need a variety of additional files to work properly and to allow extraction of TCR-derived reads and expression quantification etc. The locations of these files are specified in the other sections of the configuration file and are detailed below.
@@ -147,11 +151,22 @@ Path to fasta files with sequences for each V, D or J gene. Files are names `TR<
 
 Type of sequence to be analysed. Since TraCeR currently only works with TCR sequences, there's no need to change this. 
 
-####Kallisto options####
-	[kallisto_options]
-	base_transcriptome = /path/to/kallisto/transcriptome
+####Base transcriptomes for Kallisto/Salmon####
+	[base_transcriptomes]
+	Mmus = /path/to/kallisto/transcriptome_for_Mmus
+	Hsap = /path/to/kallisto/transcriptome_for_Hsap
 
 Location of the transcriptome fasta file to which the specific TCR sequences will be appended from each cell. Can be downloaded from http://bio.math.berkeley.edu/kallisto/transcriptomes/ and many other places. This must be a plain-text fasta file so decompress it if necessary (files from the Kallisto link are gzipped).
+
+####Salmon options####
+	[salmon_options]
+	libType = A
+	kmerLen = 31
+
+* Description of the type of sequencing library from which the reads come (containing, e.g., the relative orientation of paired end reads). As of version 0.7.0, Salmon also has the ability to automatically infer (i.e. guess) the library type based on how the first few thousand reads map to the transcriptome. Set `libType = A` for automatic detection.
+* Salmon builds the quasi-mapping-based index, using an auxiliary k-mer hash over k-mers of length `kmerLen`. While quasi-mapping will make used of arbitrarily long matches between the query and reference, the k size selected here will act as the minimum acceptable length for a valid match. The value for `kmerLen` must be odd; its default and maximum value is 31. 
+
+See salmon [documentation](http://salmon.readthedocs.io/en/latest/salmon.html) for more details.
 
 
 ## Testing TraCeR ##
@@ -192,14 +207,25 @@ Tracer has two modes *assemble* and *summarise*.
 `<output_directory>` : directory for output. Will be created if it doesn't exist. Cell-specific output will go into `/<output_directory>/<cell_name>`. This path should be the same for every cell that you want to summarise together.
 
 #####Options#####
-`-p/--ncores <int>` : number of processor cores available. This is passed to Bowtie2 and Trinity. Default=1.  
+
+`-p/--ncores <int>` : number of processor cores available. This is passed to Bowtie2, Trinity, and Kallisto or Salmon. Default=1.
+
 `-c/--config_file <conf_file>` : config file to use. Default = `~/.tracerrc`
-`-s/--species` : Species from which the T cells were derived. Options are `Mmus` or `Hsap` for mouse or human data. This is only important for determination of iNKT cells in the `summarise` step because it defines the V segments that are indicative of iNKT cells. Default = `Mmus`.  
-`-r/--resume_with_existing_files` : if this is set, TraCeR will look for existing output files and not re-run steps that already appear to have been completed. This saves time if TraCeR died partway through a step and you want to resume where it left off.   
-`-m/--seq_method` : method by which to generate sequences for assessment of recombinant productivity. By default (`-m imgt`), TraCeR replaces all but the junctional sequence of each detected recombinant with the reference sequence from IMGT prior to assessing productivity of the sequence. This makes the assumption that sequence changes outside the junctional region are due to PCR/sequencing errors rather than being genuine polymorphisms. This is likely to be true for well-characterised mouse sequences but may be less so for human and other outbred populations. To determine productivity from only the assembled contig sequence for each recombinant use `-m assembly`.   
-`--single_end` : use this option if your data are single-end reads. If this option is set you must specify fragment length and fragment sd as below.  
-`--fragment_length` : Estimated average fragment length in the sequencing library. Used for Kallisto quantification. Required for single-end data. Can also be set for paired-end data if you don't want Kallisto to estimate it directly.  
+
+`-s/--species` : Species from which the T cells were derived. Options are `Mmus` or `Hsap` for mouse or human data. This is only important for determination of iNKT cells in the `summarise` step because it defines the V segments that are indicative of iNKT cells. Default = `Mmus`.
+
+`-r/--resume_with_existing_files` : if this is set, TraCeR will look for existing output files and not re-run steps that already appear to have been completed. This saves time if TraCeR died partway through a step and you want to resume where it left off.
+
+`-m/--seq_method` : method by which to generate sequences for assessment of recombinant productivity. By default (`-m imgt`), TraCeR replaces all but the junctional sequence of each detected recombinant with the reference sequence from IMGT prior to assessing productivity of the sequence. This makes the assumption that sequence changes outside the junctional region are due to PCR/sequencing errors rather than being genuine polymorphisms. This is likely to be true for well-characterised mouse sequences but may be less so for human and other outbred populations. To determine productivity from only the assembled contig sequence for each recombinant use `-m assembly`.
+
+`-q/--quant_method` : Method used for expression quantification. Options are `-q salmon` and `-q kallisto` (default).
+
+`--single_end` : use this option if your data are single-end reads. If this option is set you must specify fragment length and fragment sd as below.
+
+`--fragment_length` : Estimated average fragment length in the sequencing library. Used for Kallisto quantification. Required for single-end data. Can also be set for paired-end data if you don't want Kallisto to estimate it directly.
+
 `--fragment_sd` : Estimated standard deviation of average fragment length in the sequencing library. Used for Kallisto quantification. Required for single-end data. Can also be set for paired-end data if you don't want Kallisto to estimate it directly.
+
 `--invariant_sequences`: Custom invariant sequence file. Use the default example in 'resources/Mmus/invariant_seqs.csv'
 
 ####Output####
@@ -222,7 +248,7 @@ For each cell, an `/<output_directory>/<cell_name>` directory will be created. T
     - `<cell_name>.pkl` : Python [pickle](https://docs.python.org/2/library/pickle.html) file containing the internal representation of the cell and its recombinants as used by TraCeR. This is used in the summarisation steps.
 
 5. `<output_directory>/<cell_name>/expression_quantification`  
-    Contains Kallisto output with expression quantification of the entire transcriptome *including* the reconstructed TCRs.
+    Contains Kallisto/Salmon output with expression quantification of the entire transcriptome *including* the reconstructed TCRs.
 
 6. `<output_directory>/<cell_name>/filtered_TCR_seqs`  
     Contains the same files as the unfiltered directory above but these recombinants have been filtered so that only the two most highly expressed from each locus are retained. This resolves biologically implausible situtations where more than two recombinants are detected for a locus. **This directory contains the final output with high-confidence TCR assignments**.

@@ -185,6 +185,9 @@ class Assembler(TracerTask):
                                 help='Method for constructing sequence to assess productivity, \
                                 quantify expression and for output reporting. See README for details.',
                                 choices=['imgt', 'assembly'], default='imgt')
+            parser.add_argument('--quant_method', '-q',
+                                help='Method for expression quantification. See README for details.',
+                                choices=['kallisto', 'salmon'], default='kallisto')            
             parser.add_argument('--single_end', help='set this if your sequencing data are single-end reads',
                                 action="store_true")
             parser.add_argument('--fragment_length',
@@ -215,6 +218,7 @@ class Assembler(TracerTask):
             self.ncores = str(args.ncores)
             self.species = args.species
             self.seq_method = args.seq_method
+            self.quant_method = args.quant_method
             self.resume_with_existing_files = args.resume_with_existing_files
             self.fragment_length = args.fragment_length
             self.fragment_sd = args.fragment_sd
@@ -231,6 +235,7 @@ class Assembler(TracerTask):
             self.ncores = kwargs.get('ncores')
             self.species = kwargs.get('species')
             self.seq_method = kwargs.get('seq_method')
+            self.quant_method = kwargs.get('quant_method')
             self.resume_with_existing_files = kwargs.get('resume_with_existing_files')
             self.output_dir = kwargs.get('output_dir')
             self.single_end = kwargs.get('single_end')
@@ -402,23 +407,56 @@ class Assembler(TracerTask):
         return cell
 
     def quantify(self, cell):
-        kallisto = self.get_binary('kallisto')
-
-        if not self.config.has_option('kallisto_transcriptomes', self.species):
+        
+        if not self.config.has_option('base_transcriptomes', self.species):
             raise OSError("No transcriptome reference specified for {species}. Please specify location in config file."
                           .format(species = self.species))
         else:
-            kallisto_base_transcriptome = self.resolve_relative_path(self.config.get('kallisto_transcriptomes',
+            base_transcriptome = self.resolve_relative_path(self.config.get('base_transcriptomes',
                                                                                  self.species))
 
-        # Quantification with kallisto
-        tracer_func.quantify_with_kallisto(
-            kallisto, cell, self.output_dir, self.cell_name, kallisto_base_transcriptome, self.fastq1, self.fastq2,
-            self.ncores, self.resume_with_existing_files, self.single_end, self.fragment_length, self.fragment_sd)
-        print()
+        if self.quant_method == 'salmon':
 
-        counts = tracer_func.load_kallisto_counts("{}/expression_quantification/abundance.tsv".format(self.output_dir))
+            # Quantification with salmon
 
+            print("##Running Salmon##")
+
+            salmon = self.get_binary('salmon')
+
+            if self.config.has_option('salmon_options', 'libType'):
+                salmon_libType = self.config.get('salmon_options','libType')
+            else:
+                print("No library type specified for salmon in the configuration file. Using automatic detection (--libType A).")
+                salmon_libType = 'A'
+        
+            if self.config.has_option('salmon_options', 'kmerLen'):
+                salmon_kmerLen = self.config.get('salmon_options','kmerLen')
+            else:
+                print("No kmer length specified for salmon in the configuration file. Using default value of 31.")
+                salmon_kmerLen = 31
+
+
+            tracer_func.quantify_with_salmon(salmon, cell, self.output_dir, self.cell_name, base_transcriptome,
+                                               self.fastq1, self.fastq2, self.ncores, self.resume_with_existing_files,
+                                               self.single_end, self.fragment_length, self.fragment_sd,salmon_libType,salmon_kmerLen)
+            print()
+
+            counts = tracer_func.load_salmon_counts("{}/expression_quantification/quant.sf".format(self.output_dir))
+
+        else:
+            
+            # Quantification with kallisto
+
+            kallisto = self.get_binary('kallisto')
+        
+            tracer_func.quantify_with_kallisto(kallisto, cell, self.output_dir, self.cell_name, base_transcriptome,
+                                               self.fastq1, self.fastq2, self.ncores, self.resume_with_existing_files,
+                                               self.single_end, self.fragment_length, self.fragment_sd)
+            print()
+
+            counts = tracer_func.load_kallisto_counts("{}/expression_quantification/abundance.tsv".format(self.output_dir))
+
+            
         for receptor, locus_dict in six.iteritems(cell.recombinants):
             for locus, recombinants in six.iteritems(locus_dict):
                 if recombinants is not None:
