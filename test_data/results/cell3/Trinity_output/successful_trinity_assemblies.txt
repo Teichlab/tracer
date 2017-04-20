@@ -1,1 +1,1 @@
-cell3	['A', 'B']
+cell3	['TCR_A', 'TCR_B']

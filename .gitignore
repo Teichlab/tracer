@@ -67,3 +67,6 @@ filtered_TCR_summary
 # IDE settings
 .idea
 .ropeproject
+
+# Folder for temp stuff
+unversioned/
