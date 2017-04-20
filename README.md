@@ -201,32 +201,23 @@ Tracer has three modes: *assemble*, *summarise* and *build*.
     tracer assemble [options] <file_1> [<file_2>] <cell_name> <output_directory>
 
 ##### Main arguments
-`<file_1>` : fastq file containing #1 mates from paired-end sequencing or all reads from single-end sequencing.   
-`<file_2>` : fastq file containing #2 mates from paired-end sequencing. Do not use if your data are from single-end sequencing.  
-`<cell_name>` : name of the cell. This is arbitrary text that will be used for all subsequent references to the cell in filenames/labels etc.     
-`<output_directory>` : directory for output. Will be created if it doesn't exist. Cell-specific output will go into `/<output_directory>/<cell_name>`. This path should be the same for every cell that you want to summarise together.
+* `<file_1>` : fastq file containing #1 mates from paired-end sequencing or all reads from single-end sequencing.   
+* `<file_2>` : fastq file containing #2 mates from paired-end sequencing. Do not use if your data are from single-end sequencing.  
+* `<cell_name>` : name of the cell. This is arbitrary text that will be used for all subsequent references to the cell in filenames/labels etc.     
+* `<output_directory>` : directory for output. Will be created if it doesn't exist. Cell-specific output will go into `/<output_directory>/<cell_name>`. This path should be the same for every cell that you want to summarise together.
 
 ##### Options 
 
-`-p/--ncores <int>` : number of processor cores available. This is passed to Bowtie2, Trinity, and Kallisto or Salmon. Default=1.
-
-`-c/--config_file <conf_file>` : config file to use. Default = `~/.tracerrc`
-
-`-s/--species` : Species from which the T cells were derived. Options are `Mmus` or `Hsap` for mouse or human data. This is only important for determination of iNKT cells in the `summarise` step because it defines the V segments that are indicative of iNKT cells. Default = `Mmus`.
-
-`-r/--resume_with_existing_files` : if this is set, TraCeR will look for existing output files and not re-run steps that already appear to have been completed. This saves time if TraCeR died partway through a step and you want to resume where it left off.
-
-`-m/--seq_method` : method by which to generate sequences for assessment of recombinant productivity. By default (`-m imgt`), TraCeR replaces all but the junctional sequence of each detected recombinant with the reference sequence from IMGT prior to assessing productivity of the sequence. This makes the assumption that sequence changes outside the junctional region are due to PCR/sequencing errors rather than being genuine polymorphisms. This is likely to be true for well-characterised mouse sequences but may be less so for human and other outbred populations. To determine productivity from only the assembled contig sequence for each recombinant use `-m assembly`.
-
-`-q/--quant_method` : Method used for expression quantification. Options are `-q salmon` and `-q kallisto` (default).
-
-`--single_end` : use this option if your data are single-end reads. If this option is set you must specify fragment length and fragment sd as below.
-
-`--fragment_length` : Estimated average fragment length in the sequencing library. Used for Kallisto quantification. Required for single-end data. Can also be set for paired-end data if you don't want Kallisto to estimate it directly.
-
-`--fragment_sd` : Estimated standard deviation of average fragment length in the sequencing library. Used for Kallisto quantification. Required for single-end data. Can also be set for paired-end data if you don't want Kallisto to estimate it directly.
-
-`--invariant_sequences`: Custom invariant sequence file. Use the default example in 'resources/Mmus/invariant_seqs.csv'
+* `-p/--ncores <int>` : number of processor cores available. This is passed to Bowtie2, Trinity, and Kallisto or Salmon. Default=1.
+* `-c/--config_file <conf_file>` : config file to use. Default = `~/.tracerrc`
+* `-s/--species` : Species from which the T cells were derived. Options are `Mmus` or `Hsap` for mouse or human data. This is only important for determination of iNKT cells in the `summarise` step because it defines the V segments that are indicative of iNKT cells. Default = `Mmus`.
+* `-r/--resume_with_existing_files` : if this is set, TraCeR will look for existing output files and not re-run steps that already appear to have been completed. This saves time if TraCeR died partway through a step and you want to resume where it left off.
+* `-m/--seq_method` : method by which to generate sequences for assessment of recombinant productivity. By default (`-m imgt`), TraCeR replaces all but the junctional sequence of each detected recombinant with the reference sequence from IMGT prior to assessing productivity of the sequence. This makes the assumption that sequence changes outside the junctional region are due to PCR/sequencing errors rather than being genuine polymorphisms. This is likely to be true for well-characterised mouse sequences but may be less so for human and other outbred populations. To determine productivity from only the assembled contig sequence for each recombinant use `-m assembly`.
+* `-q/--quant_method` : Method used for expression quantification. Options are `-q salmon` and `-q kallisto` (default).
+* `--single_end` : use this option if your data are single-end reads. If this option is set you must specify fragment length and fragment sd as below.
+* `--fragment_length` : Estimated average fragment length in the sequencing library. Used for Kallisto quantification. Required for single-end data. Can also be set for paired-end data if you don't want Kallisto to estimate it directly.
+* `--fragment_sd` : Estimated standard deviation of average fragment length in the sequencing library. Used for Kallisto quantification. Required for single-end data. Can also be set for paired-end data if you don't want Kallisto to estimate it directly.
+* `--invariant_sequences`: Custom invariant sequence file. Use the default example in 'resources/Mmus/invariant_seqs.csv'
 
 #### Output 
 
@@ -260,14 +251,14 @@ For each cell, an `/<output_directory>/<cell_name>` directory will be created. T
     tracer summarise [options] <input_dir>
 
 ##### Main argument 
-`<input_dir>` : directory containing subdirectories of each cell you want to summarise. 
+* `<input_dir>` : directory containing subdirectories of each cell you want to summarise. 
 
 ##### Options 
-`-c/--config_file <conf_file>` : config file to use. Default = `~/.tracerrc`
-`-u/--use_unfiltered` : Set this flag to use unfiltered recombinants for summary and networks rather than the recombinants filtered by expression level.  
-`-i/--keep_inkt` : TraCeR attempts to identify iNKT cells by their characteristic TCRA gene segments (TRAV11–TRAJ18). By default, these are removed before creation of clonotype networks. Setting this option retains the iNKT cells in all stages.    
-`-g/--graph_format` : Output format for the clonotype networks. This is passed directly to Graphviz and so must be one of the options detailed at http://www.graphviz.org/doc/info/output.html.  
-`--no_networks` : Don't try to draw clonotype network graphs. This is useful if you don't have a working installation of Graphviz.
+* `-c/--config_file <conf_file>` : config file to use. Default = `~/.tracerrc`
+* `-u/--use_unfiltered` : Set this flag to use unfiltered recombinants for summary and networks rather than the recombinants filtered by expression level.  
+* `-i/--keep_inkt` : TraCeR attempts to identify iNKT cells by their characteristic TCRA gene segments (TRAV11–TRAJ18). By default, these are removed before creation of clonotype networks. Setting this option retains the iNKT cells in all stages.    
+* `-g/--graph_format` : Output format for the clonotype networks. This is passed directly to Graphviz and so must be one of the options detailed at http://www.graphviz.org/doc/info/output.html.  
+* `--no_networks` : Don't try to draw clonotype network graphs. This is useful if you don't have a working installation of Graphviz.
 
 #### Output 
 Output is written to `<input_dir>/filtered_TCR_summary` or `<input_dir>/unfiltered_TCR_summary` depending on whether the `--use_unfiltered` option was set.
@@ -290,30 +281,19 @@ The following output files are generated:
 ### *Build*: Build Combinatorial Recombinomes for a Given Species
 
 #### Usage
-    tracer build [options]
+    tracer build <species> <receptor_name> <locus_name> <N_padding> <colour> <V_seqs> <J_seqs> <C_seqs> <D_seqs>
 
 #### Main Arguments
-`<species>` : Species (e.g. Mmus).
-
-`<receptor_name>` : Name of receptor (e.g. TCR).
-
-`<locus_name>` : Name of locus (e.g. A)
-
-`<N_padding>` : Number of ambiguous N nucleotides between V and J
-
-`<colour>` : Colour for the productive recombinants (optional). Specify as HTML (e.g. E41A1C) or use "random"
-
-`<V_seqs>` : Fasta file containing V gene sequences
-
-`<J_seqs>` : Fasta file containing J gene sequences
-
-`<C_seqs>` : Fasta file containing single constant region sequence
-
-`<J_seqs>` : Fasta file containing J gene sequences
-
-`<D_seqs>` : Fasta file containing D gene sequences (optional)
+* `<species>` : Species (e.g. Mmus).
+* `<receptor_name>` : Name of receptor (e.g. TCR).
+* `<locus_name>` : Name of locus (e.g. A)
+* `<N_padding>` : Number of ambiguous N nucleotides between V and J
+* `<colour>` : Colour for the productive recombinants (optional). Specify as HTML (e.g. E41A1C) or use "random"
+* `<V_seqs>` : Fasta file containing V gene sequences
+* `<J_seqs>` : Fasta file containing J gene sequences
+* `<C_seqs>` : Fasta file containing single constant region sequence
+* `<D_seqs>` : Fasta file containing D gene sequences (optional)
 
 #### Options
 
-`-f/--force_overwrite` : Force overwrite of existing resources
-
+* `-f/--force_overwrite` : Force overwrite of existing resources

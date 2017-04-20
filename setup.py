@@ -8,7 +8,7 @@ def read(fname):
 
 setup(
     name='tracer',
-    version=0.1,
+    version=0.5,
     author="Mike Stubbington",
     entry_points={
         'console_scripts': [
