@@ -20,6 +20,7 @@ import pdb
 
 import json
 
+
 def makeOutputDir(output_dir_path):
     if not os.path.exists(output_dir_path):
         os.mkdir(output_dir_path)
@@ -66,35 +67,37 @@ def load_IMGT_seqs(file):
 
 def parse_IgBLAST(receptor, loci, output_dir, cell_name, raw_seq_dir, species,
                   seq_method, max_junc_len=50, invariant_seqs=None):
-    
     IMGT_seqs = dict()
-    #expecting_D = dict()
-    
+    # expecting_D = dict()
+
     loci_for_segments = defaultdict(list)
-    
-    #for locus in loci:
+
+    # for locus in loci:
     #    expecting_D[locus] = False
     for locus in loci:
-        seq_files = glob.glob(os.path.join(raw_seq_dir, "{receptor}_{locus}_*.fa".format(receptor=receptor, 
-                                                                                    locus=locus)))
+        seq_files = glob.glob(os.path.join(raw_seq_dir,
+                                           "{receptor}_{locus}_*.fa".format(
+                                               receptor=receptor,
+                                               locus=locus)))
         for f in seq_files:
-            #if not f.endswith("_C.fa"):
-                segment_name = os.path.splitext(os.path.split(f)[1])[0]
-                IMGT_seqs[segment_name] = load_IMGT_seqs(f)
-                #if segment_name.split("_")[2] == 'D':
-                #    expecting_D[locus] = True
-                loci_for_segments[segment_name.split("_")[2]].append(locus)
-                    
-    #segment_names = ['TRAJ', 'TRAV', 'TRBD', 'TRBJ', 'TRBV']
-    #IMGT_seqs = dict()
-    #for segment in segment_names:
+            # if not f.endswith("_C.fa"):
+            segment_name = os.path.splitext(os.path.split(f)[1])[0]
+            IMGT_seqs[segment_name] = load_IMGT_seqs(f)
+            # if segment_name.split("_")[2] == 'D':
+            #    expecting_D[locus] = True
+            loci_for_segments[segment_name.split("_")[2]].append(locus)
+
+    # segment_names = ['TRAJ', 'TRAV', 'TRBD', 'TRBJ', 'TRBV']
+    # IMGT_seqs = dict()
+    # for segment in segment_names:
     #    IMGT_seqs[segment] = load_IMGT_seqs("{}/{}.fa".format(imgt_seq_location, segment))
-    
-    locus_names = ["_".join([receptor,x]) for x in loci]
+
+    locus_names = ["_".join([receptor, x]) for x in loci]
     all_locus_data = defaultdict(dict)
     for locus in locus_names:
-        file = "{output_dir}/IgBLAST_output/{cell_name}_{locus}.IgBLASTOut".format(output_dir=output_dir,
-                                                                                   cell_name=cell_name, locus=locus)
+        file = "{output_dir}/IgBLAST_output/{cell_name}_{locus}.IgBLASTOut".format(
+            output_dir=output_dir,
+            cell_name=cell_name, locus=locus)
         if os.path.isfile(file):
             igblast_result_chunks = split_igblast_file(file)
 
@@ -104,8 +107,10 @@ def parse_IgBLAST(receptor, loci, output_dir, cell_name, raw_seq_dir, species,
                 all_locus_data[locus][query_name] = chunk_details
         else:
             all_locus_data[locus] = None
-    cell = find_possible_alignments(all_locus_data, locus_names, cell_name, IMGT_seqs, output_dir, species, seq_method,
-                                     invariant_seqs, loci_for_segments, receptor, loci, max_junc_len)
+    cell = find_possible_alignments(all_locus_data, locus_names, cell_name,
+                                    IMGT_seqs, output_dir, species, seq_method,
+                                    invariant_seqs, loci_for_segments, receptor,
+                                    loci, max_junc_len)
     return (cell)
 
 
@@ -118,8 +123,9 @@ def split_igblast_file(filename):
     with open(filename) as fh:
         for line in fh:
             line = line.rstrip()
-                
-            if line.startswith(token) and current_chunk and not line.startswith("Total queries"):
+
+            if line.startswith(token) and current_chunk and not line.startswith(
+                    "Total queries"):
                 # if line starts with token and the current chunk is not empty
                 chunks.append(current_chunk[:])  # add not empty chunk to chunks
                 current_chunk = []  # make current chunk blank
@@ -130,22 +136,6 @@ def split_igblast_file(filename):
         chunks.append(current_chunk)  # append the last chunk outside the loop
     return (chunks)
 
-
-# def check_binary(name, user_path=None):
-#     if user_path:
-#         if not is_exe(user_path):
-#             print("The user provided path for {name} is not executable {user_path}. "
-#                   "Checking PATH for alternative... ".format(name=name, user_path=user_path))
-#         else:
-#             return user_path
-#     if sys.version_info[0] < 3:
-#         binary_path = distutils.spawn.find_executable(name)
-#     else:
-#         binary_path = shutil.which(name)
-#     if not binary_path:
-#     else:
-#         print("Binary for {name} found at {binary_path}.".format(name=name, binary_path=binary_path))
-#         return binary_path
 
 def check_binary(name, user_path=None):
     def is_exe(fpath):
@@ -161,18 +151,19 @@ def check_binary(name, user_path=None):
             if is_exe(exe_file):
                 return exe_file
 
-    raise OSError("Required binary not found: {name}. Please add to PATH or specify location in config file."
-                  .format(name=name))
+    raise OSError(
+        "Required binary not found: {name}. Please add to PATH or specify location in config file."
+        .format(name=name))
 
 
 def parse_invariant_cells(filename):
-
     invariant_cells = []
     with open(filename) as fh:
         json_dict = json.load(fh)
         for c in json_dict:
             invariant_cells.append(Invar_cell(c))
     return invariant_cells
+
 
 def read_colour_file(filename, return_used_list=False, receptor_name=None):
     colour_map = dict()
@@ -181,8 +172,8 @@ def read_colour_file(filename, return_used_list=False, receptor_name=None):
         for line in f:
             line = line.rstrip()
             receptor, locus, prod_colour, nonprod_colour = line.split(",")
-            d = {locus : (prod_colour, nonprod_colour)}
-            
+            d = {locus: (prod_colour, nonprod_colour)}
+
             if receptor in colour_map:
                 colour_map[receptor].update(d)
             else:
@@ -196,7 +187,8 @@ def read_colour_file(filename, return_used_list=False, receptor_name=None):
         return t
     else:
         return colour_map
-            
+
+
 def write_colour_file(filename, colour_map):
     sorted_receptors = sorted(colour_map.keys())
     with open(filename, 'w') as f:
@@ -204,4 +196,5 @@ def write_colour_file(filename, colour_map):
             sorted_loci = sorted(colour_map[receptor].keys())
             for l in sorted_loci:
                 colours = colour_map[receptor][l]
-                f.write("{},{},{},{}\n".format(receptor, l, colours[0], colours[1]))
+                f.write(
+                    "{},{},{},{}\n".format(receptor, l, colours[0], colours[1]))
