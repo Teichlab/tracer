@@ -1,0 +1,39 @@
+[
+    {
+        "cell_name" : "iNKT",
+        "receptor_type" : "TCR",
+        "defining_locus" : "A",
+        "recombinants":
+            {
+                "A":
+                [
+                    {"V":"TRAV11", "J":"TRAJ18"}
+                ],
+                "B":
+                [
+                    {"V":"TRBV1", "J":"*"},
+                    {"V":"TRBV29", "J":"*"},
+                    {"V":"TRBV13-1", "J":"*"},
+                    {"V":"TRBV13-2", "J":"*"},
+                    {"V":"TRBV13-3", "J":"*"}
+                ]
+            }
+    },
+    {
+        "cell_name" : "MAIT",
+        "receptor_type" : "TCR",
+        "defining_locus" : "A",
+        "recombinants":
+            {
+                "A":
+                [
+                    {"V":"TRAV1-2", "J":"TRAJ33"}
+                ],
+                "B":
+                [
+                    {"V":"TRBV13", "J":"*"},
+                    {"V":"TRBV19", "J":"*"}
+                ]
+            }
+    }
+]
