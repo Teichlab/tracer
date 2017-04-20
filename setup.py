@@ -12,7 +12,7 @@ setup(
     author="Mike Stubbington",
     entry_points={
         'console_scripts': [
-            'tracer=tracer.tracerlib.__main__'
+            'tracer = tracerlib.launcher:launch'
         ]
     },
     author_email="mike.stubbington@sanger.ac.uk",

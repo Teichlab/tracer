@@ -354,7 +354,10 @@ class Assembler(TracerTask):
 
     def de_novo_assemble(self):
 
-        trinity = self.get_binary('trinity')
+        try:
+            trinity = self.get_binary('trinity')
+        except OSError:
+            trinity = self.get_binary('Trinity')
 
         # Trinity version
         if not self.config.has_option('trinity_options', 'trinity_version'):
@@ -764,33 +767,34 @@ class Summariser(TracerTask):
                  ivc_loci = []
                  found_ivcs = {}
                  defining_locus = ivc.defining_locus
-                 ivc_loci.append(defining_locus)
-                 for cell in cells.values():
-                     found_idents = {}
-                     found_defining_locus, defining_id = ivc.check_for_match(cell, defining_locus)
-                     if found_defining_locus:
-                         found_idents[ivc.defining_locus] = defining_id
+                 if defining_locus in self.loci:
+                    ivc_loci.append(defining_locus)
+                    for cell in cells.values():
+                        found_idents = {}
+                        found_defining_locus, defining_id = ivc.check_for_match(cell, defining_locus)
+                        if found_defining_locus:
+                            found_idents[ivc.defining_locus] = defining_id
 
-                         for l in ivc.invariant_recombinants.keys():
-                             if not l==defining_locus:
-                                 ivc_loci.append(l)
-                                 if l in cell.recombinants[ivc.receptor_type] and \
-                                 cell.recombinants[ivc.receptor_type][l] is not None:
-                                     found_other_locus, invar_id = ivc.check_for_match(cell, l)
-                                     if found_other_locus:
-                                         pass
-                                     else:
-                                         invar_id = "Invariant recombinant not found for {}_{}. {} found in total ({})".format(
-                                             ivc.receptor_type, l, len(cell.recombinants[ivc.receptor_type][l]),
-                                             cell.getMainRecombinantIdentifiersForLocus(ivc.receptor_type, l))
+                            for l in ivc.invariant_recombinants.keys():
+                                if not l==defining_locus:
+                                    ivc_loci.append(l)
+                                    if l in cell.recombinants[ivc.receptor_type] and \
+                                    cell.recombinants[ivc.receptor_type][l] is not None:
+                                        found_other_locus, invar_id = ivc.check_for_match(cell, l)
+                                        if found_other_locus:
+                                            pass
+                                        else:
+                                            invar_id = "Invariant recombinant not found for {}_{}. {} found in total ({})".format(
+                                                ivc.receptor_type, l, len(cell.recombinants[ivc.receptor_type][l]),
+                                                cell.getMainRecombinantIdentifiersForLocus(ivc.receptor_type, l))
 
-                                 else:
-                                     invar_id = "No sequences reconstructed for {}_{}".format(ivc.receptor_type, l)
-                                 found_idents[l] = invar_id
+                                    else:
+                                        invar_id = "No sequences reconstructed for {}_{}".format(ivc.receptor_type, l)
+                                    found_idents[l] = invar_id
 
 
-                         found_ivcs[cell.name] = found_idents
-                         invariant_cells.append(cell.name)
+                            found_ivcs[cell.name] = found_idents
+                            invariant_cells.append(cell.name)
 
                  if len(found_ivcs) > 0:
                      outfile.write("\n#{} cells#\n".format(ivc.name))
