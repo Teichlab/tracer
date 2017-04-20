@@ -1129,13 +1129,39 @@ def quantify_with_kallisto(kallisto, cell, output_dir, cell_name, kallisto_base_
 
 
 
+def quantify_with_kallisto_from_index(kallisto, cell, quant_dir, cell_name, kallisto_base_index, fastq1, fastq2,
+                           ncores, should_resume, single_end, fragment_length, fragment_sd):
+
+    print("\n##Quantifying with Kallisto (from existing index)##")
+    
+    if should_resume:
+        if os.path.isfile("{}/abundance.tsv".format(quant_dir)):
+            print("Resuming with existing Kallisto output")
+            return
+   
+    idx_file = kallisto_base_index
+
+    if not single_end:
+        if not fragment_length:
+            kallisto_command = [kallisto, 'quant', '-i', idx_file, '-t', ncores, '-o',
+                                quant_dir, fastq1, fastq2]
+        else:
+            kallisto_command = [kallisto, 'quant', '-i', idx_file, '-t', ncores, '-l', fragment_length, '-o',
+                                quant_dir, fastq1, fastq2]
+    else:
+        kallisto_command = [kallisto, 'quant', '-i', idx_file, '-t', ncores, '--single', '-l', fragment_length,
+                            '-s', fragment_sd, '-o', quant_dir, fastq1]
+
+    subprocess.check_call(kallisto_command)
+
+
+
 
 
 def quantify_with_salmon(salmon, cell, output_dir, cell_name, salmon_base_transcriptome, fastq1, fastq2,
                            ncores, should_resume, single_end, fragment_length, fragment_sd, libType, kmerLen):
-
-    ##### print("##Running Salmon##")
-
+    print("\n##Running Salmon##")
+    
     if should_resume:
         if os.path.isfile("{}/expression_quantification/quant.sf".format(output_dir)):
             print("Resuming with existing Salmon output")
@@ -1165,7 +1191,7 @@ def quantify_with_salmon(salmon, cell, output_dir, cell_name, salmon_base_transc
     index_command = [salmon, 'index', '-t', output_transcriptome, '-i', idx_file, '-k', str(kmerLen), '-p', ncores]
     subprocess.check_call(index_command)
 
-    print("\n ##Quantifying with Salmon##")
+    print("\n##Quantifying with Salmon##")
 
     if not single_end:
         if not fragment_length:
@@ -1188,4 +1214,84 @@ def quantify_with_salmon(salmon, cell, output_dir, cell_name, salmon_base_transc
 
     shutil.rmtree("{}/expression_quantification/salmon_index/".format(output_dir))
 
+
+def quantify_with_salmon_from_index(salmon, cell, quant_dir, cell_name, salmon_base_index, fastq1, fastq2,
+                           ncores, should_resume, single_end, fragment_length, fragment_sd, libType, kmerLen):
+
+    print("\n##Quantifying with Salmon (from existing index)##")
     
+    if should_resume:
+        if os.path.isfile("{}/quant.sf".format(quant_dir)):
+            print("Resuming with existing Salmon output")
+            return
+   
+    idx_file = salmon_base_index
+
+    if not single_end:
+        if not fragment_length:
+            salmon_command = [salmon, 'quant', '-i', idx_file, '-l', libType, '-p', ncores,
+                              '-1', fastq1,'-2', fastq2,'-o', quant_dir]
+        else:
+            salmon_command = [salmon, 'quant', '-i', idx_file, '-l', libType, '-p', ncores,
+                              '--fldMean',fragment_length,'-1', fastq1,'-2', fastq2,
+                              '-o', quant_dir]                     
+    else:
+        salmon_command = [salmon, 'quant', '-i', idx_file,'-l', libType, '-p', ncores,
+                          '--fldMean',fragment_length, '--fldSD', fragment_sd, '-r', fastq1,
+                          '-o', quant_dir]
+
+    subprocess.check_call(salmon_command)
+   
+    
+
+def extract_newref_from_quant(reffile, quantfile, tpmcol, newreffile):
+
+    print("\n##Extracting new (smaller) reference transcriptome from first quantification (using existing index)##")
+
+    ref_ids=[];
+    ref_seqs=[];
+
+    # read reffile -> ref_ids, ref_seqs
+    seqstring=""
+    with open(reffile, 'r') as fref:
+        for line in fref:
+            if(line[0]==">"):
+                seqid=(line.split(' ',1)[0]).strip('\n')
+                if(seqstring!=""):
+                    ref_seqs.append(seqstring)
+                seqstring=""
+                ref_ids.append(seqid)
+            else:
+                seqstring=seqstring+line.strip('\n').strip(' ')
+    if(seqstring!=""):
+        ref_seqs.append(seqstring)
+
+    ## check length match
+    if(len(ref_ids)!=len(ref_seqs)):
+        raise OSError("Reading in reference transcriptome failed.")
+
+    # write to newreffile all sequences with TPM > 0 in quantfile 
+    fnew= open(newreffile, 'w')
+    seq_num=0
+    sel_count=0
+    with open(quantfile, 'r') as fquant:
+        next(fquant) ## skip header of quantfile
+        for line in fquant:
+            line=line.strip('\n')
+            line=line.strip(' ')
+            words=line.split()
+            if(len(line)>0):
+                tpmval=float(words[tpmcol])
+                if(tpmval>0):
+                    if(">"+words[0] == ref_ids[seq_num]):                    
+                        fnew.write(ref_ids[seq_num]+"\n")
+                        fnew.write(ref_seqs[seq_num]+"\n")
+                        sel_count+=1
+                    else:
+                        raise OSError("SEQ IDs of reference transcriptome and quantification file don't match.")
+                    
+                seq_num+=1
+                
+    fnew.close()
+     
+    return 0

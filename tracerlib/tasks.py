@@ -188,6 +188,8 @@ class Assembler(TracerTask):
             parser.add_argument('--quant_method', '-q',
                                 help='Method for expression quantification. See README for details.',
                                 choices=['kallisto', 'salmon'], default='kallisto')            
+            parser.add_argument('--small_index', help='Set this to speed up expression quantification by using a smaller index. See README for details.',
+                                action="store_true")
             parser.add_argument('--single_end', help='set this if your sequencing data are single-end reads',
                                 action="store_true")
             parser.add_argument('--fragment_length',
@@ -219,6 +221,7 @@ class Assembler(TracerTask):
             self.species = args.species
             self.seq_method = args.seq_method
             self.quant_method = args.quant_method
+            self.small_index = args.small_index
             self.resume_with_existing_files = args.resume_with_existing_files
             self.fragment_length = args.fragment_length
             self.fragment_sd = args.fragment_sd
@@ -236,6 +239,7 @@ class Assembler(TracerTask):
             self.species = kwargs.get('species')
             self.seq_method = kwargs.get('seq_method')
             self.quant_method = kwargs.get('quant_method')
+            self.small_index = kwargs.get('small_index')
             self.resume_with_existing_files = kwargs.get('resume_with_existing_files')
             self.output_dir = kwargs.get('output_dir')
             self.single_end = kwargs.get('single_end')
@@ -412,50 +416,91 @@ class Assembler(TracerTask):
             raise OSError("No transcriptome reference specified for {species}. Please specify location in config file."
                           .format(species = self.species))
         else:
-            base_transcriptome = self.resolve_relative_path(self.config.get('base_transcriptomes',
-                                                                                 self.species))
+            base_transcriptome = self.resolve_relative_path(self.config.get('base_transcriptomes',self.species))                                                                                 
+            if not os.path.isfile(base_transcriptome):
+                raise OSError('2', 'Transcriptome reference not found', base_transcriptome)
 
+        
+        # set up Salmon/Kallisto parameters
+        
         if self.quant_method == 'salmon':
-
-            # Quantification with salmon
-
-            print("##Running Salmon##")
-
             salmon = self.get_binary('salmon')
-
             if self.config.has_option('salmon_options', 'libType'):
                 salmon_libType = self.config.get('salmon_options','libType')
             else:
                 print("No library type specified for salmon in the configuration file. Using automatic detection (--libType A).")
                 salmon_libType = 'A'
-        
             if self.config.has_option('salmon_options', 'kmerLen'):
                 salmon_kmerLen = self.config.get('salmon_options','kmerLen')
             else:
                 print("No kmer length specified for salmon in the configuration file. Using default value of 31.")
                 salmon_kmerLen = 31
 
+        else:
+            kallisto = self.get_binary('kallisto')
 
-            tracer_func.quantify_with_salmon(salmon, cell, self.output_dir, self.cell_name, base_transcriptome,
+
+        # small-index method: filter base_transcriptome -> ref_transcriptome
+        
+        if self.small_index:
+            
+            if not self.config.has_option("{}{}".format(self.quant_method,'_base_indices'), self.species):
+                raise OSError("No {method} {species} reference index specified to be used with option --small_index. Please specify location in config file.".format(method = self.quant_method, species = self.species))
+            else:
+                base_index = self.resolve_relative_path(self.config.get("{}{}".format(self.quant_method,'_base_indices'), self.species))
+                if not os.path.exists(base_index):
+                    raise OSError('2', 'Reference index not found', base_index)
+
+
+            smind_dir="{}/{}".format(self.output_dir, 'expression_quantification_from_base_index')
+            new_ref_transcriptome="{}/{}".format(smind_dir, 'newref.fa')
+            io.makeOutputDir(smind_dir)
+
+            if self.quant_method == 'salmon':
+                tracer_func.quantify_with_salmon_from_index(salmon, cell, smind_dir, self.cell_name, base_index,
+                                               self.fastq1, self.fastq2, self.ncores, self.resume_with_existing_files,
+                                               self.single_end, self.fragment_length, self.fragment_sd,salmon_libType,salmon_kmerLen)
+                
+                quantfile="{}/{}".format(smind_dir,'quant.sf')
+                tpmcol=3 ## TPM col = 3 in quant.sf
+                
+            else: # use kallisto
+                tracer_func.quantify_with_kallisto_from_index(kallisto, cell, smind_dir, self.cell_name, base_index,
+                                               self.fastq1, self.fastq2, self.ncores, self.resume_with_existing_files,
+                                               self.single_end, self.fragment_length, self.fragment_sd)
+   
+                quantfile="{}/{}".format(smind_dir,'abundance.tsv')
+                tpmcol=4 ## TPM col = 4 in abundance.tsv
+            
+                
+            tracer_func.extract_newref_from_quant(base_transcriptome,quantfile,tpmcol,new_ref_transcriptome)
+            ref_transcriptome=new_ref_transcriptome
+            
+        else:
+            ## use entire base_transcriptome for index construction as usual
+            ref_transcriptome = base_transcriptome
+
+
+        # actual quantification of TCR Seq
+        
+        if self.quant_method == 'salmon':
+            tracer_func.quantify_with_salmon(salmon, cell, self.output_dir, self.cell_name, ref_transcriptome,
                                                self.fastq1, self.fastq2, self.ncores, self.resume_with_existing_files,
                                                self.single_end, self.fragment_length, self.fragment_sd,salmon_libType,salmon_kmerLen)
             print()
-
             counts = tracer_func.load_salmon_counts("{}/expression_quantification/quant.sf".format(self.output_dir))
-
         else:
-            
-            # Quantification with kallisto
-
-            kallisto = self.get_binary('kallisto')
-        
-            tracer_func.quantify_with_kallisto(kallisto, cell, self.output_dir, self.cell_name, base_transcriptome,
+            tracer_func.quantify_with_kallisto(kallisto, cell, self.output_dir, self.cell_name, ref_transcriptome,
                                                self.fastq1, self.fastq2, self.ncores, self.resume_with_existing_files,
                                                self.single_end, self.fragment_length, self.fragment_sd)
             print()
-
             counts = tracer_func.load_kallisto_counts("{}/expression_quantification/abundance.tsv".format(self.output_dir))
 
+                    
+        if self.small_index:
+            os.remove(new_ref_transcriptome) # remove filtered reference file
+        #     ## shutil.rmtree(smind_dir)
+        
             
         for receptor, locus_dict in six.iteritems(cell.recombinants):
             for locus, recombinants in six.iteritems(locus_dict):
