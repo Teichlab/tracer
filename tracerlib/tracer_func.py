@@ -559,12 +559,12 @@ def collapse_close_sequences(recombinants, locus):
                         and comp_name in filtered_contig_names:
                     # pdb.set_trace()
                     # define re pattern here to find TRAVx[DN] or TRDVx[DN] depending on locus
-                    if locus == "TCRA":
+                    if locus == "TCR_A":
                         duplicate_pattern = re.compile(r"TRAV\d+[DN]")
                         segment_pattern = re.compile(
                             r"TRAV(\d+)([DN])?(-\d)?.+")
                         attempt_collapse = True
-                    elif locus == "TCRD":
+                    elif locus == "TCR_D":
                         duplicate_pattern = re.compile(r"DV\d+[DN]")
                         segment_pattern = re.compile(r"DV(\d+)([DN])?(-\d)?.+")
                         attempt_collapse = True
@@ -596,12 +596,12 @@ def collapse_close_sequences(recombinants, locus):
 
                 elif lev_dist < 75 and not base_id == comp_id and base_name in filtered_contig_names \
                         and comp_name in filtered_contig_names:
-                    if locus == "TCRA":
+                    if locus == "TCR_A":
                         duplicate_pattern = re.compile(r"TRAV\d+[DN]")
                         segment_pattern = re.compile(
                             r"TRAV(\d+)([DN])?(-\d)?.+")
                         attempt_collapse = True
-                    elif locus == "TCRD":
+                    elif locus == "TCR_D":
                         duplicate_pattern = re.compile(r"DV\d+[DN]")
                         segment_pattern = re.compile(r"DV(\d+)([DN])?(-\d)?.+")
                         attempt_collapse = True
