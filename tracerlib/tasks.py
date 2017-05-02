@@ -936,7 +936,7 @@ class Summariser(TracerTask):
                         cell_name=cell_name,
                         receptor=self.receptor_name,
                         loci=self.loci))
-
+        #pdb.set_trace()
         recombinant_data = pd.DataFrame(recombinant_data)
 
         # make clonotype networks
@@ -969,12 +969,18 @@ class Summariser(TracerTask):
                                          "group_size": group_len})
 
         group_membership = pd.DataFrame(group_membership)
-
-        cell_data = pd.merge(recombinant_data, group_membership, how='outer',
-                             on='cell_name')
+        
+        if not group_membership.empty:
+            cell_data = pd.merge(recombinant_data, group_membership, how='outer',
+                                 on='cell_name')
+        else:
+            cell_data = recombinant_data.copy()
+            cell_data['clonal_group'] = ''
+            cell_data['group_size'] = ''
+            
         cell_data.set_index("cell_name", inplace=True)
         cell_data.to_csv(os.path.join(outdir, "cell_data.csv"))
-
+        #pdb.set_trace()
         # plot clonotype sizes
         plt.figure()
         clonotype_sizes = tracer_func.get_component_groups_sizes(cells,

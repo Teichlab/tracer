@@ -390,6 +390,7 @@ class Invar_cell(object):
         self.expected_string = self._get_expected_string()
 
     def check_for_match(self, cell, locus):
+        #pdb.set_trace()
         found_identifiers = set()
         found_locus = False
 
