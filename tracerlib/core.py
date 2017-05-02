@@ -390,7 +390,6 @@ class Invar_cell(object):
         self.expected_string = self._get_expected_string()
 
     def check_for_match(self, cell, locus):
-        #pdb.set_trace()
         found_identifiers = set()
         found_locus = False
 
@@ -405,8 +404,8 @@ class Invar_cell(object):
                         v = ident[0]
                         j = ident[2]
                         for ivr in invariant_recs:
-                            if (v in ivr['V'] or ivr['V'] == '*') and (
-                                    j in ivr['J'] or ivr['J'] == '*'):
+                            if (v == ivr['V'] or ivr['V'] == '*') and (
+                                    j == ivr['J'] or ivr['J'] == '*'):
                                 found_locus = True
                                 found_identifiers.add("_".join(ident))
 
