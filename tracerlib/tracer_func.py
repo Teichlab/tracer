@@ -1,6 +1,6 @@
 ##############################################################################
 #                         Functions for use with                             #
-# TraCeR - a tool to reconstruct TCR sequences from single-cell RNA-seq data #    
+# TraCeR - a tool to reconstruct TCR sequences from single-cell RNA-seq data #
 #                                                                            #
 # Please see README and LICENCE for details of use and licence conditions.   #
 # This software was written by Mike Stubbington (ms31@sanger.ac.uk) from the #
@@ -140,7 +140,8 @@ def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs,
 
                     identifier = best_V + "_" + junc_string + "_" + best_J
 
-                    ##line attempting to add alignment summary to data for use with PCR comparisons
+                    # line attempting to add alignment summary to data for use
+                    # with PCR comparisons
                     alignment_summary = query_data['alignment_summary']
 
                     all_V_names = [remove_allele_stars(x) for x in
@@ -220,7 +221,8 @@ def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs,
     if recombinants:
         for locus, rs in six.iteritems(recombinants):
             # Adding code to collapse sequences with very low Levenshtein distances caused by confusion between
-            # TRAVxD and TRAVx segments with different alignment lengths from IgBlast.
+            # TRAVxD and TRAVx segments with different alignment lengths from
+            # IgBlast.
             recombinants[locus] = collapse_close_sequences(rs, locus)
 
         cell = Cell(cell_name, recombinants, species=species, receptor=receptor,
@@ -377,7 +379,6 @@ def get_fasta_line_for_contig_imgt(rearrangement_summary, junction_details,
             best_J_seq = best_J_seq[length_in_parens:]
         junc_seqs = [VD_junc, D_region, DJ_junc]
 
-
     else:
         VJ_junc = junction_details[1]
         # junctions in parentheses are represented in the coordinates of the matched segments.
@@ -398,7 +399,8 @@ def get_fasta_line_for_contig_imgt(rearrangement_summary, junction_details,
 
     constant_seq = list(IMGT_seqs["_".join([locus, 'C'])].values())[0]
 
-    # Editing IMGT V and J sequences to include any alterations from the junction details
+    # Editing IMGT V and J sequences to include any alterations from the
+    # junction details
     V_end_seq = junction_details[0]
     J_start_seq = junction_details[-1]
     best_V_seq = best_V_seq[:-(len(V_end_seq))]
@@ -418,7 +420,8 @@ def get_fasta_line_for_contig_imgt(rearrangement_summary, junction_details,
 
 
 def is_rearrangement_productive(seq):
-    # returns a tuple of three true/false values (productive, contains stop, in-frame)
+    # returns a tuple of three true/false values (productive, contains stop,
+    # in-frame)
     seq_mod_3 = len(seq) % 3
     if seq_mod_3 == 0:
         in_frame = True
@@ -466,7 +469,8 @@ def get_fasta_line_for_contig_assembly(trinity_seq, hit_table, locus, IMGT_seqs,
         if V_pattern.search(segment) and not found_best_V:
             V_locus_key = V_locus_key = "_".join([locus, 'V'])
             best_V_name = segment
-            # Remove forward slashes from shared A/D gene names to be the same as in the IMGT files.
+            # Remove forward slashes from shared A/D gene names to be the same
+            # as in the IMGT files.
             segment = segment.replace("/", "_")
             ref_V_seq = IMGT_seqs[V_locus_key][segment]
 
@@ -508,7 +512,8 @@ def get_fasta_line_for_contig_assembly(trinity_seq, hit_table, locus, IMGT_seqs,
     else:
         in_frame = False
 
-    # remove the minimal nucleotides from the trinity sequence to check for stop codons
+    # remove the minimal nucleotides from the trinity sequence to check for
+    # stop codons
     start_base_removal_count = (3 - (ref_V_start - 1)) % 3
     end_base_removal_count = (1 - end_padding) % 3
 
@@ -558,7 +563,8 @@ def collapse_close_sequences(recombinants, locus):
                 if lev_dist < 35 and not base_id == comp_id and base_name in filtered_contig_names \
                         and comp_name in filtered_contig_names:
                     # pdb.set_trace()
-                    # define re pattern here to find TRAVx[DN] or TRDVx[DN] depending on locus
+                    # define re pattern here to find TRAVx[DN] or TRDVx[DN]
+                    # depending on locus
                     if locus == "TCR_A":
                         duplicate_pattern = re.compile(r"TRAV\d+[DN]")
                         segment_pattern = re.compile(
@@ -573,9 +579,9 @@ def collapse_close_sequences(recombinants, locus):
                             "{}_vs_{}".format(base_name, comp_name))
                         attempt_collapse = False
                     if attempt_collapse and (
-                                duplicate_pattern.search(
-                                    base_V_segment) or duplicate_pattern.search(
-                                comp_V_segment)):
+                        duplicate_pattern.search(
+                            base_V_segment) or duplicate_pattern.search(
+                            comp_V_segment)):
                         base_segment = get_segment_name(base_V_segment,
                                                         segment_pattern)
                         comp_segment = get_segment_name(comp_V_segment,
@@ -610,16 +616,16 @@ def collapse_close_sequences(recombinants, locus):
                             "{}_vs_{}".format(base_name, comp_name))
                         attempt_collapse = False
                     if attempt_collapse and (
-                                duplicate_pattern.search(
-                                    base_V_segment) or duplicate_pattern.search(
-                                comp_V_segment)):
+                        duplicate_pattern.search(
+                            base_V_segment) or duplicate_pattern.search(
+                            comp_V_segment)):
                         base_segment = get_segment_name(base_V_segment,
                                                         segment_pattern)
                         comp_segment = get_segment_name(comp_V_segment,
                                                         segment_pattern)
                         if (base_segment == comp_segment) and (
-                            base_junc == comp_junc) and (
-                                    base_J_segment == comp_J_segment):
+                                base_junc == comp_junc) and (
+                                base_J_segment == comp_J_segment):
                             # find alignment with lowest E value for V match
                             if base_e_value <= comp_e_value:
                                 filtered_contig_names.remove(comp_name)
@@ -711,12 +717,12 @@ def make_cell_network_from_dna(cells, keep_unlinked, shape, dot, neato,
                 shared_identifiers = 0
                 if current_cell.recombinants[receptor][locus] is not None:
                     for current_recombinant in \
-                    current_cell.recombinants[receptor][locus]:
+                            current_cell.recombinants[receptor][locus]:
                         current_id_set = current_recombinant.all_poss_identifiers
                         if comparison_cell.recombinants[receptor][
-                            locus] is not None:
+                                locus] is not None:
                             for comparison_recombinant in \
-                            comparison_cell.recombinants[receptor][locus]:
+                                    comparison_cell.recombinants[receptor][locus]:
                                 comparison_id_set = comparison_recombinant.all_poss_identifiers
                                 if len(current_id_set.intersection(
                                         comparison_id_set)) > 0:
@@ -826,12 +832,12 @@ def get_component_groups_sizes(cells, receptor, loci):
                 shared_identifiers = 0
                 if current_cell.recombinants[receptor][locus] is not None:
                     for current_recombinant in \
-                    current_cell.recombinants[receptor][locus]:
+                            current_cell.recombinants[receptor][locus]:
                         current_id_set = current_recombinant.all_poss_identifiers
                         if comparison_cell.recombinants[receptor][
-                            locus] is not None:
+                                locus] is not None:
                             for comparison_recombinant in \
-                            comparison_cell.recombinants[receptor][locus]:
+                                    comparison_cell.recombinants[receptor][locus]:
                                 comparison_id_set = comparison_recombinant.all_poss_identifiers
                                 if len(current_id_set.intersection(
                                         comparison_id_set)) > 0:
@@ -1026,9 +1032,9 @@ def assemble_with_trinity(trinity, receptor, loci, output_dir, cell_name,
             output_dir)
         if (os.path.isfile(trinity_report_successful) and os.path.isfile(
                 trinity_report_unsuccessful)) and (
-                        os.path.getsize(
-                            trinity_report_successful) > 0 or os.path.getsize(
-                    trinity_report_unsuccessful) > 0):
+            os.path.getsize(
+                trinity_report_successful) > 0 or os.path.getsize(
+                trinity_report_unsuccessful) > 0):
             print("Resuming with existing Trinity output")
             successful_files = glob.glob(
                 "{}/Trinity_output/*.fasta".format(output_dir))
@@ -1066,17 +1072,18 @@ def assemble_with_trinity(trinity, receptor, loci, output_dir, cell_name,
             subprocess.check_call(command)
             shutil.move('{}/Trinity_output/Trinity_{}_{}.Trinity.fasta'.format(
                 output_dir, cell_name, locus),
-                        '{}/Trinity_output/{}_{}.Trinity.fasta'.format(
-                            output_dir, cell_name, locus))
+                '{}/Trinity_output/{}_{}.Trinity.fasta'.format(
+                output_dir, cell_name, locus))
         except (subprocess.CalledProcessError, IOError):
             print("Trinity failed for locus")
 
     # clean up unsuccessful assemblies
     sleep(
         10)  # this gives the cluster filesystem time to catch up and stops weird things happening
-    successful_files = glob.glob("{}/Trinity_output/*.fasta".format(output_dir))
+    successful_files = glob.glob(
+        "{}/Trinity_output/*.fasta".format(output_dir))
     unsuccessful_directories = \
-    next(os.walk("{}/Trinity_output".format(output_dir)))[1]
+        next(os.walk("{}/Trinity_output".format(output_dir)))[1]
     for directory in unsuccessful_directories:
         shutil.rmtree("{}/Trinity_output/{}".format(output_dir, directory))
     successful_file_summary = "{}/Trinity_output/successful_trinity_assemblies.txt".format(
@@ -1162,7 +1169,8 @@ def run_IgBlast(igblast, receptor, loci, output_dir, cell_name, index_location,
         if len(locus_names) == 0:
             return
 
-    print("Performing IgBlast on {locus_names}".format(locus_names=locus_names))
+    print("Performing IgBlast on {locus_names}".format(
+        locus_names=locus_names))
 
     databases = {}
     for segment in ['V', 'D', 'J']:
@@ -1170,7 +1178,8 @@ def run_IgBlast(igblast, receptor, loci, output_dir, cell_name, index_location,
                                                   segment)
 
     # Lines below suppress Igblast warning about not having an auxliary file.
-    # Taken from http://stackoverflow.com/questions/11269575/how-to-hide-output-of-subprocess-in-python-2-7
+    # Taken from
+    # http://stackoverflow.com/questions/11269575/how-to-hide-output-of-subprocess-in-python-2-7
     DEVNULL = open(os.devnull, 'wb')
 
     for locus in locus_names:
@@ -1263,15 +1272,15 @@ def quantify_with_kallisto(kallisto, cell, output_dir, cell_name,
 
 
 def quantify_with_kallisto_from_index(kallisto, cell, quant_dir, cell_name, kallisto_base_index, fastq1, fastq2,
-                           ncores, should_resume, single_end, fragment_length, fragment_sd):
+                                      ncores, should_resume, single_end, fragment_length, fragment_sd):
 
     print("\n##Quantifying with Kallisto (from existing index)##")
-    
+
     if should_resume:
         if os.path.isfile("{}/abundance.tsv".format(quant_dir)):
             print("Resuming with existing Kallisto output")
             return
-   
+
     idx_file = kallisto_base_index
 
     if not single_end:
@@ -1288,15 +1297,13 @@ def quantify_with_kallisto_from_index(kallisto, cell, quant_dir, cell_name, kall
     subprocess.check_call(kallisto_command)
 
 
-
-
 def quantify_with_salmon(salmon, cell, output_dir, cell_name,
                          salmon_base_transcriptome, fastq1, fastq2,
                          ncores, should_resume, single_end, fragment_length,
                          fragment_sd, libType, kmerLen):
 
     print("\n##Running Salmon##")
-    
+
     if should_resume:
         if os.path.isfile(
                 "{}/expression_quantification/quant.sf".format(output_dir)):
@@ -1364,83 +1371,84 @@ def quantify_with_salmon(salmon, cell, output_dir, cell_name,
     shutil.rmtree(
         "{}/expression_quantification/salmon_index/".format(output_dir))
 
+
 def quantify_with_salmon_from_index(salmon, cell, quant_dir, cell_name, salmon_base_index, fastq1, fastq2,
-                           ncores, should_resume, single_end, fragment_length, fragment_sd, libType, kmerLen):
+                                    ncores, should_resume, single_end, fragment_length, fragment_sd, libType, kmerLen):
 
     print("\n##Quantifying with Salmon (from existing index)##")
-    
+
     if should_resume:
         if os.path.isfile("{}/quant.sf".format(quant_dir)):
             print("Resuming with existing Salmon output")
             return
-   
+
     idx_file = salmon_base_index
 
     if not single_end:
         if not fragment_length:
             salmon_command = [salmon, 'quant', '-i', idx_file, '-l', libType, '-p', ncores,
-                              '-1', fastq1,'-2', fastq2,'-o', quant_dir]
+                              '-1', fastq1, '-2', fastq2, '-o', quant_dir]
         else:
             salmon_command = [salmon, 'quant', '-i', idx_file, '-l', libType, '-p', ncores,
-                              '--fldMean',fragment_length,'-1', fastq1,'-2', fastq2,
-                              '-o', quant_dir]                     
+                              '--fldMean', fragment_length, '-1', fastq1, '-2', fastq2,
+                              '-o', quant_dir]
     else:
-        salmon_command = [salmon, 'quant', '-i', idx_file,'-l', libType, '-p', ncores,
-                          '--fldMean',fragment_length, '--fldSD', fragment_sd, '-r', fastq1,
+        salmon_command = [salmon, 'quant', '-i', idx_file, '-l', libType, '-p', ncores,
+                          '--fldMean', fragment_length, '--fldSD', fragment_sd, '-r', fastq1,
                           '-o', quant_dir]
 
     subprocess.check_call(salmon_command)
-   
-    
+
 
 def extract_newref_from_quant(reffile, quantfile, tpmcol, newreffile):
 
     print("\n##Extracting new (smaller) reference transcriptome from first quantification (using existing index)##")
 
-    ref_ids=[];
-    ref_seqs=[];
+    ref_ids = []
+    ref_seqs = []
 
     # read reffile -> ref_ids, ref_seqs
-    seqstring=""
+    seqstring = ""
     with open(reffile, 'r') as fref:
         for line in fref:
-            if(line[0]==">"):
-                seqid=(line.split(' ',1)[0]).strip('\n')
-                if(seqstring!=""):
+            if(line[0] == ">"):
+                seqid = (line.split(' ', 1)[0]).strip('\n')
+                if(seqstring != ""):
                     ref_seqs.append(seqstring)
-                seqstring=""
+                seqstring = ""
                 ref_ids.append(seqid)
             else:
-                seqstring=seqstring+line.strip('\n').strip(' ')
-    if(seqstring!=""):
+                seqstring = seqstring + line.strip('\n').strip(' ')
+    if(seqstring != ""):
         ref_seqs.append(seqstring)
 
-    ## check length match
-    if(len(ref_ids)!=len(ref_seqs)):
+    # check length match
+    if(len(ref_ids) != len(ref_seqs)):
         raise OSError("Reading in reference transcriptome failed.")
 
-    # write to newreffile all sequences with TPM > 0 in quantfile 
-    fnew= open(newreffile, 'w')
-    seq_num=0
-    sel_count=0
+    # write to newreffile all sequences with TPM > 0 in quantfile
+    fnew = open(newreffile, 'w')
+    seq_num = 0
+    sel_count = 0
     with open(quantfile, 'r') as fquant:
-        next(fquant) ## skip header of quantfile
+        next(fquant)  # skip header of quantfile
         for line in fquant:
-            line=line.strip('\n')
-            line=line.strip(' ')
-            words=line.split()
-            if(len(line)>0):
-                tpmval=float(words[tpmcol])
-                if(tpmval>0):
-                    if(">"+words[0] == ref_ids[seq_num]):                    
-                        fnew.write(ref_ids[seq_num]+"\n")
-                        fnew.write(ref_seqs[seq_num]+"\n")
-                        sel_count+=1
+            line = line.strip('\n')
+            line = line.strip(' ')
+            words = line.split()
+            if(len(line) > 0):
+                tpmval = float(words[tpmcol])
+                if(tpmval > 0):
+                    if(">" + words[0] == ref_ids[seq_num]):
+                        fnew.write(ref_ids[seq_num] + "\n")
+                        fnew.write(ref_seqs[seq_num] + "\n")
+                        sel_count += 1
                     else:
-                        raise OSError("SEQ IDs of reference transcriptome and quantification file don't match.")
-                    
-                seq_num+=1
-                
+                        raise OSError(
+                            "SEQ IDs of reference transcriptome and quantification file don't match.")
+
+                seq_num += 1
+
     fnew.close()
-     
+
     return 0

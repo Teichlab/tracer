@@ -147,9 +147,9 @@ class TracerTask(object):
         # Save cell in a pickle
         with open(
                 "{output_dir}/unfiltered_{receptor}_seqs/{cell_name}.pkl".format(
-                        output_dir=self.output_dir,
-                        cell_name=cell.name,
-                        receptor=self.receptor_name), 'wb') as pf:
+                    output_dir=self.output_dir,
+                    cell_name=cell.name,
+                    receptor=self.receptor_name), 'wb') as pf:
             pickle.dump(cell, pf, protocol=0)
         cell.filter_recombinants()
         self.print_cell_summary(
@@ -161,9 +161,9 @@ class TracerTask(object):
 
         with open(
                 "{output_dir}/filtered_{receptor}_seqs/{cell_name}.pkl".format(
-                        output_dir=self.output_dir,
-                        cell_name=cell.name,
-                        receptor=self.receptor_name), 'wb') as pf:
+                    output_dir=self.output_dir,
+                    cell_name=cell.name,
+                    receptor=self.receptor_name), 'wb') as pf:
             pickle.dump(cell, pf, protocol=0)
 
         exit(0)
@@ -346,9 +346,9 @@ class Assembler(TracerTask):
         # Save cell in a pickle
         with open(
                 "{output_dir}/unfiltered_{receptor}_seqs/{cell_name}.pkl".format(
-                        output_dir=self.output_dir,
-                        cell_name=cell.name,
-                        receptor=self.receptor_name), 'wb') as pf:
+                    output_dir=self.output_dir,
+                    cell_name=cell.name,
+                    receptor=self.receptor_name), 'wb') as pf:
             pickle.dump(cell, pf, protocol=0)
         print("##Filtering by read count##")
         cell.filter_recombinants()
@@ -368,9 +368,9 @@ class Assembler(TracerTask):
 
         with open(
                 "{output_dir}/filtered_{receptor}_seqs/{cell_name}.pkl".format(
-                        output_dir=self.output_dir,
-                        cell_name=cell.name,
-                        receptor=self.receptor_name), 'wb') as pf:
+                    output_dir=self.output_dir,
+                    cell_name=cell.name,
+                    receptor=self.receptor_name), 'wb') as pf:
             pickle.dump(cell, pf, protocol=0)
 
     def get_index_location(self, name):
@@ -449,7 +449,7 @@ class Assembler(TracerTask):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             # cell = io.parse_IgBLAST(self.receptor_name, self.loci, self.output_dir, self.cell_name, imgt_seq_location,
-            #                        self.species, self.seq_method, self.invariant_sequences)
+            # self.species, self.seq_method, self.invariant_sequences)
             cell = io.parse_IgBLAST(self.receptor_name, self.loci,
                                     self.output_dir, self.cell_name,
                                     imgt_seq_location,
@@ -462,97 +462,100 @@ class Assembler(TracerTask):
         return cell
 
     def quantify(self, cell):
-        
+
         if not self.config.has_option('base_transcriptomes', self.species):
             raise OSError("No transcriptome reference specified for {species}. Please specify location in config file."
-                          .format(species = self.species))
+                          .format(species=self.species))
         else:
-            base_transcriptome = self.resolve_relative_path(self.config.get('base_transcriptomes',self.species))                                                                                 
+            base_transcriptome = self.resolve_relative_path(
+                self.config.get('base_transcriptomes', self.species))
             if not os.path.isfile(base_transcriptome):
-                raise OSError('2', 'Transcriptome reference not found', base_transcriptome)
+                raise OSError(
+                    '2', 'Transcriptome reference not found', base_transcriptome)
 
-        
         # set up Salmon/Kallisto parameters
-        
+
         if self.quant_method == 'salmon':
             salmon = self.get_binary('salmon')
             if self.config.has_option('salmon_options', 'libType'):
-                salmon_libType = self.config.get('salmon_options','libType')
+                salmon_libType = self.config.get('salmon_options', 'libType')
             else:
-                print("No library type specified for salmon in the configuration file. Using automatic detection (--libType A).")
+                print(
+                    "No library type specified for salmon in the configuration file. Using automatic detection (--libType A).")
                 salmon_libType = 'A'
             if self.config.has_option('salmon_options', 'kmerLen'):
-                salmon_kmerLen = self.config.get('salmon_options','kmerLen')
+                salmon_kmerLen = self.config.get('salmon_options', 'kmerLen')
             else:
-                print("No kmer length specified for salmon in the configuration file. Using default value of 31.")
+                print(
+                    "No kmer length specified for salmon in the configuration file. Using default value of 31.")
                 salmon_kmerLen = 31
 
         else:
             kallisto = self.get_binary('kallisto')
 
-
         # small-index method: filter base_transcriptome -> ref_transcriptome
-        
+
         if self.small_index:
-            
-            if not self.config.has_option("{}{}".format(self.quant_method,'_base_indices'), self.species):
-                raise OSError("No {method} {species} reference index specified to be used with option --small_index. Please specify location in config file.".format(method = self.quant_method, species = self.species))
+
+            if not self.config.has_option("{}{}".format(self.quant_method, '_base_indices'), self.species):
+                raise OSError("No {method} {species} reference index specified to be used with option --small_index. Please specify location in config file.".format(
+                    method=self.quant_method, species=self.species))
             else:
-                base_index = self.resolve_relative_path(self.config.get("{}{}".format(self.quant_method,'_base_indices'), self.species))
+                base_index = self.resolve_relative_path(self.config.get(
+                    "{}{}".format(self.quant_method, '_base_indices'), self.species))
                 if not os.path.exists(base_index):
                     raise OSError('2', 'Reference index not found', base_index)
 
-
-            smind_dir="{}/{}".format(self.output_dir, 'expression_quantification_from_base_index')
-            new_ref_transcriptome="{}/{}".format(smind_dir, 'newref.fa')
+            smind_dir = "{}/{}".format(self.output_dir,
+                                       'expression_quantification_from_base_index')
+            new_ref_transcriptome = "{}/{}".format(smind_dir, 'newref.fa')
             io.makeOutputDir(smind_dir)
 
             if self.quant_method == 'salmon':
                 tracer_func.quantify_with_salmon_from_index(salmon, cell, smind_dir, self.cell_name, base_index,
-                                               self.fastq1, self.fastq2, self.ncores, self.resume_with_existing_files,
-                                               self.single_end, self.fragment_length, self.fragment_sd,salmon_libType,salmon_kmerLen)
-                
-                quantfile="{}/{}".format(smind_dir,'quant.sf')
-                tpmcol=3 ## TPM col = 3 in quant.sf
-                
-            else: # use kallisto
+                                                            self.fastq1, self.fastq2, self.ncores, self.resume_with_existing_files,
+                                                            self.single_end, self.fragment_length, self.fragment_sd, salmon_libType, salmon_kmerLen)
+
+                quantfile = "{}/{}".format(smind_dir, 'quant.sf')
+                tpmcol = 3  # TPM col = 3 in quant.sf
+
+            else:  # use kallisto
                 tracer_func.quantify_with_kallisto_from_index(kallisto, cell, smind_dir, self.cell_name, base_index,
-                                               self.fastq1, self.fastq2, self.ncores, self.resume_with_existing_files,
-                                               self.single_end, self.fragment_length, self.fragment_sd)
-   
-                quantfile="{}/{}".format(smind_dir,'abundance.tsv')
-                tpmcol=4 ## TPM col = 4 in abundance.tsv
-            
-                
-            tracer_func.extract_newref_from_quant(base_transcriptome,quantfile,tpmcol,new_ref_transcriptome)
-            ref_transcriptome=new_ref_transcriptome
-            
+                                                              self.fastq1, self.fastq2, self.ncores, self.resume_with_existing_files,
+                                                              self.single_end, self.fragment_length, self.fragment_sd)
+
+                quantfile = "{}/{}".format(smind_dir, 'abundance.tsv')
+                tpmcol = 4  # TPM col = 4 in abundance.tsv
+
+            tracer_func.extract_newref_from_quant(
+                base_transcriptome, quantfile, tpmcol, new_ref_transcriptome)
+            ref_transcriptome = new_ref_transcriptome
+
         else:
-            ## use entire base_transcriptome for index construction as usual
+            # use entire base_transcriptome for index construction as usual
             ref_transcriptome = base_transcriptome
 
-
         # actual quantification of TCR Seq
-        
+
         if self.quant_method == 'salmon':
             tracer_func.quantify_with_salmon(salmon, cell, self.output_dir, self.cell_name, ref_transcriptome,
-                                               self.fastq1, self.fastq2, self.ncores, self.resume_with_existing_files,
-                                               self.single_end, self.fragment_length, self.fragment_sd,salmon_libType,salmon_kmerLen)
+                                             self.fastq1, self.fastq2, self.ncores, self.resume_with_existing_files,
+                                             self.single_end, self.fragment_length, self.fragment_sd, salmon_libType, salmon_kmerLen)
             print()
-            counts = tracer_func.load_salmon_counts("{}/expression_quantification/quant.sf".format(self.output_dir))
+            counts = tracer_func.load_salmon_counts(
+                "{}/expression_quantification/quant.sf".format(self.output_dir))
         else:
             tracer_func.quantify_with_kallisto(kallisto, cell, self.output_dir, self.cell_name, ref_transcriptome,
                                                self.fastq1, self.fastq2, self.ncores, self.resume_with_existing_files,
                                                self.single_end, self.fragment_length, self.fragment_sd)
             print()
-            counts = tracer_func.load_kallisto_counts("{}/expression_quantification/abundance.tsv".format(self.output_dir))
+            counts = tracer_func.load_kallisto_counts(
+                "{}/expression_quantification/abundance.tsv".format(self.output_dir))
 
-                    
         if self.small_index:
-            os.remove(new_ref_transcriptome) # remove filtered reference file
+            os.remove(new_ref_transcriptome)  # remove filtered reference file
         #     ## shutil.rmtree(smind_dir)
-        
-            
+
         for receptor, locus_dict in six.iteritems(cell.recombinants):
             for locus, recombinants in six.iteritems(locus_dict):
                 if recombinants is not None:
@@ -560,7 +563,7 @@ class Assembler(TracerTask):
                         tpm = counts[receptor][locus][rec.contig_name]
                         rec.TPM = tpm
 
-        #for locus, recombinants in six.iteritems(cell.all_recombinants):
+        # for locus, recombinants in six.iteritems(cell.all_recombinants):
         #    if recombinants is not None:
         #        for rec in recombinants:
         #            tpm = counts[locus][rec.contig_name]
@@ -698,7 +701,8 @@ class Summariser(TracerTask):
                     empty_cells.append(d)
 
         cell_recovery_count = dict()
-        # count cells with productive chains for each locus and for each possible pair
+        # count cells with productive chains for each locus and for each
+        # possible pair
         for l in self.loci:
             cell_recovery_count[l] = 0
 
@@ -755,11 +759,12 @@ class Summariser(TracerTask):
         all_recombinant_counts = []
         for locus in all_counters:
             all_recombinant_counts = all_recombinant_counts + \
-                                     list(all_counters[locus].keys())
+                list(all_counters[locus].keys())
         max_recombinant_count = max(all_recombinant_counts)
 
         # max_recombinant_count = max(list(counters['all_alpha'].keys()) + list(counters['all_beta'].keys()))
-        table_header = ['', '0 recombinants', '1 recombinant', '2 recombinants']
+        table_header = ['', '0 recombinants',
+                        '1 recombinant', '2 recombinants']
         recomb_range = range(0, 3)
         if max_recombinant_count > 2:
             extra_header = [str(x) + " recombinants" for x in
@@ -782,8 +787,8 @@ class Summariser(TracerTask):
                 if total_with_at_least_one > 0:
                     percentages = [''] + [" (" + str(round(
                         (float(x) / total_with_at_least_one) * 100)) + "%)" for
-                                          x in
-                                          count_array[1:]]
+                        x in
+                        count_array[1:]]
                 else:
                     percentages = [''] + [" (N/A%)" for x in count_array[1:]]
                 row = []
@@ -801,7 +806,8 @@ class Summariser(TracerTask):
                 "\n\n#Cells with more than two recombinants for a locus#\n")
             found_multi = False
             for cell in cells.values():
-                # if cell.count_total_recombinants('A') > 2 or cell.count_total_recombinants('B') > 2:
+                # if cell.count_total_recombinants('A') > 2 or
+                # cell.count_total_recombinants('B') > 2:
                 if cell.has_excess_recombinants(2):
                     outfile.write("###{}###\n".format(cell.name))
                     for l in self.loci:
@@ -849,10 +855,10 @@ class Summariser(TracerTask):
                                 if not l == defining_locus:
                                     ivc_loci.append(l)
                                     if l in cell.recombinants[
-                                        ivc.receptor_type] and \
-                                                    cell.recombinants[
-                                                        ivc.receptor_type][
-                                                        l] is not None:
+                                            ivc.receptor_type] and \
+                                            cell.recombinants[
+                                            ivc.receptor_type][
+                                            l] is not None:
                                         found_other_locus, invar_id = ivc.check_for_match(
                                             cell, l)
                                         if found_other_locus:
@@ -1034,7 +1040,8 @@ class Summariser(TracerTask):
                              '{receptor}_{locus}.fa'.format(
                                  receptor=receptor, locus=locus))
 
-        # need to remove the start N padding and end C sequence from the lengths
+        # need to remove the start N padding and end C sequence from the
+        # lengths
         constant_fasta = os.path.join(self.species_dir, 'raw_seqs',
                                       '{receptor}_{locus}_C.fa'.format(
                                           receptor=receptor, locus=locus))
@@ -1049,7 +1056,8 @@ class Summariser(TracerTask):
 
         adj = C_len + N_len
 
-        lengths = array([len(rec) - adj for rec in SeqIO.parse(fasta, "fasta")])
+        lengths = array(
+            [len(rec) - adj for rec in SeqIO.parse(fasta, "fasta")])
         quartiles = (percentile(lengths, 25), percentile(lengths, 75))
         return (quartiles)
 
@@ -1197,7 +1205,7 @@ class Builder(TracerTask):
         missing_dbs = self.make_igblast_db(VDJC_files)
         for s in missing_dbs:
             print(
-                "\nIMPORTANT: there is no IgBLAST database for {receptor}_{segment}\n" \
+                "\nIMPORTANT: there is no IgBLAST database for {receptor}_{segment}\n"
                 "Run build with {segment} segments for {receptor} before using tracer assemble\n"
                 .format(receptor=self.receptor_name, segment=s))
 
@@ -1238,7 +1246,7 @@ class Builder(TracerTask):
         else:
             if used_colours is not None:
                 if (self.receptor_name in colour_map and
-                            self.locus_name in colour_map[self.receptor_name]
+                    self.locus_name in colour_map[self.receptor_name]
                     and not colour_map[self.receptor_name][self.locus_name][
                         0] == c):
                     if c in used_colours and c not in allowed_pal:
@@ -1289,7 +1297,6 @@ class Builder(TracerTask):
             io.makeOutputDir(os.path.join(self.species_dir, d))
 
     def copy_raw_files(self):
-
         """ Move user-specified files to internal resources file system """
 
         gene_segs = 'VJC'
@@ -1336,7 +1343,7 @@ class Builder(TracerTask):
         # Logical check for C region
         if len(seqs['C']) > 1:
             print(
-                "\nMore than one constant region sequence included in {C_file}." \
+                "\nMore than one constant region sequence included in {C_file}."
                 .format(self.raw_seq_files['C']))
             print("Please only provide one constant sequence.\n")
             sys.exit(1)
@@ -1353,7 +1360,7 @@ class Builder(TracerTask):
                 chr_name = ">chr={V_name}_{J_name}".format(J_name=J_name,
                                                            V_name=V_name)
                 seq = N_leader_string + V_seq.lower() + N_junction_string + \
-                      J_seq.lower() + const_seq
+                    J_seq.lower() + const_seq
                 seqs_to_write.append("{chr_name}\n{seq}\n"
                                      .format(seq=seq, chr_name=chr_name))
 
