@@ -1,5 +1,3 @@
-**THIS IS A DEVELOPMENT BRANCH. IT SHOULD WORK BUT MIGHT NOT**
-
 # TraCeR
 TraCeR - reconstruction of T cell receptor sequences from single-cell RNA-seq data.
 
