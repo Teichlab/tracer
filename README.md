@@ -1,3 +1,5 @@
+**THIS IS A DEVELOPMENT BRANCH. IT SHOULD WORK BUT MIGHT NOT**
+
 # TraCeR
 TraCeR - reconstruction of T cell receptor sequences from single-cell RNA-seq data.
 
@@ -37,7 +39,7 @@ Note that TraCeR is compatible with both Python 2 and 3.
 4. [makeblastdb](ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/ ) - **optional** but required if you want to use TraCeR's `build` mode to make your own references.
 5. Software for quantification of TCR expression:
     * [Kallisto](http://pachterlab.github.io/kallisto/), or alternatively
-    * [Salmon] (https://github.com/COMBINE-lab/salmon/releases).
+    * [Salmon](https://github.com/COMBINE-lab/salmon/releases).
 6. [Graphviz](http://www.graphviz.org) - Dot and Neato drawing programs required for visualisation of clonotype graphs. This is optional - see the [`--no_networks` option](#options-1) to [`summarise`](#summarise-summary-and-clonotype-networks).
 
 ##### Installing IgBlast 
@@ -156,7 +158,17 @@ Type of sequence to be analysed. Since TraCeR currently only works with TCR sequ
 
 Location of the transcriptome fasta file to which the specific TCR sequences will be appended from each cell. Can be downloaded from http://bio.math.berkeley.edu/kallisto/transcriptomes/ and many other places. This must be a plain-text fasta file so decompress it if necessary (files from the Kallisto link are gzipped).
 
-#### Salmon options 
+#### Base indices for Kallisto/Salmon
+	[salmon_base_indices]
+	Mmus = /path/to/salmon/index_for_Mmus
+	Hsap = /path/to/salmon/index_for_Hsap
+	[kallisto_base_indices]
+	Mmus = /path/to/kallisto/index_for_Mmus
+	Hsap = /path/to/kallisto/index_for_Hsap
+
+Location of Kallisto/Salmon indices built (exclusively) from corresponding `[base_transcriptomes]`. These indices are only needed when option `--small_index` is used in *Assemble* mode (see below). 
+
+#### Salmon options
 	[salmon_options]
 	libType = A
 	kmerLen = 31
@@ -200,6 +212,7 @@ Tracer has three modes: *assemble*, *summarise* and *build*.
 
     tracer assemble [options] <file_1> [<file_2>] <cell_name> <output_directory>
 
+
 ##### Main arguments
 * `<file_1>` : fastq file containing #1 mates from paired-end sequencing or all reads from single-end sequencing.   
 * `<file_2>` : fastq file containing #2 mates from paired-end sequencing. Do not use if your data are from single-end sequencing.  
@@ -214,6 +227,7 @@ Tracer has three modes: *assemble*, *summarise* and *build*.
 * `-r/--resume_with_existing_files` : if this is set, TraCeR will look for existing output files and not re-run steps that already appear to have been completed. This saves time if TraCeR died partway through a step and you want to resume where it left off.
 * `-m/--seq_method` : method by which to generate sequences for assessment of recombinant productivity. By default (`-m imgt`), TraCeR replaces all but the junctional sequence of each detected recombinant with the reference sequence from IMGT prior to assessing productivity of the sequence. This makes the assumption that sequence changes outside the junctional region are due to PCR/sequencing errors rather than being genuine polymorphisms. This is likely to be true for well-characterised mouse sequences but may be less so for human and other outbred populations. To determine productivity from only the assembled contig sequence for each recombinant use `-m assembly`.
 * `-q/--quant_method` : Method used for expression quantification. Options are `-q salmon` and `-q kallisto` (default).
+* `--small_index` : Use this option to speed up expression quantification. The location of an index that is built (exclusively) from the corresponding `base_transcriptome` must be specified in the configuration file (under `[salmon_base_indices]` or `[kallisto_base_indices]`). Since this index does not contain any TCR sequences, it has to be built only once for each species and can then be used for all cells. When option `--small-index` is used, reads are first quantified with this `base_index` (this should lead to non-zero TPM numbers for all non-TCR transcripts present in the cell). After selecting all transcripts with non-zero TPM numbers, cell-specific TCR sequences (as constructed by Bowtie-Trinity-IgBlast) are appended to that list. Then a new Kallisto/Salmon index is built from the combined set (since this set contains only a subset of the `base_transcriptome`, this is fast). Finally, reads are quantified with this small index. 
 * `--single_end` : use this option if your data are single-end reads. If this option is set you must specify fragment length and fragment sd as below.
 * `--fragment_length` : Estimated average fragment length in the sequencing library. Used for Kallisto quantification. Required for single-end data. Can also be set for paired-end data if you don't want Kallisto to estimate it directly.
 * `--fragment_sd` : Estimated standard deviation of average fragment length in the sequencing library. Used for Kallisto quantification. Required for single-end data. Can also be set for paired-end data if you don't want Kallisto to estimate it directly.
@@ -239,7 +253,7 @@ For each cell, an `/<output_directory>/<cell_name>` directory will be created. T
     - `<cell_name>.pkl` : Python [pickle](https://docs.python.org/2/library/pickle.html) file containing the internal representation of the cell and its recombinants as used by TraCeR. This is used in the summarisation steps.
 
 5. `<output_directory>/<cell_name>/expression_quantification`  
-    Contains Kallisto/Salmon output with expression quantification of the entire transcriptome *including* the reconstructed TCRs.
+    Contains Kallisto/Salmon output with expression quantification of the entire transcriptome *including* the reconstructed TCRs. When option `--small_index` is used, this directory contains only the output of the quantification with the small index (built from reconstructed TCRs and only a subset of the base transcriptome; see above).
 
 6. `<output_directory>/<cell_name>/filtered_TCR_seqs`  
     Contains the same files as the unfiltered directory above but these recombinants have been filtered so that only the two most highly expressed from each locus are retained. This resolves biologically implausible situtations where more than two recombinants are detected for a locus. **This directory contains the final output with high-confidence TCR assignments**.
