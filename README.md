@@ -55,6 +55,11 @@ You should also ensure to set the `$IGDATA` environment variable to point to the
 7. It seems that v1.11 of Networkx behaves differently when writing dot files for use with Graphviz. If you have this (or later versions) you also need to install [PyDotPlus](http://pydotplus.readthedocs.org).
 8. [Future](http://python-future.org/index.html) for compatibility with Python 2.
 
+Note: Seaborn depends on the module statsmodels, which if updated through other packages may cause problems in Seaborn. If such issues arise, try to uninstall statsmodels and install again:
+  
+    conda uninstall statsmodels --yes
+    conda install -c taugspurger statsmodels=0.8.0     
+
 ## Setup 
 To set up the python dependencies, use the requirements file:
 
