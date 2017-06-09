@@ -83,8 +83,12 @@ Once the prerequisites above are installed and working you're ready to tell TraC
 
 TraCeR uses a configuration file to point it to the locations of files that it needs and a couple of other options.
 An example configuration file is included in the repository - `tracer.conf`.
-By default, this is `~/.tracerrc`. If tracer fails to find this file, it will use the `tracer.conf` in the repository.
- The `-c` option to the various tracer modules allows you to specify any other file to act as the configuration file.
+
+TraCeR looks for the configuration file, in descending order of priority, from the following sources:
+1. The `-c` option used at run time for any of the TraCeR modes
+2. The environmental variable `TRACER_CONF`, which can be set to point to a default location
+3. The default global location of `~/.tracerrc`
+4. If all else fails, the provided example `tracer.conf` in the directory is used
 
 **Important:** If you  specify relative paths in the config file these will be used as relative to the main installation directory. For example, `resources/Mmus/igblast_dbs` will resolve to `/<wherever you installed tracer>/tracer/resources/Mmus/igblast_dbs`.
 

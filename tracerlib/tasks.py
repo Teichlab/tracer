@@ -48,7 +48,7 @@ class TracerTask(object):
                              default=1)
     base_parser.add_argument('--config_file', '-c', metavar="<CONFIG_FILE>",
                              help='config file to use',
-                             default='~/.tracerrc')
+                             default=None)
 
     config = None
 
@@ -64,14 +64,20 @@ class TracerTask(object):
         return check_binary(name, user_path)
 
     def read_config(self, config_file):
-        # Read config file
+        # First look for environmental variable
+        if not config_file:
+            config_file = os.environ.get('TRACER_CONF', None)
+            config_file = os.path.expanduser(config_file)
+            if not os.path.isfile(config_file):
+                config_file = None
+        # Then check the default location
         if not config_file:
             config_file = '~/.tracerrc'
-        config_file = os.path.expanduser(config_file)
-        if not os.path.isfile(config_file):
-            print(
-                "Config file not found at ~/.tracerrc. Using default tracer.conf in repo...")
-            config_file = os.path.join(base_dir, 'tracer.conf')
+            config_file = os.path.expanduser(config_file)
+            if not os.path.isfile(config_file):
+                print("Config file not found at ~/.tracerrc."
+                      " Using default tracer.conf in repo...")
+                config_file = os.path.join(base_dir, 'tracer.conf')
         tracer_func.check_config_file(config_file)
         config = ConfigParser()
         config.read(config_file)
