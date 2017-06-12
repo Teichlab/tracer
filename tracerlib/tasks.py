@@ -67,17 +67,17 @@ class TracerTask(object):
         # First look for environmental variable
         if not config_file:
             config_file = os.environ.get('TRACER_CONF', None)
-            config_file = os.path.expanduser(config_file)
-            if not os.path.isfile(config_file):
-                config_file = None
+            if config_file is not None:
+                if not os.path.isfile(config_file):
+                    config_file = None
         # Then check the default location
         if not config_file:
             config_file = '~/.tracerrc'
-            config_file = os.path.expanduser(config_file)
             if not os.path.isfile(config_file):
                 print("Config file not found at ~/.tracerrc."
                       " Using default tracer.conf in repo...")
                 config_file = os.path.join(base_dir, 'tracer.conf')
+        config_file = os.path.expanduser(config_file)
         tracer_func.check_config_file(config_file)
         config = ConfigParser()
         config.read(config_file)

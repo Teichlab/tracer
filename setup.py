@@ -1,10 +1,20 @@
 import os
+import glob
 from setuptools import setup, find_packages
 
 
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
+
+def package_files(directory):
+    paths = []
+    for (path, directories, filenames) in os.walk(directory):
+        for filename in filenames:
+            paths.append(os.path.join('..', path, filename))
+    return paths
+
+extra_files = package_files('test_data')
 
 setup(
     name='tracer',
@@ -21,6 +31,7 @@ setup(
     keywords="biopython genetics",
     url="https://github.com/teichlab/tracer",
     packages=find_packages(),
+    package_data={'': extra_files},
     install_requires=[
         "biopython>=1.66",
         "cycler>=0.10.0",
