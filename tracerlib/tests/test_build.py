@@ -29,7 +29,7 @@ class TestBuild(unittest.TestCase):
             ncores=1, species=self.species, receptor_name='TCR', locus_name='A',
             N_padding=10, V_seqs=self.seq_files[0][0],
             J_seqs=self.seq_files[1][0], C_seq=self.seq_files[2][0],
-            force_overwrite=True)
+            force_overwrite=True, output='build_output')
         self.builder.init_dirs()
         self.vdjc_files = self.builder.copy_raw_files()
 
@@ -68,11 +68,13 @@ class TestBuild(unittest.TestCase):
 
     def tearDown(self):
         # Remove the species resources
-        root_folder = self.builder.get_resources_root(self.species)
-        shutil.rmtree(root_folder)
-        for filename, _ in self.seq_files:
-            if os.path.isfile(filename):
-                os.unlink(filename)
+        root_folder = self.builder.get_species_root(self.species,
+                                                    root='build_output')
+        if os.path.isdir(root_folder):
+            shutil.rmtree(root_folder)
+            for filename, _ in self.seq_files:
+                if os.path.isfile(filename):
+                    os.unlink(filename)
 
 
 if __name__ == '__main__':
