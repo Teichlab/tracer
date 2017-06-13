@@ -204,6 +204,8 @@ Tracer has three modes: *assemble*, *summarise* and *build*.
 * `<file_2>` : fastq file containing #2 mates from paired-end sequencing. Do not use if your data are from single-end sequencing.  
 * `<cell_name>` : name of the cell. This is arbitrary text that will be used for all subsequent references to the cell in filenames/labels etc.     
 * `<output_directory>` : directory for output. Will be created if it doesn't exist. Cell-specific output will go into `/<output_directory>/<cell_name>`. This path should be the same for every cell that you want to summarise together.
+* `<resource_dir>`: the directory containing the resources required for alignment.
+ By default this is the `resources` directory in this repository, but can be pointed to a user-built set of resources.
 
 ##### Options 
 
@@ -252,6 +254,8 @@ For each cell, an `/<output_directory>/<cell_name>` directory will be created. T
 
 ##### Main argument 
 * `<input_dir>` : directory containing subdirectories of each cell you want to summarise. 
+* `<resource_dir>`: the directory containing the resources required for alignment.
+ By default this is the `resources` directory in this repository, but can be pointed to a user-built set of resources.
 
 ##### Options 
 * `-c/--config_file <conf_file>` : config file to use. Default = `~/.tracerrc`
@@ -293,6 +297,7 @@ The following output files are generated:
 * `<J_seqs>` : Fasta file containing J gene sequences
 * `<C_seqs>` : Fasta file containing single constant region sequence
 * `<D_seqs>` : Fasta file containing D gene sequences (optional)
+* `<output>` : Output directory for the generated build resources
 
 #### Options
 
