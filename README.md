@@ -109,18 +109,6 @@ Edit `~/.tracerrc` (or a copy) so that the paths within the `[tool_locations]` s
 	neato_path = /path/to/neato
 		
 		
-### Resource locations and necessary files 
-The tools used by TraCeR need a variety of additional files to work properly and to allow extraction of TCR-derived reads and expression quantification etc. The locations of these files are specified in the other sections of the configuration file and are detailed below.
-
-Currently, organism-specific files (TCR gene sequences, synthetic genome indices, igblast_indices) for mouse and human are distributed with the source-code in the `resources` directory. There will soon be a `build` module that constructs all of the necessary synthetic genomes and indices from any collection of V and J gene sequences. 
-
-
-#### Bowtie synthetic genomes path 
-	[bowtie2_options]
-	synthetic_genome_index_path = resources/Mmus/synthetic_genomes
-
-This path specifies the directory that contains Bowtie2 indices constructed from all possible combinations of V and J segments for each locus. 
-
 #### Trinity options 
 ##### Jellyfish memory 
 	[trinity_options]
@@ -144,15 +132,6 @@ Trinity can parallelise contig assembly by submitting jobs across a compute clus
  
 
 #### IgBLAST options 
-##### Databases path 
-	[IgBlast_options]
-	igblast_index_location = resources/Mmus/igblast_dbs
-##### VDJ sequences 
-This path specifies the directory that contains IgBLAST database files for V, D and J genes. These files are named `imgt_tcr_db_<SEGMENT>.fa`.
-
-    imgt_seq_location = resources/Mmus/imgt_sequences
-		
-Path to fasta files with sequences for each V, D or J gene. Files are names `TR<LOCUS><SEGMENT>.fa`.
 ##### Receptor type 
     igblast_seqtype = TCR
 
