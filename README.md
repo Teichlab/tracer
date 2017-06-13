@@ -168,7 +168,7 @@ See salmon [documentation](http://salmon.readthedocs.io/en/latest/salmon.html) f
 ## Testing TraCeR 
 TraCeR comes with a small dataset in `test_data/` (containing only TCRA or TCRB reads for a single cell) that you can use to test your installation and config file and confirm that all the prerequisites are working. Run it as:
 
-    tracer test -p <ncores> -c <config_file>
+    tracer test -p <ncores> -c <config_file> -o <output>
     
 **Note:** The data used in the test are derived from mouse T cells so make sure that the config file points to the appropriate mouse resource files.
 
@@ -177,7 +177,8 @@ You can also pass the following two options to change the Graphviz output format
 `-g/--graph_format` : Output format for the clonotype networks. This is passed directly to Graphviz and so must be one of the options detailed at http://www.graphviz.org/doc/info/output.html.  
 `--no_networks` : Don't try to draw clonotype network graphs. This is useful if you don't have a working installation of Graphviz.
     
-Running `test` will peform the [`assemble`](#assemble-tcr-reconstruction) step using the small test dataset. It will then perform [`summarise`](#summarise-summary-and-clonotype-networks) using the assemblies that are generated along with pre-calculated output for two other cells (in `test_data/results`).
+Running `test` will peform the [`assemble`](#assemble-tcr-reconstruction) step using the small test dataset.
+ It will then perform [`summarise`](#summarise-summary-and-clonotype-networks) using the assemblies that are generated along with pre-calculated output for two other cells (in `test_data/results`), dumping the data in the `output` directory as specified.
 
 Compare the output in `test_data/results/filtered_TCR_summary` with the expected results in `test_data/expected_summary`. There should be three cells, each with one productive alpha, one productive beta, one non-productive alpha and one non-productive beta. Cells 1 and 2 should be in a clonotype.
 
@@ -204,6 +205,8 @@ Tracer has three modes: *assemble*, *summarise* and *build*.
 * `<file_2>` : fastq file containing #2 mates from paired-end sequencing. Do not use if your data are from single-end sequencing.  
 * `<cell_name>` : name of the cell. This is arbitrary text that will be used for all subsequent references to the cell in filenames/labels etc.     
 * `<output_directory>` : directory for output. Will be created if it doesn't exist. Cell-specific output will go into `/<output_directory>/<cell_name>`. This path should be the same for every cell that you want to summarise together.
+* `<resource_dir>`: the directory containing the resources required for alignment.
+ By default this is the `resources` directory in this repository, but can be pointed to a user-built set of resources.
 
 ##### Options 
 
@@ -252,6 +255,8 @@ For each cell, an `/<output_directory>/<cell_name>` directory will be created. T
 
 ##### Main argument 
 * `<input_dir>` : directory containing subdirectories of each cell you want to summarise. 
+* `<resource_dir>`: the directory containing the resources required for alignment.
+ By default this is the `resources` directory in this repository, but can be pointed to a user-built set of resources.
 
 ##### Options 
 * `-c/--config_file <conf_file>` : config file to use. Default = `~/.tracerrc`
@@ -293,6 +298,7 @@ The following output files are generated:
 * `<J_seqs>` : Fasta file containing J gene sequences
 * `<C_seqs>` : Fasta file containing single constant region sequence
 * `<D_seqs>` : Fasta file containing D gene sequences (optional)
+* `<output>` : Output directory for the generated build resources
 
 #### Options
 

@@ -23,7 +23,7 @@ import json
 
 def makeOutputDir(output_dir_path):
     if not os.path.exists(output_dir_path):
-        os.mkdir(output_dir_path)
+        os.makedirs(output_dir_path)
 
 
 def is_exe(fpath):

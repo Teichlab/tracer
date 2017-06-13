@@ -49,6 +49,8 @@ class TracerTask(object):
     base_parser.add_argument('--config_file', '-c', metavar="<CONFIG_FILE>",
                              help='config file to use',
                              default=None)
+    base_parser.add_argument('--resource_dir', metavar="<CONFIG_FILE>",
+                             help='root directory for resources', default=None)
 
     config = None
 
@@ -68,16 +70,16 @@ class TracerTask(object):
         if not config_file:
             config_file = os.environ.get('TRACER_CONF', None)
             if config_file is not None:
+                config_file = os.path.expanduser(config_file)
                 if not os.path.isfile(config_file):
                     config_file = None
         # Then check the default location
         if not config_file:
-            config_file = '~/.tracerrc'
+            config_file = os.path.expanduser('~/.tracerrc')
             if not os.path.isfile(config_file):
                 print("Config file not found at ~/.tracerrc."
                       " Using default tracer.conf in repo...")
                 config_file = os.path.join(base_dir, 'tracer.conf')
-        config_file = os.path.expanduser(config_file)
         tracer_func.check_config_file(config_file)
         config = ConfigParser()
         config.read(config_file)
@@ -174,13 +176,18 @@ class TracerTask(object):
 
         exit(0)
 
-    def get_resources_root(self, species):
-        resources_dir = os.path.join(base_dir, 'resources')
-        resources_root = os.path.join(resources_dir, species)
+    def get_species_root(self, species, root=None):
+        if root is None:
+            resources_root = os.path.join(base_dir, 'resources', species)
+        else:
+            resources_root = os.path.join(root, species)
         return (resources_root)
 
-    def get_available_species(self):
-        resources_dir = os.path.join(base_dir, 'resources')
+    def get_available_species(self, root=None):
+        if root is None:
+            resources_dir = os.path.join(base_dir, 'resources')
+        else:
+            resources_dir = root
         species_dirs = next(os.walk(resources_dir))[1]
         return (species_dirs)
 
@@ -246,6 +253,7 @@ class Assembler(TracerTask):
 
             args = parser.parse_args(sys.argv[2:])
 
+            resource_dir = args.resource_dir
             self.cell_name = args.cell_name
             self.fastq1 = args.fastq1
             self.single_end = args.single_end
@@ -265,6 +273,7 @@ class Assembler(TracerTask):
             config_file = args.config_file
 
         else:
+            resource_dir = kwargs.get('resource_dir')
             self.cell_name = kwargs.get('cell_name')
             self.fastq1 = kwargs.get('fastq1')
             self.fastq2 = kwargs.get('fastq2')
@@ -285,6 +294,9 @@ class Assembler(TracerTask):
             config_file = kwargs.get('config_file')
 
         self.config = self.read_config(config_file)
+
+        self.species_root = self.get_species_root(self.species,
+                                                  root=resource_dir)
         # self.locus_names = ["TCRA", "TCRB"]
 
         # Check the fastq config is correct
@@ -379,16 +391,11 @@ class Assembler(TracerTask):
                     receptor=self.receptor_name), 'wb') as pf:
             pickle.dump(cell, pf, protocol=0)
 
-    def get_index_location(self, name):
-        location = os.path.join(base_dir, 'resources', self.species, name)
-
-        return location
-
     def align(self):
         bowtie2 = self.get_binary('bowtie2')
 
-        synthetic_genome_path = self.get_index_location(
-            'combinatorial_recombinomes')
+        synthetic_genome_path = os.path.join(self.species_root,
+                                             'combinatorial_recombinomes')
         # Align with bowtie
         tracer_func.bowtie2_alignment(
             bowtie2, self.ncores, self.receptor_name, self.loci,
@@ -439,8 +446,8 @@ class Assembler(TracerTask):
         igblastn = self.get_binary('igblastn')
 
         # Reference data locations
-        igblast_index_location = self.get_index_location('igblast_dbs')
-        imgt_seq_location = self.get_index_location('raw_seqs')
+        igblast_index_location = os.path.join(self.species_root, 'igblast_dbs')
+        imgt_seq_location = os.path.join(self.species_root, 'raw_seqs')
 
         igblast_seqtype = self.config.get('IgBlast_options', 'igblast_seqtype')
 
@@ -470,7 +477,8 @@ class Assembler(TracerTask):
     def quantify(self, cell):
 
         if not self.config.has_option('base_transcriptomes', self.species):
-            raise OSError("No transcriptome reference specified for {species}. Please specify location in config file."
+            raise OSError("No transcriptome reference specified for {species}."
+                          " Please specify location in config file."
                           .format(species=self.species))
         else:
             base_transcriptome = self.resolve_relative_path(
@@ -486,14 +494,15 @@ class Assembler(TracerTask):
             if self.config.has_option('salmon_options', 'libType'):
                 salmon_libType = self.config.get('salmon_options', 'libType')
             else:
-                print(
-                    "No library type specified for salmon in the configuration file. Using automatic detection (--libType A).")
+                print("No library type specified for salmon "
+                      "in the configuration file. Using automatic detection "
+                      "(--libType A).")
                 salmon_libType = 'A'
             if self.config.has_option('salmon_options', 'kmerLen'):
                 salmon_kmerLen = self.config.get('salmon_options', 'kmerLen')
             else:
-                print(
-                    "No kmer length specified for salmon in the configuration file. Using default value of 31.")
+                print("No kmer length specified for salmon "
+                      "in the configuration file. Using default value of 31.")
                 salmon_kmerLen = 31
 
         else:
@@ -503,12 +512,19 @@ class Assembler(TracerTask):
 
         if self.small_index:
 
-            if not self.config.has_option("{}{}".format(self.quant_method, '_base_indices'), self.species):
-                raise OSError("No {method} {species} reference index specified to be used with option --small_index. Please specify location in config file.".format(
-                    method=self.quant_method, species=self.species))
+            if not self.config.has_option(
+                    "{}{}".format(self.quant_method, '_base_indices'),
+                    self.species):
+                raise OSError(
+                    "No {method} {species} reference index specified to be used"
+                    " with option --small_index. "
+                    "Please specify location in config file.".format(
+                        method=self.quant_method, species=self.species))
             else:
-                base_index = self.resolve_relative_path(self.config.get(
-                    "{}{}".format(self.quant_method, '_base_indices'), self.species))
+                base_index = self.resolve_relative_path(
+                    self.config.get(
+                        "{}{}".format(self.quant_method, '_base_indices'),
+                        self.species))
                 if not os.path.exists(base_index):
                     raise OSError('2', 'Reference index not found', base_index)
 
@@ -518,17 +534,22 @@ class Assembler(TracerTask):
             io.makeOutputDir(smind_dir)
 
             if self.quant_method == 'salmon':
-                tracer_func.quantify_with_salmon_from_index(salmon, cell, smind_dir, self.cell_name, base_index,
-                                                            self.fastq1, self.fastq2, self.ncores, self.resume_with_existing_files,
-                                                            self.single_end, self.fragment_length, self.fragment_sd, salmon_libType, salmon_kmerLen)
+                tracer_func.quantify_with_salmon_from_index(
+                    salmon, cell, smind_dir, self.cell_name, base_index,
+                    self.fastq1, self.fastq2, self.ncores,
+                    self.resume_with_existing_files, self.single_end,
+                    self.fragment_length, self.fragment_sd,
+                    salmon_libType, salmon_kmerLen)
 
                 quantfile = "{}/{}".format(smind_dir, 'quant.sf')
                 tpmcol = 3  # TPM col = 3 in quant.sf
 
             else:  # use kallisto
-                tracer_func.quantify_with_kallisto_from_index(kallisto, cell, smind_dir, self.cell_name, base_index,
-                                                              self.fastq1, self.fastq2, self.ncores, self.resume_with_existing_files,
-                                                              self.single_end, self.fragment_length, self.fragment_sd)
+                tracer_func.quantify_with_kallisto_from_index(
+                    kallisto, cell, smind_dir, self.cell_name, base_index,
+                    self.fastq1, self.fastq2, self.ncores,
+                    self.resume_with_existing_files, self.single_end,
+                    self.fragment_length, self.fragment_sd)
 
                 quantfile = "{}/{}".format(smind_dir, 'abundance.tsv')
                 tpmcol = 4  # TPM col = 4 in abundance.tsv
@@ -544,23 +565,27 @@ class Assembler(TracerTask):
         # actual quantification of TCR Seq
 
         if self.quant_method == 'salmon':
-            tracer_func.quantify_with_salmon(salmon, cell, self.output_dir, self.cell_name, ref_transcriptome,
-                                             self.fastq1, self.fastq2, self.ncores, self.resume_with_existing_files,
-                                             self.single_end, self.fragment_length, self.fragment_sd, salmon_libType, salmon_kmerLen)
+            tracer_func.quantify_with_salmon(
+                salmon, cell, self.output_dir, self.cell_name, ref_transcriptome,
+                self.fastq1, self.fastq2, self.ncores,
+                self.resume_with_existing_files,
+                self.single_end, self.fragment_length,
+                self.fragment_sd, salmon_libType, salmon_kmerLen)
             print()
             counts = tracer_func.load_salmon_counts(
                 "{}/expression_quantification/quant.sf".format(self.output_dir))
         else:
-            tracer_func.quantify_with_kallisto(kallisto, cell, self.output_dir, self.cell_name, ref_transcriptome,
-                                               self.fastq1, self.fastq2, self.ncores, self.resume_with_existing_files,
-                                               self.single_end, self.fragment_length, self.fragment_sd)
+            tracer_func.quantify_with_kallisto(
+                kallisto, cell, self.output_dir, self.cell_name,
+                ref_transcriptome, self.fastq1, self.fastq2, self.ncores,
+                self.resume_with_existing_files, self.single_end,
+                self.fragment_length, self.fragment_sd)
             print()
             counts = tracer_func.load_kallisto_counts(
                 "{}/expression_quantification/abundance.tsv".format(self.output_dir))
 
         if self.small_index:
             os.remove(new_ref_transcriptome)  # remove filtered reference file
-        #     ## shutil.rmtree(smind_dir)
 
         for receptor, locus_dict in six.iteritems(cell.recombinants):
             for locus, recombinants in six.iteritems(locus_dict):
@@ -568,12 +593,6 @@ class Assembler(TracerTask):
                     for rec in recombinants:
                         tpm = counts[receptor][locus][rec.contig_name]
                         rec.TPM = tpm
-
-        # for locus, recombinants in six.iteritems(cell.all_recombinants):
-        #    if recombinants is not None:
-        #        for rec in recombinants:
-        #            tpm = counts[locus][rec.contig_name]
-        #            rec.TPM = tpm
 
 
 class Summariser(TracerTask):
@@ -610,6 +629,7 @@ class Summariser(TracerTask):
                                 help='directory containing subdirectories for each cell to be summarised')
             args = parser.parse_args(sys.argv[2:])
 
+            resource_dir = args.resource_dir
             self.root_dir = os.path.abspath(args.dir)
             self.graph_format = args.graph_format
             self.keep_invariant = args.keep_invariant
@@ -620,6 +640,7 @@ class Summariser(TracerTask):
             self.species = args.species
             config_file = args.config_file
         else:
+            resource_dir = kwargs.get('resource_dir')
             self.use_unfiltered = kwargs.get('use_unfiltered')
             self.root_dir = os.path.abspath(kwargs.get('root_dir'))
             self.draw_graphs = not (kwargs.get('no_networks'))
@@ -632,12 +653,10 @@ class Summariser(TracerTask):
 
         # Read config file
         self.config = self.read_config(config_file)
+        self.species_dir = self.get_species_root(self.species,
+                                                 root=resource_dir)
 
-        self.species_dir = self.get_resources_root(self.species)
-
-        invariant_cells = self.resolve_relative_path(
-            os.path.join('resources', self.species,
-                         'invariant_cells.json'))
+        invariant_cells = os.path.join(self.species_dir, 'invariant_cells.json')
         if os.path.isfile(invariant_cells):
             self.invariant_cells = io.parse_invariant_cells(invariant_cells)
         else:
@@ -658,8 +677,8 @@ class Summariser(TracerTask):
                     not_executable.append((name, x))
             if len(not_executable) > 0:
                 print()
-                print(
-                    "Could not execute the following required tools. Check your configuration file.")
+                print("Could not execute the following required tools."
+                      " Check your configuration file.")
                 for t in not_executable:
                     print(t[0], t[1])
                 print()
@@ -674,17 +693,15 @@ class Summariser(TracerTask):
 
         if self.use_unfiltered:
             pkl_dir = "unfiltered_{}_seqs".format(self.receptor_name)
-            outdir = "{}/unfiltered_{}_summary".format(self.root_dir,
-                                                       self.receptor_name + "".join(
-                                                           self.loci))
+            outdir = "{}/unfiltered_{}_summary".format(
+                self.root_dir, self.receptor_name + "".join(self.loci))
             # outfile = open("{root_dir}/unfiltered_TCR_summary.txt".format(root_dir=root_dir), 'w')
             # length_filename_root = "{}/unfiltered_reconstructed_lengths_TCR".format(root_dir)
 
         else:
             pkl_dir = "filtered_{}_seqs".format(self.receptor_name)
-            outdir = "{}/filtered_{}_summary".format(self.root_dir,
-                                                     self.receptor_name + "".join(
-                                                         self.loci))
+            outdir = "{}/filtered_{}_summary".format(
+                self.root_dir, self.receptor_name + "".join(self.loci))
             # outfile = open("{root_dir}/filtered_TCR_summary.txt".format(root_dir=root_dir), 'w')
             # length_filename_root = "{}/filtered_reconstructed_lengths_TCR".format(root_dir)
 
@@ -1090,14 +1107,20 @@ class Tester(TracerTask):
             parser.add_argument('--resume_with_existing_files', '-r',
                                 help='look for existing intermediate files and use those instead of starting from scratch',
                                 action="store_true")
+            parser.add_argument('--output', '-o',
+                                help='directory for output data of test')
             args = parser.parse_args(sys.argv[2:])
 
+            self.resource_dir = args.resource_dir
+            self.output_dir = args.output
             self.ncores = args.ncores
             self.config_file = args.config_file
             self.graph_format = args.graph_format
             self.no_networks = args.no_networks
             self.resume = args.resume_with_existing_files
         else:
+            self.resource_dir = kwargs.get('resource_dir')
+            self.output_dir = kwargs.get('output')
             self.ncores = kwargs.get('ncores')
             self.config_file = kwargs.get('config_file')
             self.graph_format = kwargs.get('graph_format', 'pdf')
@@ -1109,12 +1132,16 @@ class Tester(TracerTask):
         # test_dir = self.resolve_relative_path("test_data")
         test_dir = os.path.join(base_dir, 'test_data')
         test_names = ['cell1']
-        out_dir = "{}/results".format(test_dir)
+        if self.output_dir:
+            out_dir = os.path.join(self.output_dir, 'results')
+        else:
+            out_dir = os.path.join(test_dir, 'results')
         for name in test_names:
             f1 = "{}/{}_1.fastq".format(test_dir, name)
             f2 = "{}/{}_2.fastq".format(test_dir, name)
 
-            Assembler(ncores=str(self.ncores), config_file=self.config_file,
+            Assembler(resource_dir=self.resource_dir, ncores=str(self.ncores),
+                      config_file=self.config_file,
                       resume_with_existing_files=self.resume,
                       species='Mmus', seq_method='imgt', fastq1=f1, fastq2=f2,
                       cell_name=name, output_dir=out_dir,
@@ -1122,7 +1149,7 @@ class Tester(TracerTask):
                       fragment_sd=False, receptor_name='TCR',
                       loci=['A', 'B'], max_junc_len=50).run()
 
-        Summariser(config_file=self.config_file, use_unfiltered=False,
+        Summariser(resource_dir=self.resource_dir, config_file=self.config_file, use_unfiltered=False,
                    keep_invariant=False,
                    graph_format=self.graph_format, no_networks=self.no_networks,
                    root_dir=out_dir, receptor_name='TCR',
@@ -1162,6 +1189,8 @@ class Builder(TracerTask):
             parser.add_argument('D_seqs', metavar="<D_SEQS>", nargs='?',
                                 default=False,
                                 help='fasta file containing D gene sequences (optional)')
+            parser.add_argument('output', '-o', default=None,
+                                help='output directory for built resources')
 
             args = parser.parse_args(sys.argv[2:])
 
@@ -1171,7 +1200,6 @@ class Builder(TracerTask):
             self.receptor_name = args.receptor_name
             self.locus_name = args.locus_name
             self.N_padding = args.N_padding
-
             self.raw_seq_files = {}
             self.raw_seq_files['V'] = args.V_seqs
             self.raw_seq_files['J'] = args.J_seqs
@@ -1180,6 +1208,7 @@ class Builder(TracerTask):
             if args.D_seqs:
                 self.raw_seq_files['D'] = args.D_seqs
             config_file = args.config_file
+            self.output = args.output
 
         else:
             self.ncores = kwargs.get('ncores')
@@ -1197,9 +1226,10 @@ class Builder(TracerTask):
                 self.raw_seq_files['D'] = kwargs.get('D_seqs')
 
             config_file = kwargs.get('config_file')
+            self.output = kwargs.get('output')
 
         self.config = self.read_config(config_file)
-        self.species_dir = self.get_resources_root(self.species)
+        self.species_dir = self.get_species_root(self.species, root=self.output)
 
     def run(self):
 
@@ -1207,7 +1237,7 @@ class Builder(TracerTask):
         # assert self.species not in ('Mmus', 'Hsap'), \
         #    "Cannot overwrite inbuilt species. Please choose a unique name " \
         #    "e.g. 'Mmus_1'"
-        #
+
         self.init_dirs()
 
         self.calculate_colours(self.prod_colour)
