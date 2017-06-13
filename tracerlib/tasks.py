@@ -295,8 +295,8 @@ class Assembler(TracerTask):
 
         self.config = self.read_config(config_file)
 
-        self.resource_root = self.get_species_root(self.species,
-                                                   root=resource_dir)
+        self.species_root = self.get_species_root(self.species,
+                                                  root=resource_dir)
         # self.locus_names = ["TCRA", "TCRB"]
 
         # Check the fastq config is correct
@@ -394,7 +394,7 @@ class Assembler(TracerTask):
     def align(self):
         bowtie2 = self.get_binary('bowtie2')
 
-        synthetic_genome_path = os.path.join(self.resource_root,
+        synthetic_genome_path = os.path.join(self.species_root,
                                              'combinatorial_recombinomes')
         # Align with bowtie
         tracer_func.bowtie2_alignment(
@@ -446,8 +446,8 @@ class Assembler(TracerTask):
         igblastn = self.get_binary('igblastn')
 
         # Reference data locations
-        igblast_index_location = os.path.join(self.resource_root, 'igblast_dbs')
-        imgt_seq_location = os.path.join(self.resource_root, 'raw_seqs')
+        igblast_index_location = os.path.join(self.species_root, 'igblast_dbs')
+        imgt_seq_location = os.path.join(self.species_root, 'raw_seqs')
 
         igblast_seqtype = self.config.get('IgBlast_options', 'igblast_seqtype')
 
