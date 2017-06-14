@@ -181,6 +181,7 @@ class TracerTask(object):
             resources_root = os.path.join(base_dir, 'resources', species)
         else:
             resources_root = os.path.join(root, species)
+        assert os.path.isdir(resources_root), "Species not found in resources"
         return (resources_root)
 
     def get_available_species(self, root=None):
@@ -207,7 +208,6 @@ class Assembler(TracerTask):
                                 action="store_true")
             parser.add_argument('--species', '-s',
                                 help='Species to use for reconstruction',
-                                choices=self.get_available_species(),
                                 default='Mmus')
             parser.add_argument('--receptor_name',
                                 help="Name of receptor to reconstruct",
