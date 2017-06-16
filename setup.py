@@ -31,7 +31,7 @@ setup(
     keywords="biopython genetics",
     url="https://github.com/teichlab/tracer",
     packages=find_packages(),
-    package_data={'': extra_files},
+    package_data={'tracer': extra_files},
     install_requires=[
         "biopython>=1.66",
         "cycler>=0.10.0",

@@ -604,7 +604,6 @@ class Summariser(TracerTask):
                 parents=[self.base_parser])
             parser.add_argument('--species', '-s',
                                 help='Species to use for reconstruction',
-                                choices=self.get_available_species(),
                                 default='Mmus')
             parser.add_argument('--receptor_name',
                                 help="Name of receptor to summarise",
