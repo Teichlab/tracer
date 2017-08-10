@@ -49,7 +49,7 @@ class TracerTask(object):
     base_parser.add_argument('--config_file', '-c', metavar="<CONFIG_FILE>",
                              help='config file to use',
                              default=None)
-    base_parser.add_argument('--resource_dir', metavar="<CONFIG_FILE>",
+    base_parser.add_argument('--resource_dir', metavar="<RESOURCE_DIR>",
                              help='root directory for resources', default=None)
 
     config = None
@@ -451,12 +451,14 @@ class Assembler(TracerTask):
 
         igblast_seqtype = self.config.get('IgBlast_options', 'igblast_seqtype')
 
-        # IgBlast of assembled contigs
-        tracer_func.run_IgBlast(igblastn, self.receptor_name, self.loci,
+        # IgBlast of assembled contigs - run twice. Once with output format 3 and once with output format 7
+        for fmt in (str(3),str(7)):
+            tracer_func.run_IgBlast(igblastn, self.receptor_name, self.loci,
                                 self.output_dir, self.cell_name,
                                 igblast_index_location,
                                 igblast_seqtype, self.species,
-                                self.resume_with_existing_files)
+                                self.resume_with_existing_files, fmt)
+        
         print()
 
         with warnings.catch_warnings():

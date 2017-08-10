@@ -1143,7 +1143,7 @@ def assemble_with_trinity(trinity, receptor, loci, output_dir, cell_name,
 
 def run_IgBlast(igblast, receptor, loci, output_dir, cell_name, index_location,
                 ig_seqtype, species,
-                should_resume):
+                should_resume, fmt):
     print("##Running IgBLAST##")
 
     species_mapper = {
@@ -1168,9 +1168,9 @@ def run_IgBlast(igblast, receptor, loci, output_dir, cell_name, index_location,
 
         if len(locus_names) == 0:
             return
-
-    print("Performing IgBlast on {locus_names}".format(
-        locus_names=locus_names))
+    if fmt == '7':
+        print("Performing IgBlast on {locus_names}".format(
+            locus_names=locus_names))
 
     databases = {}
     for segment in ['V', 'D', 'J']:
@@ -1183,7 +1183,8 @@ def run_IgBlast(igblast, receptor, loci, output_dir, cell_name, index_location,
     DEVNULL = open(os.devnull, 'wb')
 
     for locus in locus_names:
-        print("##{}##".format(locus))
+        if fmt == '7':
+            print("##{}##".format(locus))
         trinity_fasta = "{}/Trinity_output/{}_{}.Trinity.fasta".format(
             output_dir, cell_name, locus)
         if os.path.isfile(trinity_fasta):
@@ -1194,11 +1195,18 @@ def run_IgBlast(igblast, receptor, loci, output_dir, cell_name, index_location,
                        '-ig_seqtype', ig_seqtype, '-show_translation',
                        '-num_alignments_V', '5',
                        '-num_alignments_D', '5', '-num_alignments_J', '5',
-                       '-outfmt', '7', '-query', trinity_fasta]
-            igblast_out = "{output_dir}/IgBLAST_output/{cell_name}_{locus}.IgBLASTOut".format(
-                output_dir=output_dir,
-                cell_name=cell_name,
-                locus=locus)
+                       '-outfmt', fmt, '-query', trinity_fasta]
+            if fmt == '7':
+                igblast_out = "{output_dir}/IgBLAST_output/{cell_name}_{locus}.IgBLASTOut".format(
+                    output_dir=output_dir,
+                    cell_name=cell_name,
+                    locus=locus)
+            else:
+                igblast_out = "{output_dir}/IgBLAST_output/{cell_name}_{locus}_fmt{fmt}.IgBLASTOut".format(
+                    output_dir=output_dir,
+                    cell_name=cell_name,
+                    locus=locus,
+                    fmt=fmt)
             with open(igblast_out, 'w') as out:
                 # print(" ").join(pipes.quote(s) for s in command)
                 subprocess.check_call(command, stdout=out, stderr=DEVNULL)
