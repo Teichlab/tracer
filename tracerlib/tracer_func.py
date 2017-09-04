@@ -34,6 +34,8 @@ import tracerlib.io
 
 import copy
 
+import pdb
+
 
 def process_chunk(chunk):
     store_VDJ_rearrangement_summary = False
@@ -1209,8 +1211,15 @@ def run_IgBlast(igblast, receptor, loci, output_dir, cell_name, index_location,
                     fmt=fmt)
             with open(igblast_out, 'w') as out:
                 # print(" ").join(pipes.quote(s) for s in command)
-                subprocess.check_call(command, stdout=out, stderr=DEVNULL)
-
+                p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                output, error = p.communicate()
+                if p.returncode == 0:
+                    out.write(output.decode())
+                else:
+                    print(error.decode())
+                    exit(1)
+                 
+            
     DEVNULL.close()
 
 
