@@ -666,24 +666,26 @@ class Summariser(TracerTask):
     def run(self):
 
         if self.draw_graphs:
-            dot = self.resolve_relative_path(
-                self.config.get('tool_locations', 'dot_path'))
-            neato = self.resolve_relative_path(
-                self.config.get('tool_locations', 'neato_path'))
-
-            # check that executables from config file can be used
-            not_executable = []
-            for name, x in six.iteritems({"dot": dot, "neato": neato}):
-                if not io.is_exe(x):
-                    not_executable.append((name, x))
-            if len(not_executable) > 0:
-                print()
-                print("Could not execute the following required tools."
-                      " Check your configuration file.")
-                for t in not_executable:
-                    print(t[0], t[1])
-                print()
-                exit(1)
+            dot = self.get_binary('dot')
+            neato = self.get_binary('neato')
+            #dot = self.resolve_relative_path(
+            #    self.config.get('tool_locations', 'dot_path'))
+            #neato = self.resolve_relative_path(
+            #    self.config.get('tool_locations', 'neato_path'))
+            #
+            ## check that executables from config file can be used
+            #not_executable = []
+            #for name, x in six.iteritems({"dot": dot, "neato": neato}):
+            #    if not io.is_exe(x):
+            #        not_executable.append((name, x))
+            #if len(not_executable) > 0:
+            #    print()
+            #    print("Could not execute the following required tools."
+            #          " Check your configuration file.")
+            #    for t in not_executable:
+            #        print(t[0], t[1])
+            #    print()
+            #    exit(1)
         else:
             dot = ""
             neato = ""
