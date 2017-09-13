@@ -690,7 +690,7 @@ def load_salmon_counts(sf_file):
 
 def make_cell_network_from_dna(cells, keep_unlinked, shape, dot, neato,
                                receptor, loci,
-                               network_colours):
+                               network_colours, transgenic_ids=False):
     G = nx.MultiGraph()
     # initialise all cells as nodes
 
@@ -698,13 +698,13 @@ def make_cell_network_from_dna(cells, keep_unlinked, shape, dot, neato,
         for cell in cells:
             G.add_node(cell, shape=shape,
                        label=cell.html_style_label_for_circles(receptor, loci,
-                                                               network_colours),
+                                                               network_colours, transgenic_ids),
                        sep=0.4, fontname="helvetica neue")
     else:
         for cell in cells:
             G.add_node(cell, shape=shape,
                        label=cell.html_style_label_dna(receptor, loci,
-                                                       network_colours),
+                                                       network_colours, transgenic_ids),
                        fontname="helvetica neue")
     # make edges:
     for i in range(len(cells)):
@@ -720,15 +720,16 @@ def make_cell_network_from_dna(cells, keep_unlinked, shape, dot, neato,
                 if current_cell.recombinants[receptor][locus] is not None:
                     for current_recombinant in \
                             current_cell.recombinants[receptor][locus]:
-                        current_id_set = current_recombinant.all_poss_identifiers
-                        if comparison_cell.recombinants[receptor][
-                                locus] is not None:
-                            for comparison_recombinant in \
-                                    comparison_cell.recombinants[receptor][locus]:
-                                comparison_id_set = comparison_recombinant.all_poss_identifiers
-                                if len(current_id_set.intersection(
-                                        comparison_id_set)) > 0:
-                                    shared_identifiers += 1
+                        if not (transgenic_ids and current_recombinant.identifier in transgenic_ids):
+                            current_id_set = current_recombinant.all_poss_identifiers
+                            if comparison_cell.recombinants[receptor][
+                                    locus] is not None:
+                                for comparison_recombinant in \
+                                        comparison_cell.recombinants[receptor][locus]:
+                                    comparison_id_set = comparison_recombinant.all_poss_identifiers
+                                    if len(current_id_set.intersection(
+                                            comparison_id_set)) > 0:
+                                        shared_identifiers += 1
 
                 if shared_identifiers > 0:
                     width = shared_identifiers * 2
@@ -779,10 +780,10 @@ def make_cell_network_from_dna(cells, keep_unlinked, shape, dot, neato,
 
 
 def draw_network_from_cells(cells, output_dir, output_format, dot, neato,
-                            draw_graphs, receptor, loci, network_colours):
+                            draw_graphs, receptor, loci, network_colours, transgenic_ids=False):
     cells = list(cells.values())
     network, draw_tool, component_groups = make_cell_network_from_dna(
-        cells, False, "box", dot, neato, receptor, loci, network_colours)
+        cells, False, "box", dot, neato, receptor, loci, network_colours, transgenic_ids)
     network_file = "{}/clonotype_network_with_identifiers.dot".format(
         output_dir)
     try:
@@ -799,7 +800,7 @@ def draw_network_from_cells(cells, output_dir, output_format, dot, neato,
         subprocess.check_call(command)
 
     network, draw_tool, cgx = make_cell_network_from_dna(
-        cells, False, "circle", dot, neato, receptor, loci, network_colours)
+        cells, False, "circle", dot, neato, receptor, loci, network_colours, transgenic_ids)
     network_file = "{}/clonotype_network_without_identifiers.dot".format(
         output_dir)
     try:
@@ -817,7 +818,7 @@ def draw_network_from_cells(cells, output_dir, output_format, dot, neato,
     return (component_groups)
 
 
-def get_component_groups_sizes(cells, receptor, loci):
+def get_component_groups_sizes(cells, receptor, loci, transgenic_ids=False):
     cells = list(cells.values())
     G = nx.MultiGraph()
     # initialise all cells as nodes
@@ -835,15 +836,16 @@ def get_component_groups_sizes(cells, receptor, loci):
                 if current_cell.recombinants[receptor][locus] is not None:
                     for current_recombinant in \
                             current_cell.recombinants[receptor][locus]:
-                        current_id_set = current_recombinant.all_poss_identifiers
-                        if comparison_cell.recombinants[receptor][
-                                locus] is not None:
-                            for comparison_recombinant in \
-                                    comparison_cell.recombinants[receptor][locus]:
-                                comparison_id_set = comparison_recombinant.all_poss_identifiers
-                                if len(current_id_set.intersection(
-                                        comparison_id_set)) > 0:
-                                    shared_identifiers += 1
+                        if not (transgenic_ids and current_recombinant.identifier in transgenic_ids):
+                            current_id_set = current_recombinant.all_poss_identifiers
+                            if comparison_cell.recombinants[receptor][
+                                    locus] is not None:
+                                for comparison_recombinant in \
+                                        comparison_cell.recombinants[receptor][locus]:
+                                    comparison_id_set = comparison_recombinant.all_poss_identifiers
+                                    if len(current_id_set.intersection(
+                                            comparison_id_set)) > 0:
+                                        shared_identifiers += 1
 
                 if shared_identifiers > 0:
                     width = shared_identifiers * 2
@@ -1469,3 +1471,58 @@ def extract_newref_from_quant(reffile, quantfile, tpmcol, newreffile):
     fnew.close()
 
     return 0
+    
+def get_tg_identifier(self, seq, locus, igblast, index_location, ig_seqtype):
+    seq = ">Tg_TCR{} len={}\n{}".format(locus, len(seq), seq)
+    
+    databases = {}
+    for segment in ['v','d','j']:
+        databases[segment] = "{}/imgt_tcr_db_{}.fa".format(index_location,segment)
+    
+    #lines below suppress Igblast warning about not having an auxliary file. Taken from http://stackoverflow.com/questions/11269575/how-to-hide-output-of-subprocess-in-python-2-7
+    try:
+        from subprocess import DEVNULL # py3k
+    except ImportError:
+        DEVNULL = open(os.devnull, 'wb')
+    
+    
+    cmd = [igblast, '-germline_db_V', databases['v'], '-germline_db_D', databases['d'], '-germline_db_J', databases['j'], '-domain_system', 'imgt', '-ig_seqtype', ig_seqtype, '-show_translation', '-num_alignments_V', '5', '-num_alignments_D', '5', '-num_alignments_J', '5', '-outfmt', '7']
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+    igblast_out = p.communicate(seq)[0]
+    DEVNULL.close()
+    #pdb.set_trace()
+    igblast_out = StringIO.StringIO(igblast_out)
+    igblast_result_chunk = io.split_igblast_file(igblast_out)[0]
+    (query_name, chunk_details) = tracer_func.process_chunk(igblast_result_chunk)
+    
+    tg_identifier = tracer_func.extract_identifier_from_chunk(chunk_details, query_name, "TCR"+locus)
+    return(tg_identifier)
+    
+def extract_identifier_from_chunk(chunk_dict, query_name, locus):
+                  
+    processed_hit_table = process_hit_table(query_name, chunk_dict, locus)
+    
+    if processed_hit_table is not None:
+        (returned_locus, good_hits, rearrangement_summary) = processed_hit_table
+        junction_list = chunk_dict['junction_details']
+        
+        
+                  
+        
+        best_V = remove_allele_stars(rearrangement_summary[0].split(",")[0])
+         
+        
+                  
+        junc_string = "".join(junction_list)
+        junc_string = remove_NA(junc_string)
+        
+        if returned_locus in "BD":
+            best_J = remove_allele_stars(rearrangement_summary[2].split(",")[0])
+        elif returned_locus in "AG":
+            best_J = remove_allele_stars(rearrangement_summary[1].split(",")[0])
+                  
+        identifier = best_V + "_" + junc_string + "_" + best_J
+        
+        
+        return(identifier)
+    

@@ -241,7 +241,9 @@ class Assembler(TracerTask):
                                 help="Maximum permitted length of junction string in recombinant identifier. "
                                      "Used to filter out artefacts. May need to be longer for TCRdelta.",
                                 default=50, type=int)
-
+            parser.add_argument('--transgenic', '-t', 
+                                help="Use if cells have transgenic TCR A or B sequences outside endogenous loci to allow three \
+                                recombinants per chain.", action="store_true")
             parser.add_argument('fastq1', metavar="<FASTQ1>",
                                 help='first fastq file')
             parser.add_argument('fastq2', metavar="<FASTQ2>",
@@ -270,6 +272,7 @@ class Assembler(TracerTask):
             self.receptor_name = args.receptor_name
             self.loci = args.loci
             self.max_junc_len = args.max_junc_len
+            self.transgenic = args.transgenic
             config_file = args.config_file
 
         else:
@@ -291,6 +294,7 @@ class Assembler(TracerTask):
             self.receptor_name = kwargs.get('receptor_name')
             self.loci = kwargs.get('loci')
             self.max_junc_len = kwargs.get('max_junc_len')
+            self.transgenic = kwargs.get('transgenic')
             config_file = kwargs.get('config_file')
 
         self.config = self.read_config(config_file)
@@ -321,6 +325,22 @@ class Assembler(TracerTask):
         if not self.single_end and self.fastq2:
             if not os.path.isfile(self.fastq2):
                 raise OSError('2', 'FASTQ file not found', self.fastq2)
+        
+        transgenic_ids = {'A':False, 'B':False}
+        
+        if self.transgenic:
+            if not (config.has_option('transgenic_sequences', 'tcra_tg') or config.has_option('transgenic_sequences', 'tcrb_tg')):
+                print
+                print("No transgenic sequences specified. Please edit the config file to include them or run without -t flag.")
+                print
+                exit(1)
+            else:
+                if config.has_option('transgenic_sequences', 'tcra_tg'):
+                    transgenic_ids['A'] = tracer_func.get_tg_identifier(config.get('transgenic_sequences', 'tcra_tg'), 'A', igblast, igblast_index_location, igblast_seqtype)
+  
+                if config.has_option('transgenic_sequences', 'tcrb_tg'):
+                    transgenic_ids['B'] = tracer_func.get_tg_identifier(config.get('transgenic_sequences', 'tcrb_tg'), 'B', igblast, igblast_index_location, igblast_seqtype)
+        
 
     def run(self, **kwargs):
 
@@ -369,7 +389,12 @@ class Assembler(TracerTask):
                     receptor=self.receptor_name), 'wb') as pf:
             pickle.dump(cell, pf, protocol=0)
         print("##Filtering by read count##")
-        cell.filter_recombinants()
+        
+        if self.transgenic:
+            cell.filter_recombinants(transgenic_ids.values())
+        else:
+            cell.filter_recombinants()
+            
         fasta_filename = "{output_dir}/filtered_{receptor}_seqs/{cell_name}_{receptor}seqs.fa".format(
             output_dir=self.output_dir,
             cell_name=self.cell_name,
@@ -616,6 +641,7 @@ class Summariser(TracerTask):
             parser.add_argument('--use_unfiltered', '-u',
                                 help='use unfiltered recombinants',
                                 action="store_true")
+            
             parser.add_argument('--keep_invariant', '-i',
                                 help='ignore invariant cells when constructing networks',
                                 action="store_true")
@@ -628,6 +654,10 @@ class Summariser(TracerTask):
                                 action="store_true")
             parser.add_argument('dir', metavar="<DIR>",
                                 help='directory containing subdirectories for each cell to be summarised')
+            parser.add_argument('--transgenic', '-t', 
+                                help="Summarise detection of expected transgenic A or B chains. \
+                                Ignore these when constructing networks.", action="store_true")
+            
             args = parser.parse_args(sys.argv[2:])
 
             resource_dir = args.resource_dir
@@ -639,6 +669,7 @@ class Summariser(TracerTask):
             self.receptor_name = args.receptor_name
             self.loci = args.loci
             self.species = args.species
+            self.transgenic = args.transgenic
             config_file = args.config_file
         else:
             resource_dir = kwargs.get('resource_dir')
@@ -650,6 +681,7 @@ class Summariser(TracerTask):
             self.receptor_name = kwargs.get('receptor_name')
             self.loci = kwargs.get('loci')
             self.species = kwargs.get('species')
+            self.transgenic = kwargs.get('transgenic')
             config_file = kwargs.get('config_file')
 
         # Read config file
@@ -689,10 +721,32 @@ class Summariser(TracerTask):
         else:
             dot = ""
             neato = ""
-
+        
+        transgenic_ids = {'A':False, 'B':False}
+        
+        if self.transgenic:
+            transgenic_ids
+            if not (config.has_option('transgenic_sequences', 'tcra_tg') or config.has_option('transgenic_sequences', 'tcrb_tg')):
+                print
+                print("No transgenic sequences specified. Please edit the config file to include them or run without -t flag.")
+                print
+                exit(1)
+            else:
+                igblast = self.get_binary('igblast')
+                
+                
+                if config.has_option('transgenic_sequences', 'tcra_tg'):
+                    transgenic_ids['A'] = tracer_func.get_tg_identifier(config.get('transgenic_sequences', 'tcra_tg'), 'A', igblast, igblast_index_location, igblast_seqtype)
+        
+                if config.has_option('transgenic_sequences', 'tcrb_tg'):
+                    transgenic_ids['B'] = tracer_func.get_tg_identifier(config.get('transgenic_sequences', 'tcrb_tg'), 'B', igblast, igblast_index_location, igblast_seqtype)
+        
+        
         cells = {}
         empty_cells = []
         subdirectories = next(os.walk(self.root_dir))[1]
+        
+        Tg_detection = {}
 
         if self.use_unfiltered:
             pkl_dir = "unfiltered_{}_seqs".format(self.receptor_name)
@@ -737,6 +791,14 @@ class Summariser(TracerTask):
 
         for p in possible_pairs:
             cell_recovery_count[p] = 0
+        
+        if self.transgenic:
+            transgenic_combinations = ['AB', 'Ab', 'aB','ab', 'A', 'a', 'B', 'b']
+            count_of_cells_with_transgenic = dict.fromkeys(transgenic_combinations, 0)
+            for locus, ident in transgenic_ids.iteritems():
+                if ident:
+                    count_of_cells_with_transgenic[locus] = 0
+        
 
         for cell_name, cell in six.iteritems(cells):
             prod_counts = dict()
@@ -749,8 +811,28 @@ class Summariser(TracerTask):
             for p in possible_pairs:
                 if prod_counts[p[0]] > 0 and prod_counts[p[1]] > 0:
                     cell_recovery_count[p] += 1
+            
+            if self.transgenic:
+                transgenic_label=""
+                Tg_detection[cell_name] = {"A":'False', "B":'False'}
+                for locus in ['A','B']:
+                    prod_count = prod_counts[locus]
+                    ident = transgenic_ids[locus]
+                    if ident in cell.getAllRecombinantIdentifiersForLocus(locus) and prod_count > 0:
+                        transgenic_label = transgenic_label + locus
+                    elif prod_count > 0 and not ident in cell.getAllRecombinantIdentifiersForLocus(locus):
+                        transgenic_label = transgenic_label + locus.lower()
+                    
+                    
+                    if ident in cell.getAllRecombinantIdentifiersForLocus(locus):
+                        Tg_detection[cell_name][locus] = 'True'
+                    
+                if len (transgenic_label) > 0:
+                    count_of_cells_with_transgenic[transgenic_label] += 1
 
         total_cells = len(cells)
+        
+      
 
         for l in self.loci:
             count = cell_recovery_count[l]
@@ -774,6 +856,12 @@ class Summariser(TracerTask):
 
         all_counters = defaultdict(Counter)
         prod_counters = defaultdict(Counter)
+        
+        if self.transgenic:
+            outfile.write("DETECTION OF TRANSGENIC SEQUENCES\nNumber of cells with transgenic sequence detected.\nUppercase letter indicates transgenic seq detected for locus, lowercase indicates a different productive recombinant.\n")
+            for comb in transgenic_combinations:
+                outfile.write("{}:\t{}\n".format(comb, count_of_cells_with_transgenic[comb]))
+            outfile.write("\n\n")
 
         for cell in cells.values():
             for l in self.loci:
@@ -1004,7 +1092,17 @@ class Summariser(TracerTask):
         # make clonotype networks
         network_colours = io.read_colour_file(
             os.path.join(self.species_dir, "colours.csv"))
-        component_groups = tracer_func.draw_network_from_cells(cells, outdir,
+        if self.transgenic:
+            component_groups = tracer_func.draw_network_from_cells(cells, outdir,
+                                                               self.graph_format,
+                                                               dot, neato,
+                                                               self.draw_graphs,
+                                                               self.receptor_name,
+                                                               self.loci,
+                                                               network_colours,
+                                                               transgenic_ids.values())
+        else:
+            component_groups = tracer_func.draw_network_from_cells(cells, outdir,
                                                                self.graph_format,
                                                                dot, neato,
                                                                self.draw_graphs,
@@ -1045,9 +1143,15 @@ class Summariser(TracerTask):
         #pdb.set_trace()
         # plot clonotype sizes
         plt.figure()
-        clonotype_sizes = tracer_func.get_component_groups_sizes(cells,
-                                                                 self.receptor_name,
-                                                                 self.loci)
+        if self.transgenic:
+            clonotype_sizes = tracer_func.get_component_groups_sizes(cells,
+                                                                     self.receptor_name,
+                                                                     self.loci,
+                                                                     transgenic_ids.values())
+        else:
+            clonotype_sizes = tracer_func.get_component_groups_sizes(cells,
+                                                                     self.receptor_name,
+                                                                     self.loci)
         w = 0.85
         x_range = range(1, len(clonotype_sizes) + 1)
         plt.bar(x_range, height=clonotype_sizes, width=w, color='black',
@@ -1150,13 +1254,13 @@ class Tester(TracerTask):
                       cell_name=name, output_dir=out_dir,
                       single_end=False, fragment_length=False,
                       fragment_sd=False, receptor_name='TCR',
-                      loci=['A', 'B'], max_junc_len=50).run()
+                      loci=['A', 'B'], max_junc_len=50, transgenic=False).run()
 
         Summariser(resource_dir=self.resource_dir, config_file=self.config_file, use_unfiltered=False,
                    keep_invariant=False,
                    graph_format=self.graph_format, no_networks=self.no_networks,
                    root_dir=out_dir, receptor_name='TCR',
-                   loci=['A', 'B'], species='Mmus').run()
+                   loci=['A', 'B'], species='Mmus', transgenic=False).run()
 
 
 class Builder(TracerTask):
