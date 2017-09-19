@@ -1,8 +1,6 @@
 # TraCeR
 TraCeR - reconstruction of T cell receptor sequences from single-cell RNA-seq data.
 
-**IMPORTANT: Python dependencies have changed since the last release. Use the requirements file (detailed [here](#setup)) to update them if necessary.**
-
 ## Contents ##
 1. [Introduction](#introduction)
 2. [Installation](#installation)
@@ -11,6 +9,7 @@ TraCeR - reconstruction of T cell receptor sequences from single-cell RNA-seq da
 5. [Usage](#using-tracer)
 	- [*Assemble*](#assemble-tcr-reconstruction)
     - [*Summarise*](#summarise-summary-and-clonotype-networks)
+6. [Docker image](#docker)
 
 
 ## Introduction
@@ -45,27 +44,17 @@ Downloading the executable files from `ftp://ftp.ncbi.nih.gov/blast/executables/
 
 You should also ensure to set the `$IGDATA` environment variable to point to the location of the IgBlast executable. For example run `export IGDATA=/<path_to_igblast>/igblast/1.4.0/bin`.
 
-#### Python modules 
-1. [Matplotlib](http://matplotlib.org)
-2. [Seaborn](http://stanford.edu/~mwaskom/software/seaborn/)
-3. [Biopython](http://biopython.org/)
-4. [Prettytable](https://code.google.com/p/prettytable/)
-5. [Levenshtein](https://pypi.python.org/pypi/python-Levenshtein/)
-6. [Networkx](https://networkx.github.io)
-7. It seems that v1.11 of Networkx behaves differently when writing dot files for use with Graphviz. If you have this (or later versions) you also need to install [PyDotPlus](http://pydotplus.readthedocs.org).
-8. [Future](http://python-future.org/index.html) for compatibility with Python 2.
-
-Note: Seaborn depends on the module statsmodels, which if updated through other packages may cause problems in Seaborn. If such issues arise, try to uninstall statsmodels and install again:
-  
-    conda uninstall statsmodels --yes
-    conda install -c taugspurger statsmodels=0.8.0     
-
 ## Setup 
 To set up the python dependencies, use the requirements file:
 
     pip install -r requirements.txt
 
 It is **highly** recommended that numpy and biopython are first installed through your system's package manager or conda.
+
+Note: Seaborn depends on the module statsmodels, which if updated through other packages may cause problems in Seaborn. If such issues arise, try to uninstall statsmodels and install again:
+  
+    conda uninstall statsmodels --yes
+    conda install -c taugspurger statsmodels=0.8.0     
 
 The tracer module is then installed using:
 
@@ -163,7 +152,6 @@ Location of Kallisto/Salmon indices built (exclusively) from corresponding `[bas
 * Salmon builds the quasi-mapping-based index, using an auxiliary k-mer hash over k-mers of length `kmerLen`. While quasi-mapping will make used of arbitrarily long matches between the query and reference, the k size selected here will act as the minimum acceptable length for a valid match. The value for `kmerLen` must be odd; its default and maximum value is 31. 
 
 See salmon [documentation](http://salmon.readthedocs.io/en/latest/salmon.html) for more details.
-
 
 ## Testing TraCeR 
 TraCeR comes with a small dataset in `test_data/` (containing only TCRA or TCRB reads for a single cell) that you can use to test your installation and config file and confirm that all the prerequisites are working. Run it as:
@@ -303,3 +291,11 @@ The following output files are generated:
 #### Options
 
 * `-f/--force_overwrite` : Force overwrite of existing resources
+
+##Docker image
+
+TraCeR is also available as a standalone Docker image on [DockerHub](https://hub.docker.com/r/teichlab/tracer/), with all of its dependencies installed and configured appropriately. Running TraCeR from the image is very similar to running it from a normal installation, as you still need to pass it all the arguments, including run mode, and the syntax is identical. The only difference is that `--small_index` is not supported.
+
+To run the TraCeR Docker image, create a directory, ensure that all of your input data is within said directory, and then call the Docker image with `docker run -it --rm -v $PWD:/scratch -w /scratch teichlab/tracer`, followed by any syntax you would have used to call TraCeR normally but without worrying about the configuration aspect. The `-it` flag ensures that you see all the information TraCeR prints to the screen during its run, while `--rm` deletes the individual container created based on the image for the purpose of the run once the analysis is complete, not littering your computer's drive. `-v` creates a volume, allowing the created container to see the contents of your current working directory, and the `-w` flag sets the container's working directory to the newly created volume. For example, if you wanted to run the test analysis, you should clone this GitHub repository, navigate to its main directory so you can see the `test_data` folder, and call the following (you need to specify the `-o test_data` so that the results get written to the volume you created):
+
+	docker run -it --rm -v $PWD:/scratch -w /scratch teichlab/tracer test -o test_data

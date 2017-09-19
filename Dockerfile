@@ -40,25 +40,14 @@ RUN cd /tracer && pip3 install -r requirements.txt && python3 setup.py install
 RUN cp -r /tracer/test_data /usr/local/lib/python3.5/dist-packages/tracer-0.5-py3.5.egg/
 RUN cp -r /tracer/resources /usr/local/lib/python3.5/dist-packages/tracer-0.5-py3.5.egg/
 
-#obtaining the transcript sequences and kallisto/salmon indices
+#obtaining the transcript sequences. no salmon/kallisto indices as they make dockerhub unhappy for some reason
 RUN mkdir GRCh38 && cd GRCh38 && wget ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_human/release_27/gencode.v27.transcripts.fa.gz && \
-	gunzip gencode.v27.transcripts.fa.gz && python3 /tracer/docker_helper_files/gencode_parse.py gencode.v27.transcripts.fa && rm gencode.v27.transcripts.fa && \
-	/Salmon-0.8.2_linux_x86_64/bin/salmon index -t transcripts.fasta -i salmon && \
-	/kallisto_linux-v0.43.1/kallisto index -i kallisto.idx transcripts.fasta
+	gunzip gencode.v27.transcripts.fa.gz && python3 /tracer/docker_helper_files/gencode_parse.py gencode.v27.transcripts.fa && rm gencode.v27.transcripts.fa
 RUN mkdir GRCm38 && cd GRCm38 && wget ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_mouse/release_M15/gencode.vM15.transcripts.fa.gz && \
-	gunzip gencode.vM15.transcripts.fa.gz && python3 /tracer/docker_helper_files/gencode_parse.py gencode.vM15.transcripts.fa && rm gencode.vM15.transcripts.fa && \
-	/Salmon-0.8.2_linux_x86_64/bin/salmon index -t transcripts.fasta -i salmon && \
-	/kallisto_linux-v0.43.1/kallisto index -i kallisto.idx transcripts.fasta
+	gunzip gencode.vM15.transcripts.fa.gz && python3 /tracer/docker_helper_files/gencode_parse.py gencode.vM15.transcripts.fa && rm gencode.vM15.transcripts.fa
 
-#world's longest sed pipe, turning the github demo tracer.conf into a functional file representing where things live
-RUN sed 's/#igblastn_path = \/path\/to\/igblastn/igblastn_path = \/ncbi-igblast-1.7.0\/bin\/igblastn/g' /tracer/tracer.conf | \
-	sed 's/#makeblastdb_path = \/path\/to\/makeblastdb/makeblastdb_path = \/ncbi-igblast-1.7.0\/bin\/makeblastdb/g' | \
-	sed 's/#kallisto_path = \/path\/to\/kallisto/kallisto_path = \/kallisto_linux-v0.43.1\/kallisto/g' | \
-	sed 's/#salmon_path = \/path\/to\/salmon/salmon_path = \/Salmon-0.8.2_linux_x86_64\/bin\/salmon/g' | \
-	sed 's/#trinity_path = \/path\/to\/trinity/trinity_path = \/trinityrnaseq-Trinity-v2.4.0\/Trinity/g' | \
-	sed ':a;N;$!ba;s/\[base_transcriptomes\]\n# reference transcriptomes for kallisto\/salmon\nMmus = \/path\/to\/kallisto\/transcriptome_for_Mmus\nHsap = \/path\/to\/kallisto\/transcriptome_for_Hsap/\[base_transcriptomes\]\n# reference transcriptomes for kallisto\/salmon\nMmus = \/GRCm38\/transcripts.fasta\nHsap = \/GRCh38\/transcripts.fasta/g' | \
-	sed ':a;N;$!ba;s/\[salmon_base_indices\]\n# salmon indices created from \[base_transcriptomes\] above; needed only when option --small_index is used\nMmus = \/path\/to\/salmon\/index_for_Mmus\nHsap = \/path\/to\/salmon\/index_for_Hsap/\[salmon_base_indices\]\n# salmon indices created from \[base_transcriptomes\] above; needed only when option --small_index is used\nMmus = \/GRCm38\/salmon\nHsap = \/GRCh38\/salmon/g' | \
-	sed ':a;N;$!ba;s/\[kallisto_base_indices\]\n# kallisto indices created from \[base_transcriptomes\] above; needed only when option --small_index is used\nMmus = \/path\/to\/kallisto\/index_for_Mmus\nHsap = \/path\/to\/kallisto\/index_for_Hsap/\[kallisto_base_indices\]\n# kallisto indices created from \[base_transcriptomes\] above; needed only when option --small_index is used\nMmus = \/GRCm38\/kallisto.idx\nHsap = \/GRCh38\/kallisto.idx/g' > ~/.tracerrc
+#placing a preconfigured tracer.conf in ~/.tracerrc
+RUN cp /tracer/docker_helper_files/docker_tracer.conf ~/.tracerrc
 
 #this is a tracer container, so let's point it at a tracer wrapper that sets the silly IgBLAST environment variable thing
 ENTRYPOINT ["bash", "/tracer/docker_helper_files/docker_wrapper.sh"]
