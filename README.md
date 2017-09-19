@@ -292,7 +292,7 @@ The following output files are generated:
 
 * `-f/--force_overwrite` : Force overwrite of existing resources
 
-##Docker image
+## Docker image
 
 TraCeR is also available as a standalone Docker image on [DockerHub](https://hub.docker.com/r/teichlab/tracer/), with all of its dependencies installed and configured appropriately. Running TraCeR from the image is very similar to running it from a normal installation, as you still need to pass it all the arguments, including run mode, and the syntax is identical. The only difference is that `--small_index` is not supported.
 
