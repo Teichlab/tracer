@@ -299,7 +299,7 @@ TraCeR is also available as a standalone Docker image on [DockerHub](https://hub
 * `--small_index` is not supported
 * You don't need to worry about specifying a configuration file. This is included in the container.
 
-To run the TraCeR Docker image, create a directory containing your input data and then run the following command from within that directory:
+To run the TraCeR Docker image, run the following command from within a directory that contains your input data:
 
 	docker run -it --rm -v $PWD:/scratch -w /scratch teichlab/tracer
 	
