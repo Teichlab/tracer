@@ -294,8 +294,19 @@ The following output files are generated:
 
 ## Docker image
 
-TraCeR is also available as a standalone Docker image on [DockerHub](https://hub.docker.com/r/teichlab/tracer/), with all of its dependencies installed and configured appropriately. Running TraCeR from the image is very similar to running it from a normal installation, as you still need to pass it all the arguments, including run mode, and the syntax is identical. The only difference is that `--small_index` is not supported.
+TraCeR is also available as a standalone Docker image on [DockerHub](https://hub.docker.com/r/teichlab/tracer/), with all of its dependencies installed and configured appropriately. Running TraCeR from the image is very similar to running it from a normal installation. You can pass all the appropriate arguments to the Docker commandwith the usual syntax as described above. Two differences from installing it yourself are that:
 
-To run the TraCeR Docker image, create a directory, ensure that all of your input data is within said directory, navigate to that directory and then call the Docker image with `docker run -it --rm -v $PWD:/scratch -w /scratch teichlab/tracer`, followed by any syntax you would have used to call TraCeR normally but without worrying about the configuration aspect. The `-it` flag ensures that you see all the information TraCeR prints to the screen during its run, while `--rm` deletes the individual container created based on the image for the purpose of the run once the analysis is complete, not littering your computer's drive. `-v` creates a volume, allowing the created container to see the contents of your current working directory, and the `-w` flag sets the container's working directory to the newly created volume. For example, if you wanted to run the test analysis, you should clone this GitHub repository, navigate to its main directory so you can see the `test_data` folder, and call the following (you need to specify the `-o test_data` so that the results get written to the volume you created, ensuring you can see them after the analysis is finished):
+* `--small_index` is not supported
+* You don't need to worry about specifying a configuration file. This is included in the container.
+
+To run the TraCeR Docker image, create a directory containing your input data and then run the following command from within that directory:
+
+	docker run -it --rm -v $PWD:/scratch -w /scratch teichlab/tracer
+	
+followed by any arguments that you want to pass to TraCeR. 
+
+The `-it` flag ensures that you see all the information TraCeR prints to the screen during its run, while `--rm` deletes the individual container created based on the image for the purpose of the run once the analysis is complete, not littering your computer's drive. `-v` creates a volume, allowing the created container to see the contents of your current working directory, and the `-w` flag sets the container's working directory to the newly created volume. 
+
+For example, if you wanted to run the test analysis, you should clone this GitHub repository, navigate to its main directory so you can see the `test_data` folder, and call the following (you need to specify the `-o test_data` so that the results get written to the volume you created, ensuring you can see them after the analysis is finished):
 
 	docker run -it --rm -v $PWD:/scratch -w /scratch teichlab/tracer test -o test_data
