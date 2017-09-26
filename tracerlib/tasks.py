@@ -426,6 +426,23 @@ class Assembler(TracerTask):
                 self.config.get('trinity_options', 'trinity_grid_conf'))
         else:
             trinity_grid_conf = False
+            
+        # Is Trinity version compatible with --no_normalize_reads argument
+        no_normalise = False
+        trinity_version = self.config.get('trinity_options', 'trinity_version')
+        if trinity_version == '2':
+            try:
+                subprocess.check_output([trinity, '--version'])
+            except subprocess.CalledProcessError as err:
+                first_line = err.output.decode('utf-8').split("\n")[0]
+                m = re.search(r'v(\d+\.\d+\.?\d*)', first_line)
+                if m is not None:
+                    minor_version = int(m.group()[1:].split(".")[1])
+                    if minor_version >= 3:
+                        no_normalise = True
+                    else:
+                        no_normalise = False
+        
 
         # De novo assembly with trinity
         trinity_JM = self.config.get('trinity_options', 'max_jellyfish_memory')
@@ -434,7 +451,7 @@ class Assembler(TracerTask):
             trinity, self.receptor_name, self.loci, self.output_dir,
             self.cell_name, self.ncores, trinity_grid_conf,
             trinity_JM, trinity_version, self.resume_with_existing_files,
-            self.single_end, self.species)
+            self.single_end, self.species, no_normalise)
         if len(successful_files) == 0:
             print("No successful Trinity assemblies")
             self.die_with_empty_cell(self.cell_name, self.output_dir,
