@@ -326,20 +326,24 @@ class Assembler(TracerTask):
             if not os.path.isfile(self.fastq2):
                 raise OSError('2', 'FASTQ file not found', self.fastq2)
         
-        transgenic_ids = {'A':False, 'B':False}
+        self.transgenic_ids = {'A':False, 'B':False}
         
         if self.transgenic:
-            if not (config.has_option('transgenic_sequences', 'tcra_tg') or config.has_option('transgenic_sequences', 'tcrb_tg')):
+            if not (self.config.has_option('transgenic_sequences', 'tcra_tg') or self.config.has_option('transgenic_sequences', 'tcrb_tg')):
                 print
                 print("No transgenic sequences specified. Please edit the config file to include them or run without -t flag.")
                 print
                 exit(1)
             else:
-                if config.has_option('transgenic_sequences', 'tcra_tg'):
-                    transgenic_ids['A'] = tracer_func.get_tg_identifier(config.get('transgenic_sequences', 'tcra_tg'), 'A', igblast, igblast_index_location, igblast_seqtype)
+                igblast = self.get_binary('igblastn')
+                igblast_index_location = os.path.join(self.species_root, 'igblast_dbs')
+                igblast_seqtype = self.config.get('IgBlast_options', 'igblast_seqtype')
+                
+                if self.config.has_option('transgenic_sequences', 'tcra_tg'):
+                    self.transgenic_ids['A'] = tracer_func.get_tg_identifier(self.config.get('transgenic_sequences', 'tcra_tg'), 'A', igblast, igblast_index_location, igblast_seqtype)
   
-                if config.has_option('transgenic_sequences', 'tcrb_tg'):
-                    transgenic_ids['B'] = tracer_func.get_tg_identifier(config.get('transgenic_sequences', 'tcrb_tg'), 'B', igblast, igblast_index_location, igblast_seqtype)
+                if self.config.has_option('transgenic_sequences', 'tcrb_tg'):
+                    self.transgenic_ids['B'] = tracer_func.get_tg_identifier(self.config.get('transgenic_sequences', 'tcrb_tg'), 'B', igblast, igblast_index_location, igblast_seqtype)
         
 
     def run(self, **kwargs):
@@ -391,7 +395,7 @@ class Assembler(TracerTask):
         print("##Filtering by read count##")
         
         if self.transgenic:
-            cell.filter_recombinants(transgenic_ids.values())
+            cell.filter_recombinants(self.transgenic_ids.values())
         else:
             cell.filter_recombinants()
             
@@ -475,7 +479,6 @@ class Assembler(TracerTask):
         imgt_seq_location = os.path.join(self.species_root, 'raw_seqs')
 
         igblast_seqtype = self.config.get('IgBlast_options', 'igblast_seqtype')
-
         # IgBlast of assembled contigs - run twice. Once with output format 3 and once with output format 7
         for fmt in (str(3),str(7)):
             tracer_func.run_IgBlast(igblastn, self.receptor_name, self.loci,
@@ -722,11 +725,10 @@ class Summariser(TracerTask):
             dot = ""
             neato = ""
         
-        transgenic_ids = {'A':False, 'B':False}
+        self.transgenic_ids = {'A':False, 'B':False}
         
         if self.transgenic:
-            transgenic_ids
-            if not (config.has_option('transgenic_sequences', 'tcra_tg') or config.has_option('transgenic_sequences', 'tcrb_tg')):
+            if not (self.config.has_option('transgenic_sequences', 'tcra_tg') or self.config.has_option('transgenic_sequences', 'tcrb_tg')):
                 print
                 print("No transgenic sequences specified. Please edit the config file to include them or run without -t flag.")
                 print
@@ -735,11 +737,11 @@ class Summariser(TracerTask):
                 igblast = self.get_binary('igblast')
                 
                 
-                if config.has_option('transgenic_sequences', 'tcra_tg'):
-                    transgenic_ids['A'] = tracer_func.get_tg_identifier(config.get('transgenic_sequences', 'tcra_tg'), 'A', igblast, igblast_index_location, igblast_seqtype)
+                if self.config.has_option('transgenic_sequences', 'tcra_tg'):
+                    self.transgenic_ids['A'] = tracer_func.get_tg_identifier(self.config.get('transgenic_sequences', 'tcra_tg'), 'A', igblast, igblast_index_location, igblast_seqtype)
         
-                if config.has_option('transgenic_sequences', 'tcrb_tg'):
-                    transgenic_ids['B'] = tracer_func.get_tg_identifier(config.get('transgenic_sequences', 'tcrb_tg'), 'B', igblast, igblast_index_location, igblast_seqtype)
+                if self.config.has_option('transgenic_sequences', 'tcrb_tg'):
+                    self.transgenic_ids['B'] = tracer_func.get_tg_identifier(self.config.get('transgenic_sequences', 'tcrb_tg'), 'B', igblast, igblast_index_location, igblast_seqtype)
         
         
         cells = {}
@@ -795,7 +797,7 @@ class Summariser(TracerTask):
         if self.transgenic:
             transgenic_combinations = ['AB', 'Ab', 'aB','ab', 'A', 'a', 'B', 'b']
             count_of_cells_with_transgenic = dict.fromkeys(transgenic_combinations, 0)
-            for locus, ident in transgenic_ids.iteritems():
+            for locus, ident in self.transgenic_ids.iteritems():
                 if ident:
                     count_of_cells_with_transgenic[locus] = 0
         
@@ -817,7 +819,7 @@ class Summariser(TracerTask):
                 Tg_detection[cell_name] = {"A":'False', "B":'False'}
                 for locus in ['A','B']:
                     prod_count = prod_counts[locus]
-                    ident = transgenic_ids[locus]
+                    ident = self.transgenic_ids[locus]
                     if ident in cell.getAllRecombinantIdentifiersForLocus(locus) and prod_count > 0:
                         transgenic_label = transgenic_label + locus
                     elif prod_count > 0 and not ident in cell.getAllRecombinantIdentifiersForLocus(locus):
@@ -1100,7 +1102,7 @@ class Summariser(TracerTask):
                                                                self.receptor_name,
                                                                self.loci,
                                                                network_colours,
-                                                               transgenic_ids.values())
+                                                               self.transgenic_ids.values())
         else:
             component_groups = tracer_func.draw_network_from_cells(cells, outdir,
                                                                self.graph_format,
@@ -1147,7 +1149,7 @@ class Summariser(TracerTask):
             clonotype_sizes = tracer_func.get_component_groups_sizes(cells,
                                                                      self.receptor_name,
                                                                      self.loci,
-                                                                     transgenic_ids.values())
+                                                                     self.transgenic_ids.values())
         else:
             clonotype_sizes = tracer_func.get_component_groups_sizes(cells,
                                                                      self.receptor_name,

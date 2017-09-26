@@ -21,6 +21,7 @@ import shutil
 import subprocess
 from collections import defaultdict, Counter
 from time import sleep
+import StringIO
 
 import Levenshtein
 import networkx as nx
@@ -276,7 +277,6 @@ def process_hit_table(query_name, query_data, locus):
     good_hits = []
 
     segment_locus_pattern = re.compile(r"TRAV.+DV.+")
-
     locus_name = locus.split("_")[1]
 
     for entry in hit_table:
@@ -1472,12 +1472,12 @@ def extract_newref_from_quant(reffile, quantfile, tpmcol, newreffile):
 
     return 0
     
-def get_tg_identifier(self, seq, locus, igblast, index_location, ig_seqtype):
+def get_tg_identifier(seq, locus, igblast, index_location, ig_seqtype):
     seq = ">Tg_TCR{} len={}\n{}".format(locus, len(seq), seq)
     
     databases = {}
-    for segment in ['v','d','j']:
-        databases[segment] = "{}/imgt_tcr_db_{}.fa".format(index_location,segment)
+    for segment in ['V','D','J']:
+        databases[segment] = "{}/TCR_{}.fa".format(index_location,segment)
     
     #lines below suppress Igblast warning about not having an auxliary file. Taken from http://stackoverflow.com/questions/11269575/how-to-hide-output-of-subprocess-in-python-2-7
     try:
@@ -1486,20 +1486,19 @@ def get_tg_identifier(self, seq, locus, igblast, index_location, ig_seqtype):
         DEVNULL = open(os.devnull, 'wb')
     
     
-    cmd = [igblast, '-germline_db_V', databases['v'], '-germline_db_D', databases['d'], '-germline_db_J', databases['j'], '-domain_system', 'imgt', '-ig_seqtype', ig_seqtype, '-show_translation', '-num_alignments_V', '5', '-num_alignments_D', '5', '-num_alignments_J', '5', '-outfmt', '7']
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
-    igblast_out = p.communicate(seq)[0]
+    cmd = [igblast, '-germline_db_V', databases['V'], '-germline_db_D', databases['D'], '-germline_db_J', databases['J'], '-domain_system', 'imgt', '-ig_seqtype', ig_seqtype, '-show_translation', '-num_alignments_V', '5', '-num_alignments_D', '5', '-num_alignments_J', '5', '-outfmt', '7']
+
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+    igblast_out = proc.communicate(seq)[0]
     DEVNULL.close()
-    #pdb.set_trace()
     igblast_out = StringIO.StringIO(igblast_out)
-    igblast_result_chunk = io.split_igblast_file(igblast_out)[0]
-    (query_name, chunk_details) = tracer_func.process_chunk(igblast_result_chunk)
-    
-    tg_identifier = tracer_func.extract_identifier_from_chunk(chunk_details, query_name, "TCR"+locus)
+    igblast_result_chunk = tracerlib.io.split_igblast_file(igblast_out)[0]
+    (query_name, chunk_details) = process_chunk(igblast_result_chunk)
+    tg_identifier = extract_identifier_from_chunk(chunk_details, query_name, "TCR_"+locus)
     return(tg_identifier)
     
 def extract_identifier_from_chunk(chunk_dict, query_name, locus):
-                  
+    #pdb.set_trace()              
     processed_hit_table = process_hit_table(query_name, chunk_dict, locus)
     
     if processed_hit_table is not None:
@@ -1516,9 +1515,9 @@ def extract_identifier_from_chunk(chunk_dict, query_name, locus):
         junc_string = "".join(junction_list)
         junc_string = remove_NA(junc_string)
         
-        if returned_locus in "BD":
+        if returned_locus in ("TCR_B", "TCR_D"):
             best_J = remove_allele_stars(rearrangement_summary[2].split(",")[0])
-        elif returned_locus in "AG":
+        elif returned_locus in ("TCR_A", "TCR_G"):
             best_J = remove_allele_stars(rearrangement_summary[1].split(",")[0])
                   
         identifier = best_V + "_" + junc_string + "_" + best_J
