@@ -708,6 +708,8 @@ class Summariser(TracerTask):
         self.config = self.read_config(config_file)
         self.species_dir = self.get_species_root(self.species,
                                                  root=resource_dir)
+        self.species_root = self.get_species_root(self.species,
+                                                  root=resource_dir)
 
         invariant_cells = os.path.join(self.species_dir, 'invariant_cells.json')
         if os.path.isfile(invariant_cells):
@@ -751,7 +753,9 @@ class Summariser(TracerTask):
                 print
                 exit(1)
             else:
-                igblast = self.get_binary('igblast')
+                igblast = self.get_binary('igblastn')
+                igblast_index_location = os.path.join(self.species_root, 'igblast_dbs')
+                igblast_seqtype = self.config.get('IgBlast_options', 'igblast_seqtype')
                 
                 
                 if self.config.has_option('transgenic_sequences', 'tcra_tg'):
@@ -837,13 +841,13 @@ class Summariser(TracerTask):
                 for locus in ['A','B']:
                     prod_count = prod_counts[locus]
                     ident = self.transgenic_ids[locus]
-                    if ident in cell.getAllRecombinantIdentifiersForLocus(locus) and prod_count > 0:
+                    if ident in cell.getAllRecombinantIdentifiersForLocus(self.receptor_name, locus) and prod_count > 0:
                         transgenic_label = transgenic_label + locus
-                    elif prod_count > 0 and not ident in cell.getAllRecombinantIdentifiersForLocus(locus):
+                    elif prod_count > 0 and not ident in cell.getAllRecombinantIdentifiersForLocus(self.receptor_name, locus):
                         transgenic_label = transgenic_label + locus.lower()
                     
                     
-                    if ident in cell.getAllRecombinantIdentifiersForLocus(locus):
+                    if ident in cell.getAllRecombinantIdentifiersForLocus(self.receptor_name, locus):
                         Tg_detection[cell_name][locus] = 'True'
                     
                 if len (transgenic_label) > 0:

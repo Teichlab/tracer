@@ -76,8 +76,8 @@ class Cell(object):
     # def reset_cdr3_comparisons(self):
     #    self.cdr3_comparisons = {'A': None, 'B': None, 'mean_both': None}
 
-    def getAllRecombinantIdentifiersForLocus(self, locus):
-        recombinants = self.all_recombinants[locus]
+    def getAllRecombinantIdentifiersForLocus(self, receptor_name, locus):
+        recombinants = self.recombinants[receptor_name][locus]
         identifier_list = set()
         if recombinants is not None:
             for recombinant in recombinants:
@@ -124,7 +124,7 @@ class Cell(object):
                     else:
                         i = 1
                     if transgenic_ids and recombinant.identifier in transgenic_ids:
-                        recombinant_set.add("<BR/>" + '<FONT COLOR = "#999999"'+ '</FONT>')
+                        recombinant_set.add("<BR/>" + '<FONT COLOR = "#999999">'.format(colours[receptor][locus][i])  + recombinant.identifier  + '</FONT>')
                     
                     else:
                         
@@ -293,9 +293,9 @@ class Cell(object):
                              for rec in recombinants:
                                  TPM_ranks.update({rec.contig_name: rec.TPM})
                              two_most_common = [x[0] for x in TPM_ranks.most_common(2)]
-                         for rec in recombinants:
-                             if rec.contig_name not in two_most_common:
-                                 to_remove.append(rec)
+                             for rec in recombinants:
+                                if rec.contig_name not in two_most_common:
+                                    to_remove.append(rec)
                     
                     for rec in to_remove:
                         self.recombinants[receptor][locus].remove(rec)
