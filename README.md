@@ -286,11 +286,12 @@ The following output files are generated:
 * `<J_seqs>` : Fasta file containing J gene sequences
 * `<C_seqs>` : Fasta file containing single constant region sequence
 * `<D_seqs>` : Fasta file containing D gene sequences (optional)
-* `<output>` : Output directory for the generated build resources
+
 
 #### Options
 
 * `-f/--force_overwrite` : Force overwrite of existing resources
+* `-o/--output_dir` : Optional directory to write new resource files to. If not specified, the built resources will be placed in the default TraCeR resource directory.  
 
 ## Docker image
 

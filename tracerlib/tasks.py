@@ -1209,8 +1209,8 @@ class Builder(TracerTask):
             parser.add_argument('D_seqs', metavar="<D_SEQS>", nargs='?',
                                 default=False,
                                 help='fasta file containing D gene sequences (optional)')
-            parser.add_argument('output', '-o', default=None,
-                                help='output directory for built resources')
+            parser.add_argument('--output_dir', '-o', metavar="<OPTIONAL_OUTPUT_DIR>", default=None,
+                                help='optional output directory for built resources')
 
             args = parser.parse_args(sys.argv[2:])
 
@@ -1249,6 +1249,7 @@ class Builder(TracerTask):
             self.output = kwargs.get('output')
 
         self.config = self.read_config(config_file)
+
         self.species_dir = self.get_species_root(self.species, root=self.output)
 
     def run(self):
