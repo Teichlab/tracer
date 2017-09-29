@@ -1228,7 +1228,7 @@ class Builder(TracerTask):
             if args.D_seqs:
                 self.raw_seq_files['D'] = args.D_seqs
             config_file = args.config_file
-            self.output = args.output
+            self.output = args.output_dir
 
         else:
             self.ncores = kwargs.get('ncores')
@@ -1246,7 +1246,7 @@ class Builder(TracerTask):
                 self.raw_seq_files['D'] = kwargs.get('D_seqs')
 
             config_file = kwargs.get('config_file')
-            self.output = kwargs.get('output')
+            self.output = kwargs.get('output_dir')
 
         self.config = self.read_config(config_file)
 
