@@ -73,7 +73,7 @@ class TracerTask(object):
                 tracer_path = path
             else:
                 print("Please specify the path to where you originally"
-                    " installed TraCeR in the config file.")
+                    " downloaded TraCeR in the config file.")
         return tracer_path
 
 

@@ -153,6 +153,15 @@ Location of Kallisto/Salmon indices built (exclusively) from corresponding `[bas
 
 See salmon [documentation](http://salmon.readthedocs.io/en/latest/salmon.html) for more details.
 
+### TraCeR directory
+
+        [tracer_location]
+        #Path to where TraCeR was originally downloaded
+        tracer_path = /path/to/tracer
+
+Location of the cloned TraCeR repository containing tracerlib, test_data, resources etc. Eg. `/user/software/tracer`.
+Needed for localisation of resources and test_data if running TraCeR with the tracer binary.
+
 ## Testing TraCeR 
 TraCeR comes with a small dataset in `test_data/` (containing only TCRA or TCRB reads for a single cell) that you can use to test your installation and config file and confirm that all the prerequisites are working. Run it as:
 
