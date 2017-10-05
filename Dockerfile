@@ -34,11 +34,9 @@ RUN wget http://www.graphviz.org/pub/graphviz/stable/ubuntu/ub13.10/x86_64/graph
 RUN dpkg -i graphviz_2.38.0-1~saucy_amd64.deb && apt-get -y -f install
 RUN rm libgraphviz4_2.38.0-1~saucy_amd64.deb && rm graphviz_2.38.0-1~saucy_amd64.deb
 
-#tracer proper, along with repositioning its test_data and resources in a manner the installed package can understand
+#tracer proper
 COPY . /tracer
 RUN cd /tracer && pip3 install -r requirements.txt && python3 setup.py install
-RUN cp -r /tracer/test_data /usr/local/lib/python3.5/dist-packages/tracer-0.5-py3.5.egg/
-RUN cp -r /tracer/resources /usr/local/lib/python3.5/dist-packages/tracer-0.5-py3.5.egg/
 
 #obtaining the transcript sequences. no salmon/kallisto indices as they make dockerhub unhappy for some reason
 RUN mkdir GRCh38 && cd GRCh38 && wget ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_human/release_27/gencode.v27.transcripts.fa.gz && \
