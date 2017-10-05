@@ -62,6 +62,8 @@ The tracer module is then installed using:
 
 This will add the binary 'tracer' to your local bin folder, which can then be run from anywhere.
 
+_Note that installing TraCeR using this method requires you to specify the location of the originally downloaded files in your config file ([see below](#tracer-directory))_
+
 If you would like to contribute to TraCeR, you can set up a development version with
 
     python setup.py develop
