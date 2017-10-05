@@ -9,7 +9,7 @@ TraCeR - reconstruction of T cell receptor sequences from single-cell RNA-seq da
 5. [Usage](#using-tracer)
 	- [*Assemble*](#assemble-tcr-reconstruction)
     - [*Summarise*](#summarise-summary-and-clonotype-networks)
-6. [Docker image](#docker)
+6. [Docker image](#docker-image)
 
 
 ## Introduction
