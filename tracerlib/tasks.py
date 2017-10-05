@@ -65,6 +65,18 @@ class TracerTask(object):
                 self.config.get('tool_locations', tool_key))
         return check_binary(name, user_path)
 
+    def get_tracer_path(self):
+        tracer_path = None
+        if self.config.has_option('tracer_location', 'tracer_path'):
+            path = self.config.get('tracer_location', 'tracer_path')
+            if os.path.exists(path):
+                tracer_path = path
+            else:
+                print("Please specify the path to where you originally"
+                    " downloaded TraCeR in the config file.")
+        return tracer_path
+
+
     def read_config(self, config_file):
         # First look for environmental variable
         if not config_file:
@@ -79,10 +91,14 @@ class TracerTask(object):
             if not os.path.isfile(config_file):
                 print("Config file not found at ~/.tracerrc."
                       " Using default tracer.conf in repo...")
-                config_file = os.path.join(base_dir, 'tracer.conf')
+                tracer_path = self.get_tracer_path()
+                config_file = os.path.join(tracer_path, 'tracer.conf')
+                if not os.path.isfile(config_file):
+                    config_file = os.path.join(base_dir, 'tracer.conf')
         tracer_func.check_config_file(config_file)
         config = ConfigParser()
         config.read(config_file)
+
         return config
 
     def resolve_relative_path(self, path):
@@ -178,19 +194,25 @@ class TracerTask(object):
 
     def get_species_root(self, species, root=None):
         if root is None:
-            resources_root = os.path.join(base_dir, 'resources', species)
+            tracer_path = self.get_tracer_path()
+            if tracer_path is not None:
+                resources_root = os.path.join(tracer_path, 'resources', species)
+            else: 
+                # Look for resources in base directory if tracer_path is not specified
+                resources_root = os.path.join(base_dir, 'resources', species)
         else:
             resources_root = os.path.join(root, species)
         assert os.path.isdir(resources_root), "Species not found in resources"
         return (resources_root)
 
-    def get_available_species(self, root=None):
-        if root is None:
-            resources_dir = os.path.join(base_dir, 'resources')
-        else:
-            resources_dir = root
-        species_dirs = next(os.walk(resources_dir))[1]
-        return (species_dirs)
+
+    # def get_available_species(self, root=None):
+    #    if root is None:
+    #        resources_dir = os.path.join(base_dir, 'resources')
+    #    else:
+    #        resources_dir = root
+    #    species_dirs = next(os.walk(resources_dir))[1]
+    #    return (species_dirs)
 
 
 class Assembler(TracerTask):
@@ -1147,10 +1169,16 @@ class Tester(TracerTask):
             self.no_networks = kwargs.get('no_networks')
             self.resume = kwargs.get('resume_with_existing_files')
 
+        self.config = self.read_config(self.config_file)
+
     def run(self):
 
         # test_dir = self.resolve_relative_path("test_data")
         test_dir = os.path.join(base_dir, 'test_data')
+        if not os.path.exists(test_dir):
+            tracer_dir = self.get_tracer_path()
+            if not tracer_dir is None:
+                test_dir = os.path.join(tracer_dir, 'test_data')
         test_names = ['cell1']
         if self.output_dir:
             out_dir = os.path.join(self.output_dir, 'results')

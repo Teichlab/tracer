@@ -62,6 +62,8 @@ The tracer module is then installed using:
 
 This will add the binary 'tracer' to your local bin folder, which can then be run from anywhere.
 
+_Note that installing TraCeR using this method requires you to specify the location of the originally downloaded files in your config file ([see below](#tracer-directory))._
+
 If you would like to contribute to TraCeR, you can set up a development version with
 
     python setup.py develop
@@ -152,6 +154,15 @@ Location of Kallisto/Salmon indices built (exclusively) from corresponding `[bas
 * Salmon builds the quasi-mapping-based index, using an auxiliary k-mer hash over k-mers of length `kmerLen`. While quasi-mapping will make used of arbitrarily long matches between the query and reference, the k size selected here will act as the minimum acceptable length for a valid match. The value for `kmerLen` must be odd; its default and maximum value is 31. 
 
 See salmon [documentation](http://salmon.readthedocs.io/en/latest/salmon.html) for more details.
+
+### TraCeR directory
+
+        [tracer_location]
+        #Path to where TraCeR was originally downloaded
+        tracer_path = /path/to/tracer
+
+Location of the cloned TraCeR repository containing tracerlib, test_data, resources etc. Eg. `/user/software/tracer`.
+Needed for localisation of resources and test_data if running TraCeR with the tracer binary.
 
 ## Testing TraCeR 
 TraCeR comes with a small dataset in `test_data/` (containing only TCRA or TCRB reads for a single cell) that you can use to test your installation and config file and confirm that all the prerequisites are working. Run it as:
