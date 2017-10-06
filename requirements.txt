@@ -2,7 +2,7 @@ biopython>=1.66
 cycler>=0.10.0
 decorator>=4.0.9
 matplotlib>=1.5.1
-networkx>=1.11
+networkx==1.11
 numpy>=1.11.0
 pandas>=0.18.0
 prettytable>=0.7.2
