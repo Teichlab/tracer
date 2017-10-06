@@ -36,7 +36,7 @@ RUN rm libgraphviz4_2.38.0-1~saucy_amd64.deb && rm graphviz_2.38.0-1~saucy_amd64
 
 #tracer proper
 COPY . /tracer
-RUN cd /tracer && pip3 install -r requirements.txt && python3 setup.py install
+RUN cd /tracer && pip3 install -r docker_helper_files/requirements_stable.txt && python3 setup.py install
 
 #obtaining the transcript sequences. no salmon/kallisto indices as they make dockerhub unhappy for some reason
 RUN mkdir GRCh38 && cd GRCh38 && wget ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_human/release_27/gencode.v27.transcripts.fa.gz && \
