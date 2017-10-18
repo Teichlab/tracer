@@ -260,7 +260,10 @@ def remove_NA(junc_string):
 def remove_allele_stars(segment):
     p = re.compile(r"(.+)\*\d+")
     m = p.search(segment)
-    return (m.group(1))
+    if m is not None:
+        return (m.group(1))
+    else:
+        return(segment)
 
 
 def process_hit_table(query_name, query_data, locus):
@@ -736,8 +739,8 @@ def make_cell_network_from_dna(cells, keep_unlinked, shape, dot, neato,
                                penwidth=width, color=col,
                                weight=shared_identifiers)
 
-    deg = G.degree()
-
+    deg = dict(G.degree())
+    pdb.set_trace()
     to_remove = [n for n in deg if deg[n] == 0]
 
     if len(to_remove) < len(G.nodes()):
