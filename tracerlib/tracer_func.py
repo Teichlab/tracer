@@ -739,8 +739,7 @@ def make_cell_network_from_dna(cells, keep_unlinked, shape, dot, neato,
                                penwidth=width, color=col,
                                weight=shared_identifiers)
 
-    deg = dict(G.degree())
-    pdb.set_trace()
+    deg = G.degree()
     to_remove = [n for n in deg if deg[n] == 0]
 
     if len(to_remove) < len(G.nodes()):
