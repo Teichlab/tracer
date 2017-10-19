@@ -1018,7 +1018,7 @@ def bowtie2_alignment(bowtie2, ncores, receptor, loci, output_dir, cell_name,
                             seq = str(Seq(seq).reverse_complement())
                             qual = qual[::-1]
                         fastq_out.write(
-                            "@{name}\n{seq}\n+\n{qual}\n".format(name=name,
+                            "@{name}/1\n{seq}\n+\n{qual}\n".format(name=name,
                                                                  seq=seq,
                                                                  qual=qual))
                 fastq_out.close()
