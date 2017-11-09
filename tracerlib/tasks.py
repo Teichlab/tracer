@@ -17,7 +17,10 @@ import seaborn as sns
 from matplotlib import pyplot as plt
 from tracerlib import base_dir
 from tracerlib import tracer_func
-from configparser import ConfigParser, NoOptionError
+try:
+    from configparser import ConfigParser, NoOptionError
+except ImportError:
+    from ConfigParser import ConfigParser, NoOptionError
 import argparse
 import sys
 import os
