@@ -324,3 +324,5 @@ For example, if you wanted to run the test analysis, you should clone this GitHu
 	docker run -it --rm -v $PWD:/scratch -w /scratch teichlab/tracer test -o test_data
 
 If you wish to use `tracer build`, you will need to specify `--output_dir /scratch`, as otherwise the resulting resources will be saved in the default location of the container and subsequently get forgotten about when the build analysis completes, making them unuseable for any actual analyses you may want to perform. This will make the Docker container save the resulting resources in the volume you created, and you can use them for assemble/summarise by running the Dockerised TraCeR from the same directory as the one you used for the build and specifying `--resource_dir /scratch`.
+
+You may need to explicitly tell Docker to increase the memory that it can use. Instructions for [Windows](https://docs.docker.com/docker-for-windows/#advanced) and [Mac](https://docs.docker.com/docker-for-mac/#advanced). Something like 6 or 8 GB is likely to be ok.
