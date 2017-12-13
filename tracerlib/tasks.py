@@ -476,7 +476,7 @@ class Assembler(TracerTask):
             trinity, self.receptor_name, self.loci, self.output_dir,
             self.cell_name, self.ncores, trinity_grid_conf,
             trinity_JM, trinity_version, self.resume_with_existing_files,
-            self.single_end, self.species, no_normalise)
+            self.single_end, self.species, no_normalise, self.config)
         if len(successful_files) == 0:
             print("No successful Trinity assemblies")
             self.die_with_empty_cell(self.cell_name, self.output_dir,
