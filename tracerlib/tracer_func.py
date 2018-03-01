@@ -46,6 +46,7 @@ def process_chunk(chunk):
     hit_table = []
     looking_for_end = False
     return_dict = defaultdict(list)
+    query_name = None
     for line_x in chunk:
 
         if store_VDJ_rearrangement_summary:
