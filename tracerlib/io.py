@@ -103,8 +103,8 @@ def parse_IgBLAST(receptor, loci, output_dir, cell_name, raw_seq_dir, species,
 
             for chunk in igblast_result_chunks:
                 (query_name, chunk_details) = process_chunk(chunk)
-
-                all_locus_data[locus][query_name] = chunk_details
+                if query_name is not None:
+                    all_locus_data[locus][query_name] = chunk_details
         else:
             all_locus_data[locus] = None
     cell = find_possible_alignments(all_locus_data, locus_names, cell_name,
