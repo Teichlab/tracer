@@ -115,6 +115,12 @@ Trinity needs to know the maximum memory available to it for the Jellyfish compo
 
 TraCeR will automatically detect the version of Trinity you have installed. You can also explicitly specify it here if you wish.
 
+#### Trinity with short reads (<50 bases)
+
+If you're running Trinity with read lengths that are shorter than 50 bases, you'll be restricted to using the Inchworm component of Trinity, which does draft contig assembly via greedy kmer extension. In your 'tracer.conf', uncomment the 'inchworm_only=True' to activate short read mode, and uncomment the 'trinity_kmer_length' as well.  You can change the trinity_kmer_length value as needed; 17 is the shortest value, and the default length in Trinity is 25.  
+
+
+
 ##### HPC configuration 
     #uncomment the line below if you've got a configuration file for Trinity to use a computing grid #
     trinity_grid_conf = /path/to/trinity/grid.conf
