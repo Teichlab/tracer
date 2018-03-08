@@ -117,7 +117,7 @@ TraCeR will automatically detect the version of Trinity you have installed. You 
 
 #### Trinity with short reads (<50 bases)
 
-If you're running Trinity with read lengths that are shorter than 50 bases, you'll be restricted to using the Inchworm component of Trinity, which does draft contig assembly via greedy kmer extension. In your 'tracer.conf', uncomment the 'inchworm_only=True' to activate short read mode, and uncomment the 'trinity_kmer_length' as well.  You can change the trinity_kmer_length value as needed; 17 is the shortest value, and the default length in Trinity is 25.  
+If you're running Trinity with read lengths that are shorter than 50 bases, you'll be restricted to using the Inchworm component of Trinity, which does draft contig assembly via greedy kmer extension. In your 'tracer.conf', uncomment the 'inchworm_only=True' to activate short read mode, and uncomment the 'trinity_kmer_length' as well.  You can change the trinity_kmer_length value as needed; 17 is the shortest value, and the default length in Trinity is 25.  Trinity v2 should be used in this mode.
 
 
 
