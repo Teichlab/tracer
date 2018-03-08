@@ -980,23 +980,28 @@ class Summariser(TracerTask):
         for l in self.loci:
             q = quartiles[l]
             lns = lengths[l]
-            if len(lns) > 1:
-                plt.figure()
-                plt.axvline(q[0], linestyle="--", color='k')
-                plt.axvline(q[1], linestyle="--", color='k')
-                sns.distplot(lns)
-                sns.despine()
-                plt.xlabel(
-                    "{receptor}_{locus} reconstructed length (bp)".format(
-                        receptor=self.receptor_name,
-                        locus=l))
-                plt.ylabel("Density")
-                plt.savefig("{}_{}.pdf".format(length_filename_root, l))
-            if len(lns) > 0:
-                with open("{}_{}.txt".format(length_filename_root, l),
-                          'w') as f:
-                    for l in sorted(lns):
-                        f.write("{}\n".format(l))
+            try:
+                if len(lns) > 1:
+                    plt.figure()
+                    plt.axvline(q[0], linestyle="--", color='k')
+                    plt.axvline(q[1], linestyle="--", color='k')
+                    sns.distplot(lns)
+                    sns.despine()
+                    plt.xlabel(
+                        "{receptor}_{locus} reconstructed length (bp)".format(
+                            receptor=self.receptor_name,
+                            locus=l))
+                    plt.ylabel("Density")
+                    plt.savefig("{}_{}.pdf".format(length_filename_root, l))
+                if len(lns) > 0:
+                    with open("{}_{}.txt".format(length_filename_root, l),
+                              'w') as f:
+                        for l in sorted(lns):
+                            f.write("{}\n".format(l))
+            except:
+                print(self.receptor_name)
+                print(type(lns))
+                print(lns)
 
         for cell_name in empty_cells:
             del cells[cell_name]
