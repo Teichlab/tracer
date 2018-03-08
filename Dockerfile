@@ -26,13 +26,8 @@ RUN tar -xzvf kallisto_linux-v0.43.1.tar.gz && rm kallisto_linux-v0.43.1.tar.gz
 RUN wget https://github.com/COMBINE-lab/salmon/releases/download/v0.8.2/Salmon-0.8.2_linux_x86_64.tar.gz
 RUN tar -xzvf Salmon-0.8.2_linux_x86_64.tar.gz && rm Salmon-0.8.2_linux_x86_64.tar.gz
 
-#graphviz, along with its sea of dependencies that otherwise trip up the dpkg -i
-RUN apt-get -y install libgd3 libgts-0.7-5 liblasi0 libltdl7 freeglut3 libglade2-0 libglu1-mesa libglu1 libgtkglext1 libxaw7
-RUN wget http://www.graphviz.org/pub/graphviz/stable/ubuntu/ub13.10/x86_64/libgraphviz4_2.38.0-1~saucy_amd64.deb
-RUN dpkg -i libgraphviz4_2.38.0-1~saucy_amd64.deb && apt-get -y -f install
-RUN wget http://www.graphviz.org/pub/graphviz/stable/ubuntu/ub13.10/x86_64/graphviz_2.38.0-1~saucy_amd64.deb
-RUN dpkg -i graphviz_2.38.0-1~saucy_amd64.deb && apt-get -y -f install
-RUN rm libgraphviz4_2.38.0-1~saucy_amd64.deb && rm graphviz_2.38.0-1~saucy_amd64.deb
+#graphviz, which lives in a sufficient form (dot/neato) in apt-get apparently
+RUN apt-get -y install graphviz
 
 #tracer proper
 COPY . /tracer
