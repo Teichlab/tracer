@@ -46,6 +46,8 @@ def process_chunk(chunk):
     hit_table = []
     looking_for_end = False
     return_dict = defaultdict(list)
+    print("chunk: " + "\n".join(chunk))
+    query_name = None
     for line_x in chunk:
 
         if store_VDJ_rearrangement_summary:
@@ -80,10 +82,18 @@ def process_chunk(chunk):
 
         elif line_x.startswith('# Query'):
             query_name = line_x.split(" ")[2]
-            query_length = line_x.split(" ")[3]
-            return_dict['query_length'] = int(query_length.split("=")[1])
-            # return_dict['query_name'] = query_name
-
+            query_length = None
+            m = re.search("len=(\d+)", line_x)
+            if m:
+                query_length = m.group(1)
+            else:
+                m = re.search("length: (\d+)", line_x) # inchworm mode
+                if m:
+                    query_length = m.group(1)
+            if not query_length:
+                raise RuntimeError("Error, couldn't extract query length from: {}".format(line_x))
+            return_dict['query_length'] = int(query_length)
+            
         elif line_x.startswith('# V-(D)-J rearrangement summary'):
             store_VDJ_rearrangement_summary = True
 
@@ -1026,7 +1036,7 @@ def bowtie2_alignment(bowtie2, ncores, receptor, loci, output_dir, cell_name,
 
 def assemble_with_trinity(trinity, receptor, loci, output_dir, cell_name,
                           ncores, trinity_grid_conf, JM,
-                          version, should_resume, single_end, species, no_normalise):
+                          version, should_resume, single_end, species, no_normalise, config):
     print("##Assembling Trinity Contigs##")
 
     if should_resume:
@@ -1057,6 +1067,12 @@ def assemble_with_trinity(trinity, receptor, loci, output_dir, cell_name,
 
     locus_names = ["_".join([receptor, x]) for x in loci]
 
+    kmer_length = 25
+    if config.has_option("trinity_options", "trinity_kmer_length"):
+        kmer_length = config.get("trinity_options", "trinity_kmer_length")
+        base_command = base_command + ['--KMER_SIZE', kmer_length]
+        
+    
     for locus in locus_names:
         print("##{}##".format(locus))
         trinity_output = "{}/Trinity_output/{}_{}".format(output_dir, cell_name,
@@ -1075,15 +1091,39 @@ def assemble_with_trinity(trinity, receptor, loci, output_dir, cell_name,
             command = base_command + ["--single", file, "--output",
                                       '{}/Trinity_output/Trinity_{}_{}'.format(
                                           output_dir, cell_name, locus)]
-        try:
-            subprocess.check_call(command)
-            shutil.move('{}/Trinity_output/Trinity_{}_{}.Trinity.fasta'.format(
-                output_dir, cell_name, locus),
-                '{}/Trinity_output/{}_{}.Trinity.fasta'.format(
-                output_dir, cell_name, locus))
-        except (subprocess.CalledProcessError, IOError):
-            print("Trinity failed for locus")
 
+
+        try:
+            if config.has_option('trinity_options', 'inchworm_only'):
+                # try running with just the inchworm utility
+                # it's a compromise to try to recover something with very short reads
+                command = command + ["--no_run_chrysalis"]
+                subprocess.check_call(command)
+                
+                inchworm_file = "{}/Trinity_output/Trinity_{}_{}/inchworm.K{}.L{}.DS.fa".format(
+                    output_dir, cell_name, locus, kmer_length, kmer_length)
+
+                ## filter it for sequences that are at least min length
+                min_seq_len = 200 # default in Trinity
+                
+                filter_cmd = str(os.path.dirname(trinity) + "/util/misc/fasta_filter_by_min_length.pl " +
+                                 inchworm_file + " " +  str(min_seq_len) + " > " +
+                                 '{}/Trinity_output/{}_{}.Trinity.fasta'.format(
+                                     output_dir, cell_name, locus))
+                
+                subprocess.check_call(filter_cmd, shell=True)
+                
+
+            else:
+                subprocess.check_call(command)
+                shutil.move('{}/Trinity_output/Trinity_{}_{}.Trinity.fasta'.format(
+                    output_dir, cell_name, locus),
+                            '{}/Trinity_output/{}_{}.Trinity.fasta'.format(
+                                output_dir, cell_name, locus))
+                
+        except (subprocess.CalledProcessError, IOError):
+            print("*** WARNING *** Trinity command {} failed for locus {}".format(command, locus))
+        
     # clean up unsuccessful assemblies
     sleep(
         10)  # this gives the cluster filesystem time to catch up and stops weird things happening
@@ -1221,6 +1261,8 @@ def run_IgBlast(igblast, receptor, loci, output_dir, cell_name, index_location,
                 if p.returncode == 0:
                     out.write(output.decode())
                 else:
+                    print("CMD failed:")
+                    print(" ").join(pipes.quote(s) for s in command)
                     print(error.decode())
                     exit(1)
                  
