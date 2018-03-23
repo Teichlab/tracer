@@ -46,7 +46,7 @@ def process_chunk(chunk):
     hit_table = []
     looking_for_end = False
     return_dict = defaultdict(list)
-    print("chunk: " + "\n".join(chunk))
+    #print("chunk: " + "\n".join(chunk))
     query_name = None
     for line_x in chunk:
 
