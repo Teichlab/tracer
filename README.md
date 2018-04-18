@@ -19,7 +19,7 @@ For more information on TraCeR, its validation and how it can be applied to inve
 
 Please email questions / problems to mjt.stubbington \[at\] gmail.com.
 
-_Also, please note that I (Mike) created and developed TraCeR while I was at EMBL-EBI and subsequently at the Sanger Institute. Now that I have left Sanger, I will continue to maintain the code when possible *as a personal project* independent of any employment that I have_
+_Also, please note that I (Mike) created and developed TraCeR while I was at EMBL-EBI and subsequently at the Sanger Institute. Now that I have left Sanger, I will continue to maintain the code when possible **as a personal project** independent of any employment that I have_
 
 ## Installation
 TraCeR is written in Python and so can just be downloaded, made executable (with `chmod u+x tracer`) and run or run with `python tracer`. Download the latest version and accompanying files from www.github.com/teichlab/tracer. 
