@@ -175,7 +175,7 @@ Needed for localisation of resources and test_data if running TraCeR with the tr
 ## Testing TraCeR 
 TraCeR comes with a small dataset in `test_data/` (containing only TCRA or TCRB reads for a single cell) that you can use to test your installation and config file and confirm that all the prerequisites are working. Run it as:
 
-    tracer test -p <ncores> -c <config_file> -o <output>
+    tracer test -p <ncores> -c <config_file>
     
 **Note:** The data used in the test are derived from mouse T cells so make sure that the config file points to the appropriate mouse resource files.
 
