@@ -35,7 +35,7 @@ import tracerlib.io
 import copy
 
 import pdb
-
+import pipes
 
 def process_chunk(chunk):
     store_VDJ_rearrangement_summary = False
@@ -1262,7 +1262,8 @@ def run_IgBlast(igblast, receptor, loci, output_dir, cell_name, index_location,
                     out.write(output.decode())
                 else:
                     print("CMD failed:")
-                    print(" ").join(pipes.quote(s) for s in command)
+                    print(" ".join([pipes.quote(s) for s in command]))
+                    print()
                     print(error.decode())
                     exit(1)
                  
