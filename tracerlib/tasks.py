@@ -1014,7 +1014,7 @@ class Summariser(TracerTask):
         # Write out recombinant details for each cell
         with open("{}/recombinants.txt".format(outdir), 'w') as f:
             f.write(
-                "cell_name\tlocus\trecombinant_id\tproductive\treconstructed_length\n")
+                "cell_name\tlocus\trecombinant_id\tproductive\treconstructed_length\tCDR3nt\n")
             sorted_cell_names = sorted(list(cells.keys()))
             for cell_name in sorted_cell_names:
                 cell = cells[cell_name]
@@ -1025,12 +1025,20 @@ class Summariser(TracerTask):
                     recombinants = cell.recombinants[self.receptor_name][locus]
                     if recombinants is not None:
                         for r in recombinants:
+
+                            # check for cdr3nt attribute (to make backwards compatible)
+                            if hasattr(r, 'cdr3nt'):
+                                cdr3nt = r.cdr3nt
+                            else:
+                                cdr3nt = 'N/A'
+
                             f.write(
-                                "{name}\t{locus}\t{ident}\t{productive}\t{length}\n".format(
+                                "{name}\t{locus}\t{ident}\t{productive}\t{length}\t{cdr3nt}\n".format(
                                     name=cell_name, locus=locus,
                                     ident=r.identifier,
                                     productive=r.productive,
-                                    length=len(r.trinity_seq)))
+                                    length=len(r.trinity_seq),
+                                    cdr3nt=cdr3nt))
                             if r.productive:
                                 cell_data[locus + "_productive"] = r.identifier
                             else:

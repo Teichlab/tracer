@@ -42,6 +42,7 @@ def process_chunk(chunk):
     store_junction_details = False
     store_alignment_summary = False
     store_hit_table = False
+    store_CDR3 = False
     alignment_summary = []
     hit_table = []
     looking_for_end = False
@@ -80,6 +81,13 @@ def process_chunk(chunk):
                 else:
                     return_dict['hit_table'].append(line_x)
 
+        elif store_CDR3:
+            # single tab-separated line, example:
+            # CDR3 GCGTGGAAAGTG AWKV 51 59
+            _, cdr3nt, _cdr3aa, _start, _end = line_x.split('\t')
+            return_dict['cdr3'].append(cdr3nt)
+            store_CDR3 = False
+
         elif line_x.startswith('# Query'):
             query_name = line_x.split(" ")[2]
             query_length = None
@@ -99,6 +107,9 @@ def process_chunk(chunk):
 
         elif line_x.startswith('# V-(D)-J junction details'):
             store_junction_details = True
+
+        elif line_x.startswith('# Sub-region sequence'):
+            store_CDR3 = True
 
         elif line_x.startswith('# Alignment summary'):
             store_alignment_summary = True
@@ -151,6 +162,12 @@ def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs,
                             rearrangement_summary[1].split(",")[0])
 
                     identifier = best_V + "_" + junc_string + "_" + best_J
+
+                    # CDR3 nucleotide sequences
+                    if 'cdr3' in query_data.keys():
+                        cdr3nt = query_data['cdr3'][0]
+                    else:
+                        cdr3nt = 'N/A'
 
                     # line attempting to add alignment summary to data for use
                     # with PCR comparisons
@@ -227,7 +244,8 @@ def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs,
                                           alignment_summary=alignment_summary,
                                           trinity_seq=trinity_seq,
                                           imgt_reconstructed_seq=imgt_reconstructed_seq,
-                                          has_D=has_D)
+                                          has_D=has_D,
+                                          cdr3nt=cdr3nt)
                         recombinants[locus].append(rec)
 
     if recombinants:
@@ -1242,7 +1260,9 @@ def run_IgBlast(igblast, receptor, loci, output_dir, cell_name, index_location,
                        '-ig_seqtype', ig_seqtype, '-show_translation',
                        '-num_alignments_V', '5',
                        '-num_alignments_D', '5', '-num_alignments_J', '5',
-                       '-outfmt', fmt, '-query', trinity_fasta]
+                       '-outfmt', fmt,
+                       '-auxiliary_data', 'optional_file/{}_gl.aux'.format(igblast_species),
+                       '-query', trinity_fasta]
             if fmt == '7':
                 igblast_out = "{output_dir}/IgBLAST_output/{cell_name}_{locus}.IgBLASTOut".format(
                     output_dir=output_dir,
