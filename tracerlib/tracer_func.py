@@ -84,8 +84,8 @@ def process_chunk(chunk):
         elif store_CDR3:
             # single tab-separated line, example:
             # CDR3 GCGTGGAAAGTG AWKV 51 59
-            _, cdr3nt, _cdr3aa, _start, _end = line_x.split('\t')
-            return_dict['cdr3'].append(cdr3nt)
+            _, cdr3nt, cdr3, _start, _end = line_x.split('\t')
+            return_dict['cdr3'] += [cdr3nt, cdr3]
             store_CDR3 = False
 
         elif line_x.startswith('# Query'):
@@ -165,9 +165,10 @@ def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs,
 
                     # CDR3 nucleotide sequences
                     if 'cdr3' in query_data.keys():
-                        cdr3nt = query_data['cdr3'][0]
+                        cdr3nt, cdr3 = query_data['cdr3']
                     else:
                         cdr3nt = 'N/A'
+                        cdr3 = 'N/A'
 
                     # line attempting to add alignment summary to data for use
                     # with PCR comparisons
@@ -245,7 +246,8 @@ def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs,
                                           trinity_seq=trinity_seq,
                                           imgt_reconstructed_seq=imgt_reconstructed_seq,
                                           has_D=has_D,
-                                          cdr3nt=cdr3nt)
+                                          cdr3nt=cdr3nt,
+                                          cdr3=cdr3)
                         recombinants[locus].append(rec)
 
     if recombinants:

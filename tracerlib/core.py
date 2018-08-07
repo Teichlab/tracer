@@ -302,7 +302,7 @@ class Recombinant(object):
                  productive, stop_codon, in_frame, TPM,
                  dna_seq, hit_table, summary, junction_details, best_VJ_names,
                  alignment_summary, trinity_seq,
-                 imgt_reconstructed_seq, has_D, cdr3nt):
+                 imgt_reconstructed_seq, has_D, cdr3nt, cdr3):
         self.contig_name = contig_name
         self.locus = locus
         self.identifier = identifier
@@ -310,7 +310,6 @@ class Recombinant(object):
         self.productive = productive
         self.TPM = TPM
         self.dna_seq = dna_seq
-        self.cdr3 = self._get_cdr3(dna_seq)
         self.hit_table = hit_table
         self.summary = summary
         self.junction_details = junction_details
@@ -322,31 +321,11 @@ class Recombinant(object):
         self.imgt_reconstructed_seq = imgt_reconstructed_seq
         self.has_D_segment = has_D
         self.cdr3nt = cdr3nt
+        self.cdr3 = cdr3
 
     def __str__(self):
         return (
         "{} {} {} {}".format(self.identifier, self.productive, self.TPM))
-
-    def _get_cdr3(self, dna_seq):
-        aaseq = Seq(str(dna_seq), generic_dna).translate()
-        if re.findall('FG.G', str(aaseq)) and re.findall('C', str(aaseq)):
-            indices = [i for i, x in enumerate(aaseq) if x == 'C']
-            upper = str(aaseq).find(re.findall('FG.G', str(aaseq))[0])
-            lower = False
-            for i in indices:
-                if i < upper:
-                    lower = i
-            if lower:
-                cdr3 = aaseq[lower:upper + 4]
-            else:
-                cdr3 = "Couldn't find conserved cysteine"
-        elif re.findall('FG.G', str(aaseq)):
-            cdr3 = "Couldn't find conserved cysteine"
-        elif re.findall('C', str(aaseq)):
-            cdr3 = "Couldn't find FGXG"
-        else:
-            cdr3 = "Couldn't find either conserved boundary"
-        return (cdr3)
 
     def get_summary(self):
         summary_string = "##{contig_name}##\n".format(
@@ -372,7 +351,8 @@ class Recombinant(object):
             TPM=self.TPM, productive=self.productive,
             stop_codon=self.stop_codon, in_frame=self.in_frame)
 
-        summary_string += "CDR3nt:\t{}\n\n".format(self.cdr3nt)
+        summary_string += "CDR3aa:\t{}\nCDR3nt:\t{}\n\n".format(self.cdr3,
+                                                                self.cdr3nt)
 
         summary_string += 'Segment\tquery_id\tsubject_id\t% identity\t' \
                           'alignment length\tmismatches\tgap opens\tgaps' \
