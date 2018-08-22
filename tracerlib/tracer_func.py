@@ -163,7 +163,7 @@ def find_possible_alignments(sample_dict, locus_names, cell_name, IMGT_seqs,
 
                     identifier = best_V + "_" + junc_string + "_" + best_J
 
-                    # CDR3 nucleotide sequences
+                    # CDR3 sequences
                     if 'cdr3' in query_data.keys():
                         cdr3nt, cdr3 = query_data['cdr3']
                     else:

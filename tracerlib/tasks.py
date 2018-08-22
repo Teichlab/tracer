@@ -1030,6 +1030,12 @@ class Summariser(TracerTask):
                             if hasattr(r, 'cdr3nt'):
                                 cdr3nt = r.cdr3nt
                                 cdr3 = r.cdr3
+
+                                # lowercase CDR3 sequences if non-productive
+                                if not r.productive:
+                                    cdr3 = cdr3.lower()
+                                    cdr3nt = cdr3nt.lower()
+
                             else:
                                 cdr3nt = 'N/A'
                                 cdr3 = 'N/A'

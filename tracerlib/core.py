@@ -351,8 +351,15 @@ class Recombinant(object):
             TPM=self.TPM, productive=self.productive,
             stop_codon=self.stop_codon, in_frame=self.in_frame)
 
-        summary_string += "CDR3aa:\t{}\nCDR3nt:\t{}\n\n".format(self.cdr3,
-                                                                self.cdr3nt)
+        # lowercase CDR3 sequences if non-productive
+        cdr3 = self.cdr3
+        cdr3nt = self.cdr3nt
+        if not self.productive:
+            cdr3 = cdr3.lower()
+            cdr3nt = cdr3nt.lower()
+
+        summary_string += "CDR3aa:\t{}\nCDR3nt:\t{}\n\n".format(cdr3,
+                                                                cdr3nt)
 
         summary_string += 'Segment\tquery_id\tsubject_id\t% identity\t' \
                           'alignment length\tmismatches\tgap opens\tgaps' \
