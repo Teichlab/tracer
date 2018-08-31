@@ -18,7 +18,10 @@ RUN cd /trinityrnaseq-Trinity-v2.4.0 && make
 RUN wget ftp://ftp.ncbi.nih.gov/blast/executables/igblast/release/1.7.0/ncbi-igblast-1.7.0-x64-linux.tar.gz
 RUN tar -xzvf ncbi-igblast-1.7.0-x64-linux.tar.gz && rm ncbi-igblast-1.7.0-x64-linux.tar.gz
 RUN cd /ncbi-igblast-1.7.0/bin/ && wget -r ftp://ftp.ncbi.nih.gov/blast/executables/igblast/release/internal_data && \
-	mv ftp.ncbi.nih.gov/blast/executables/igblast/release/internal_data . && rm -r ftp.ncbi.nih.gov
+	wget -r ftp://ftp.ncbi.nih.gov/blast/executables/igblast/release/optional_file && \
+	mv ftp.ncbi.nih.gov/blast/executables/igblast/release/internal_data . && \
+	mv ftp.ncbi.nih.gov/blast/executables/igblast/release/optional_file . && \
+	rm -r ftp.ncbi.nih.gov
 
 #aligners - kallisto and salmon
 RUN wget https://github.com/pachterlab/kallisto/releases/download/v0.43.1/kallisto_linux-v0.43.1.tar.gz

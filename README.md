@@ -42,7 +42,7 @@ Note that TraCeR is compatible with both Python 2 and 3.
 6. [Graphviz](http://www.graphviz.org) - Dot and Neato drawing programs required for visualisation of clonotype graphs. This is optional - see the [`--no_networks` option](#options-1) to [`summarise`](#summarise-summary-and-clonotype-networks).
 
 ##### Installing IgBlast 
-Downloading the executable files from `ftp://ftp.ncbi.nih.gov/blast/executables/igblast/release/<version_number>` is not sufficient for a working IgBlast installation. You must also download the `internal_data` directory (ftp://ftp.ncbi.nih.gov/blast/executables/igblast/release/internal_data) and put it into the same directory as the igblast executable. This is also described in the igblast README file.
+Downloading the executable files from `ftp://ftp.ncbi.nih.gov/blast/executables/igblast/release/<version_number>` is not sufficient for a working IgBlast installation. You must also download the `internal_data` directory (ftp://ftp.ncbi.nih.gov/blast/executables/igblast/release/internal_data) and `optional_file` directory (ftp://ftp.ncbi.nih.gov/blast/executables/igblast/release/optional_file/) and put them into the same directory as the igblast executable. This is also described in the igblast README file.
 
 You should also ensure to set the `$IGDATA` environment variable to point to the location of the IgBlast executable. For example run `export IGDATA=/<path_to_igblast>/igblast/1.4.0/bin`.
 
@@ -286,7 +286,7 @@ The following output files are generated:
 1. `TCR_summary.txt`
     Summary statistics describing successful TCR reconstruction rates and the numbers of cells with 0, 1, 2 or more recombinants for each locus.
 2. `recombinants.txt`
-    List of TCR identifiers, lengths and productivities for each cell. 
+    List of TCR identifiers, lengths, productivities, and CDR3 sequences (nucleotide and amino acid) for each cell. **Note:** It's possible for non-productive rearrangements to still have a detectable CDR3 if a frameshift introduces a stop-codon after this region. In these cases, the CDR3 nucleotides and amino acids are still reported but are shown in lower-case.
 3. `reconstructed_lengths_TCR[A|B].pdf` and  `reconstructed_lengths_TCR[A|B].txt`
     Distribution plots (and text files with underlying data) showing the lengths of the VDJ regions from assembled TCR contigs. Longer contigs give higher-confidence segment assignments. Text files are only generated if at least one TCR is found for a locus. Plots are only generated if at least two TCRs are found for a locus. 
 4. `clonotype_sizes.pdf` and `clonotype_sizes.txt`
