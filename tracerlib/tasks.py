@@ -195,7 +195,7 @@ class TracerTask(object):
 
         exit(0)
 
-    def get_species_root(self, species, root=None):
+    def get_species_root(self, species, root=None, build_mode = False):
         if root is None:
             tracer_path = self.get_tracer_path()
             if tracer_path is not None:
@@ -205,7 +205,8 @@ class TracerTask(object):
                 resources_root = os.path.join(base_dir, 'resources', species)
         else:
             resources_root = os.path.join(root, species)
-        assert os.path.isdir(resources_root), "Species not found in resources"
+        if not build_mode:
+            assert os.path.isdir(resources_root), "Species not found in resources"
         return (resources_root)
 
 
@@ -1303,7 +1304,7 @@ class Builder(TracerTask):
 
         self.config = self.read_config(config_file)
 
-        self.species_dir = self.get_species_root(self.species, root=self.output)
+        self.species_dir = self.get_species_root(self.species, root=self.output, build_mode=True)
 
     def run(self):
 
