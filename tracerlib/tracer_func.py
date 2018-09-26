@@ -1217,8 +1217,13 @@ def run_IgBlast(igblast, receptor, loci, output_dir, cell_name, index_location,
         'Mmus': 'mouse',
         'Hsap': 'human'
     }
-
-    igblast_species = species_mapper[species]
+    
+    try:
+        igblast_species = species_mapper[species]
+        built_in_species = True
+    except KeyError:
+        built_in_species = False
+        
     initial_locus_names = ["_".join([receptor, x]) for x in loci]
     locus_names = copy.copy(initial_locus_names)
     if should_resume:
@@ -1255,16 +1260,31 @@ def run_IgBlast(igblast, receptor, loci, output_dir, cell_name, index_location,
         trinity_fasta = "{}/Trinity_output/{}_{}.Trinity.fasta".format(
             output_dir, cell_name, locus)
         if os.path.isfile(trinity_fasta):
-            command = [igblast, '-germline_db_V', databases['V'],
-                       '-germline_db_D', databases['D'],
-                       '-germline_db_J', databases['J'], '-domain_system',
-                       'imgt', '-organism', igblast_species,
-                       '-ig_seqtype', ig_seqtype, '-show_translation',
-                       '-num_alignments_V', '5',
-                       '-num_alignments_D', '5', '-num_alignments_J', '5',
-                       '-outfmt', fmt,
-                       '-auxiliary_data', 'optional_file/{}_gl.aux'.format(igblast_species),
-                       '-query', trinity_fasta]
+            if built_in_species:
+                command = [igblast, '-germline_db_V', databases['V'],
+                           '-germline_db_D', databases['D'],
+                           '-germline_db_J', databases['J'], '-domain_system',
+                           'imgt', '-organism', igblast_species,
+                           '-ig_seqtype', ig_seqtype, '-show_translation',
+                           '-num_alignments_V', '5',
+                           '-num_alignments_D', '5', '-num_alignments_J', '5',
+                           '-outfmt', fmt,
+                           '-auxiliary_data', 'optional_file/{}_gl.aux'.format(igblast_species),
+                           '-query', trinity_fasta]
+            else:
+                #remove attempts to use aux_file to call CDR3s
+                command = [igblast, '-germline_db_V', databases['V'],
+                           '-germline_db_D', databases['D'],
+                           '-germline_db_J', databases['J'], '-domain_system',
+                           'imgt',
+                           '-ig_seqtype', ig_seqtype, '-show_translation',
+                           '-num_alignments_V', '5',
+                           '-num_alignments_D', '5', '-num_alignments_J', '5',
+                           '-auxiliary_data', 'NULL',
+                           '-outfmt', fmt,
+                           '-query', trinity_fasta]
+                           
+                           
             if fmt == '7':
                 igblast_out = "{output_dir}/IgBLAST_output/{cell_name}_{locus}.IgBLASTOut".format(
                     output_dir=output_dir,
