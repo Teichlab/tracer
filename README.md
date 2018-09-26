@@ -141,8 +141,7 @@ Type of sequence to be analysed. Since TraCeR currently only works with TCR sequ
 	Mmus = /path/to/kallisto/transcriptome_for_Mmus
 	Hsap = /path/to/kallisto/transcriptome_for_Hsap
 
-Location of the transcriptome fasta file to which the specific TCR sequences will be appended from each cell. Can be downloaded from http://bio.math.berkeley.edu/kallisto/transcriptomes/ and many other places. This must be a plain-text fasta file so decompress it if necessary (files from the Kallisto link are gzipped).
-
+Location of the transcriptome fasta file to which the specific TCR sequences will be appended from each cell. Instructions on how to make reference transcriptomes can be found at: http://www.nxn.se/valent/2016/10/3/the-first-steps-in-rna-seq-expression-analysis-single-cell-and-other. Reference trasncriptomes should be uncompressed fasta files.
 #### Base indices for Kallisto/Salmon
 	[salmon_base_indices]
 	Mmus = /path/to/salmon/index_for_Mmus
