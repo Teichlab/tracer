@@ -1461,7 +1461,7 @@ class Builder(TracerTask):
         if len(seqs['C']) > 1:
             print(
                 "\nMore than one constant region sequence included in {C_file}."
-                .format(self.raw_seq_files['C']))
+                .format(C_file=self.raw_seq_files['C']))
             print("Please only provide one constant sequence.\n")
             sys.exit(1)
 
