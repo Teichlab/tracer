@@ -22,6 +22,7 @@ RUN cd /ncbi-igblast-1.7.0/bin/ && wget -r ftp://ftp.ncbi.nih.gov/blast/executab
 	mv ftp.ncbi.nih.gov/blast/executables/igblast/release/internal_data . && \
 	mv ftp.ncbi.nih.gov/blast/executables/igblast/release/optional_file . && \
 	rm -r ftp.ncbi.nih.gov
+ENV IGDATA /ncbi-igblast-1.7.0/bin/
 
 #aligners - kallisto and salmon
 RUN wget https://github.com/pachterlab/kallisto/releases/download/v0.43.1/kallisto_linux-v0.43.1.tar.gz
