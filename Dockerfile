@@ -6,7 +6,7 @@ FROM debian:latest
 
 #basic setup stuff, including bowtie2
 RUN apt-get update && apt-get -y upgrade
-RUN apt-get -y install wget curl unzip build-essential zlib1g-dev git python3 python3-pip bowtie2 openjdk-8-jre
+RUN apt-get -y install wget curl unzip build-essential zlib1g-dev git python3 python3-pip bowtie2 openjdk-8-jre procps
 
 #Trinity - depends on zlib1g-dev and openjdk-8-jre installed previously
 RUN wget https://github.com/trinityrnaseq/trinityrnaseq/archive/Trinity-v2.4.0.zip
