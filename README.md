@@ -228,6 +228,7 @@ Tracer has three modes: *assemble*, *summarise* and *build*.
 * `--single_end` : use this option if your data are single-end reads. If this option is set you must specify fragment length and fragment sd as below.
 * `--fragment_length` : Estimated average fragment length in the sequencing library. Used for Kallisto quantification. Required for single-end data. Can also be set for paired-end data if you don't want Kallisto to estimate it directly.
 * `--fragment_sd` : Estimated standard deviation of average fragment length in the sequencing library. Used for Kallisto quantification. Required for single-end data. Can also be set for paired-end data if you don't want Kallisto to estimate it directly.
+* `--max_junc_len` : Maximum permitted length of junction string in recombinant identifier. Used to filter out artefacts. May need to be longer for TCR Delta.
 * `--invariant_sequences`: Custom invariant sequence file. Use the default example in 'resources/Mmus/invariant_seqs.csv'
 
 #### Output 
