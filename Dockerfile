@@ -6,7 +6,7 @@ FROM debian:latest
 
 #basic setup stuff, including bowtie2
 RUN apt-get update && apt-get -y upgrade
-RUN apt-get -y install wget curl unzip build-essential zlib1g-dev git python3 python3-pip bowtie2 default-jre procps cmake libcairo2-dev pkg-config
+RUN apt-get -y install wget curl unzip build-essential zlib1g-dev git python3 python3-pip bowtie2 default-jre procps cmake libcairo2-dev pkg-config samtools jellyfish salmon
 
 #Trinity - depends on zlib1g-dev and openjdk-8-jre installed previously
 RUN wget https://github.com/trinityrnaseq/trinityrnaseq/releases/download/v2.11.0/trinityrnaseq-v2.11.0.FULL.tar.gz
@@ -26,8 +26,8 @@ RUN cd /ncbi-igblast-1.7.0/bin/ && wget -r ftp://ftp.ncbi.nih.gov/blast/executab
 #aligners - kallisto and salmon
 RUN wget https://github.com/pachterlab/kallisto/releases/download/v0.43.1/kallisto_linux-v0.43.1.tar.gz
 RUN tar -xzvf kallisto_linux-v0.43.1.tar.gz && rm kallisto_linux-v0.43.1.tar.gz
-RUN wget https://github.com/COMBINE-lab/salmon/releases/download/v0.8.2/Salmon-0.8.2_linux_x86_64.tar.gz
-RUN tar -xzvf Salmon-0.8.2_linux_x86_64.tar.gz && rm Salmon-0.8.2_linux_x86_64.tar.gz
+#RUN wget https://github.com/COMBINE-lab/salmon/releases/download/v0.8.2/Salmon-0.8.2_linux_x86_64.tar.gz
+#RUN tar -xzvf Salmon-0.8.2_linux_x86_64.tar.gz && rm Salmon-0.8.2_linux_x86_64.tar.gz
 
 #graphviz, which lives in a sufficient form (dot/neato) in apt-get apparently
 RUN apt-get -y install graphviz
