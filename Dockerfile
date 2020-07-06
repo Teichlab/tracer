@@ -6,12 +6,12 @@ FROM debian:latest
 
 #basic setup stuff, including bowtie2
 RUN apt-get update && apt-get -y upgrade
-RUN apt-get -y install wget curl unzip build-essential zlib1g-dev git python3 python3-pip bowtie2 default-jre procps
+RUN apt-get -y install wget curl unzip build-essential zlib1g-dev git python3 python3-pip bowtie2 default-jre procps cmake libcairo2-dev pkg-config
 
 #Trinity - depends on zlib1g-dev and openjdk-8-jre installed previously
-RUN wget https://github.com/trinityrnaseq/trinityrnaseq/archive/Trinity-v2.4.0.zip
-RUN unzip Trinity-v2.4.0.zip && rm Trinity-v2.4.0.zip
-RUN cd /trinityrnaseq-Trinity-v2.4.0 && make
+RUN wget https://github.com/trinityrnaseq/trinityrnaseq/releases/download/v2.11.0/trinityrnaseq-v2.11.0.FULL.tar.gz
+RUN tar xvzf trinityrnaseq-v2.11.0.FULL.tar.gz  && rm trinityrnaseq-v2.11.0.FULL.tar.gz
+RUN cd /trinityrnaseq-v2.11.0  && make
 
 #IgBLAST, plus the setup of its super weird internal_data thing. don't ask. just needs to happen
 #and then on top of that, the environmental variable thing facilitates the creation of a shell wrapper. fun
