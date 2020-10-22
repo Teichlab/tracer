@@ -1,4 +1,4 @@
-biopython>=1.66
+biopython==1.77
 cycler>=0.10.0
 decorator>=4.0.9
 matplotlib>=1.5.1
