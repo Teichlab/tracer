@@ -2,7 +2,10 @@ import re
 from collections import Counter, defaultdict
 
 import six
-from Bio.Alphabet import generic_dna
+try:
+  from Bio.Alphabet import generic_dna
+except:
+      print("Bio.Alphabet IUPAC not imported.  Possibly missing, possibly you are runing a modern version of python that doesn't need it")
 from Bio.Seq import Seq
 import pdb
 

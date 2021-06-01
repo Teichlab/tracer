@@ -26,7 +26,12 @@ import Levenshtein
 import networkx as nx
 import six
 from Bio import SeqIO
-from Bio.Alphabet import IUPAC
+
+try:
+  from Bio.Alphabet import IUPAC
+except:
+  print("Bio.Alphabet IUPAC not imported.  Possibly missing, possibly you are runing a modern version of python that doesn't need it")
+  
 from Bio.Seq import Seq
 
 from tracerlib.core import Cell, Recombinant, Invar_cell
@@ -462,8 +467,10 @@ def is_rearrangement_productive(seq):
         in_frame = True
     else:
         in_frame = False
-
-    seq = Seq(seq, IUPAC.unambiguous_dna)
+    # original    
+    #seq = Seq(seq, IUPAC.unambiguous_dna)
+    # modified
+    seq = Seq(seq)
     aa_seq = seq.translate()
     contains_stop = "*" in aa_seq
 
@@ -553,7 +560,8 @@ def get_fasta_line_for_contig_assembly(trinity_seq, hit_table, locus, IMGT_seqs,
     end_base_removal_count = (1 - end_padding) % 3
 
     seq = trinity_seq[start_base_removal_count:-(end_base_removal_count)]
-    seq = Seq(seq, IUPAC.unambiguous_dna)
+    # seq = Seq(seq, IUPAC.unambiguous_dna)
+    seq = Seq(seq)
     aa_seq = seq.translate()
     contains_stop = "*" in aa_seq
 
