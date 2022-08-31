@@ -79,7 +79,9 @@ RUN mkdir -p /var/GRCm38 && \
     rm /var/GRCm38/gencode.v${gencode_mouse_version}.transcripts.fa && \
     rm /gencode_parse.py
 
-#Copy setup.py from github repo
+#Copy setup.py and requirements.txt from github repo
+
+COPY requirements.txt /requirements.txt
 
 COPY setup.py /setup.py
 
@@ -88,7 +90,8 @@ COPY setup.py /setup.py
 RUN mkdir -p /opt/tracer && \
     cd /opt/tracer && \ 
     python /setup.py install && \
-    rm /setup.py
+    rm /setup.py && \
+    rm /requirements.txt
 
 #Setting up tracer config file
 
