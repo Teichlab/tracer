@@ -17,7 +17,7 @@ def package_files(directory):
 #extra_files = package_files('test_data')
 
 def get_requirements():
-    with open("requirements.txt", "rt", encoding="utf-8") as fh:
+    with open("/requirements.txt", "rt", encoding="utf-8") as fh:
         return [line.strip() for line in fh.readlines()]
 
 setup(
