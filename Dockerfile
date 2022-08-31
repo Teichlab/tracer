@@ -10,7 +10,6 @@ ARG kallisto_version=v0.48.0
 ARG salmon_version=1.9.0
 ARG gencode_human_version=41
 ARG gencode_mouse_version=M30
-ARG tracer_version=0.6.0
 
 #Install OS packages
 RUN apt-get update && \
@@ -41,9 +40,6 @@ RUN wget https://github.com/trinityrnaseq/trinityrnaseq/releases/download/Trinit
    make && \
    rm /trinityrnaseq-${trinity_version}.FULL.tar.gz
 
-#Set maximum memory for Trinity Jellyfish
-ENV max_jellyfish_memory=1G
-
 #Install igblast
 RUN wget ftp://ftp.ncbi.nih.gov/blast/executables/igblast/release/${igblast_version}/ncbi-igblast-${igblast_version}-x64-linux.tar.gz && \
     tar -xzvf ncbi-igblast-${igblast_version}-x64-linux.tar.gz -C /opt && \
@@ -51,7 +47,6 @@ RUN wget ftp://ftp.ncbi.nih.gov/blast/executables/igblast/release/${igblast_vers
 
 #Set IGDATA variable to see the internal_files
 ENV IGDATA="/opt/ncbi-igblast-${igblast_version}"
-ENV igblast_seqtype=TCR
 
 #Install Kallisto
 RUN wget https://github.com/pachterlab/kallisto/releases/download/${kallisto_version}/kallisto_linux-${kallisto_version}.tar.gz && \
@@ -84,26 +79,24 @@ RUN mkdir -p /var/GRCm38 && \
     rm /var/GRCm38/gencode.v${gencode_mouse_version}.transcripts.fa && \
     rm /gencode_parse.py
 
-#Setting reference transcriptomes for kallisto/salmon
-ENV Mmus="/var/GRCm38/transcripts.fasta"
-ENV Hsap="/var/GRCh38/transcripts.fasta"
+#Copy setup.py from github repo
 
-#Copy tracer dependencies file from github repo
-
-COPY requirements.txt /requirements.txt
-
-#Install tracer dependencies
-
-RUN pip3 install -r /requirements.txt
+COPY setup.py /setup.py
 
 #Install tracer
-RUN wget https://github.com/Teichlab/tracer/archive/refs/tags/v${tracer_version}.tar.gz && \
-    tar -xzvf v${tracer_version}.tar.gz -C /opt && \
-    rm /v${tracer_version}.tar.gz
+
+RUN mkdir -p /opt/tracer && \
+    cd /opt/tracer && \ 
+    python /setup.py install && \
+    rm /setup.py
+
+#Setting up tracer config file
+
+COPY tracer.conf ~/.tracerrc 
 
 #Adding software to path
 
-ENV PATH="${PATH}:/opt/kallisto:/opt/bowtie2-${bowtie_version}-linux-x86_64:/opt/ncbi-igblast-${igblast_version}/bin:/opt/salmon-${salmon_version}_linux_x86_64/bin:/opt/samtools-${samtools_version}:/opt/trinityrnaseq-${trinity_version}:/opt/tracer-${tracer_version}"
+ENV PATH="${PATH}:/opt/kallisto:/opt/bowtie2-${bowtie_version}-linux-x86_64:/opt/ncbi-igblast-${igblast_version}/bin:/opt/salmon-${salmon_version}_linux_x86_64/bin:/opt/samtools-${samtools_version}:/opt/trinityrnaseq-${trinity_version}:/opt/tracer"
 
 ##Saving software versions to a file
 RUN echo "bowtie2 version: ${bowtie_version}" >> versions.txt && \
@@ -112,6 +105,5 @@ RUN echo "bowtie2 version: ${bowtie_version}" >> versions.txt && \
     echo "igblast version: ${igblast_version}" >> versions.txt && \
     echo "kallisto version: ${kallisto_version}" >> versions.txt && \
     echo "salmon version: ${salmon_version}" >> versions.txt && \
-    echo "tracer version: ${tracer_version}" >> versions.txt && \
     echo "human transcript version: ${gencode_human_version}" >> versions.txt && \
     echo "mouse transcript version: ${gencode_mouse_version}" >> versions.txt
