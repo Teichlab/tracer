@@ -79,23 +79,28 @@ RUN mkdir -p /var/GRCm38 && \
     rm /var/GRCm38/gencode.v${gencode_mouse_version}.transcripts.fa && \
     rm /gencode_parse.py
 
-#Copy setup.py and requirements.txt from github repo
+#Copy requirments.txt, setup.py and tracerlib from github repo
 
 COPY requirements.txt /requirements.txt
 
 COPY setup.py /setup.py
 
+RUN mkdir -p /opt/tracer
+
+COPY tracerlib /opt/tracer/tracerlib
+
 #Install tracer
 
-RUN mkdir -p /opt/tracer && \
-    cd /opt/tracer && \ 
+RUN pip3 install pycairo
+
+RUN cd /opt/tracer && \ 
     python /setup.py install && \
     rm /setup.py && \
     rm /requirements.txt
 
 #Setting up tracer config file
 
-COPY tracer.conf ~/.tracerrc 
+COPY tracer.conf /home/.tracerrc 
 
 #Adding software to path
 
