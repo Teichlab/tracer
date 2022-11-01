@@ -35,17 +35,17 @@ RUN wget https://github.com/samtools/samtools/releases/download/${samtools_versi
 
 #Install Trinity
 RUN wget https://github.com/trinityrnaseq/trinityrnaseq/releases/download/Trinity-${trinity_version}/trinityrnaseq-${trinity_version}.FULL.tar.gz && \
-   tar xvzf trinityrnaseq-${trinity_version}.FULL.tar.gz -C /opt && \
-   cd /opt/trinityrnaseq-${trinity_version} && \
-   make && \
-   rm /trinityrnaseq-${trinity_version}.FULL.tar.gz
+    tar -xvzf trinityrnaseq-${trinity_version}.FULL.tar.gz -C /opt && \
+    cd /opt/trinityrnaseq-${trinity_version} && \
+    make && \
+    rm /trinityrnaseq-${trinity_version}.FULL.tar.gz
 
 #Install igblast
-RUN wget ftp://ftp.ncbi.nih.gov/blast/executables/igblast/release/${igblast_version}/ncbi-igblast-${igblast_version}-x64-linux.tar.gz && \
-    tar -xzvf ncbi-igblast-${igblast_version}-x64-linux.tar.gz -C /opt && \
+RUN wget https://ftp.ncbi.nih.gov/blast/executables/igblast/release/${igblast_version}/ncbi-igblast-${igblast_version}-x64-linux.tar.gz && \
+    tar -xvf ncbi-igblast-${igblast_version}-x64-linux.tar.gz -C /opt && \
     rm /ncbi-igblast-${igblast_version}-x64-linux.tar.gz 
 
-#Set IGDATA variable to see the internal_files
+##Set IGDATA variable to see the internal_files
 ENV IGDATA="/opt/ncbi-igblast-${igblast_version}"
 
 #Install Kallisto
@@ -106,7 +106,7 @@ COPY tracer.conf /home/.tracerrc
 
 ENV PATH="${PATH}:/opt/kallisto:/opt/bowtie2-${bowtie_version}-linux-x86_64:/opt/ncbi-igblast-${igblast_version}/bin:/opt/salmon-${salmon_version}_linux_x86_64/bin:/opt/samtools-${samtools_version}:/opt/trinityrnaseq-${trinity_version}:/opt/tracer"
 
-##Saving software versions to a file
+#Saving software versions to a file
 RUN echo "bowtie2 version: ${bowtie_version}" >> versions.txt && \
     echo "samtools version: ${samtools_version}" >> versions.txt && \
     echo "trinity version: ${trinity_version}" >> versions.txt && \
