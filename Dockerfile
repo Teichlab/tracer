@@ -106,6 +106,21 @@ COPY tracer.conf /home/.tracerrc
 
 ENV PATH="${PATH}:/opt/kallisto:/opt/bowtie2-${bowtie_version}-linux-x86_64:/opt/ncbi-igblast-${igblast_version}/bin:/opt/salmon-${salmon_version}_linux_x86_64/bin:/opt/samtools-${samtools_version}:/opt/trinityrnaseq-${trinity_version}:/opt/tracer"
 
+#Building Indexes
+RUN kallisto index -i /var/GRCh38/kallisto.idx /var/GRCh38/transcripts.fasta
+
+RUN kallisto index -i /var/GRCm38/kallisto.idx /var/GRCm38/transcripts.fasta
+
+RUN salmon index --index /var/GRCh38/salmon --transcripts /var/GRCh38/transcripts.fasta
+
+RUN salmon index --index /var/GRCm38/salmon --transcripts /var/GRCm38/transcripts.fasta
+
+#Copying resources
+
+RUN mkdir -p /usr/local/bin/resources
+
+COPY resources /usr/local/bin/resources
+
 #Saving software versions to a file
 RUN echo "bowtie2 version: ${bowtie_version}" >> versions.txt && \
     echo "samtools version: ${samtools_version}" >> versions.txt && \
