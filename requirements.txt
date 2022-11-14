@@ -23,6 +23,6 @@ python-Levenshtein>=0.12.0
 pytz>=2017.2
 pyxdg>=0.26
 scipy>=0.17.0
-seaborn>=0.7.0
+seaborn>=0.7.0,<0.14.0
 SecretStorage>=2.3.1
 six>=1.10.0
