@@ -14,7 +14,7 @@ FQDIR=$1
 SAMPLE_FILE=$2
 
 cat $SAMPLE_FILE | while read SAMPLE; do
-  mkdir -p "tracer_output_full/out-${SAMPLE}"
+  mkdir -p " /path/to/output/directory/out-${SAMPLE}"
   for fq in "${FQDIR}/${SAMPLE}/"*"fastq.gz"; do 
     if [[ "$fq" == *"R1"* ]]; then
       FQ1=$fq
