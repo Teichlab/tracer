@@ -130,3 +130,5 @@ RUN echo "bowtie2 version: ${bowtie_version}" >> versions.txt && \
     echo "salmon version: ${salmon_version}" >> versions.txt && \
     echo "human transcript version: ${gencode_human_version}" >> versions.txt && \
     echo "mouse transcript version: ${gencode_mouse_version}" >> versions.txt
+
+ENTRYPOINT ["bash", "/tracer/docker_wrapper.sh"]
