@@ -120,6 +120,7 @@ RUN salmon index --index /var/GRCm38/salmon --transcripts /var/GRCm38/transcript
 RUN mkdir -p /usr/local/bin/resources
 
 COPY resources /usr/local/bin/resources
+COPY docker_wrapper.sh /tracer/docker_wrapper.sh 
 
 #Saving software versions to a file
 RUN echo "bowtie2 version: ${bowtie_version}" >> versions.txt && \
