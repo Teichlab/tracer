@@ -22,7 +22,7 @@ python-dateutil==2.8.2
 python-Levenshtein==0.20.8
 pytz==2022.6
 pyxdg==0.28
-scipy==1.9.3
+scipy==1.10.0
 seaborn==0.12.0
 SecretStorage==3.3.3
 six==1.14.0
