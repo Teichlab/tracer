@@ -10,6 +10,7 @@ TraCeR - reconstruction of T cell receptor sequences from single-cell RNA-seq da
 	- [*Assemble*](#assemble-tcr-reconstruction)
     - [*Summarise*](#summarise-summary-and-clonotype-networks)
 6. [Docker image](#docker-image)
+7. [Wrapper](#wrapper)
 
 
 ## Introduction
@@ -257,8 +258,6 @@ For each cell, an `/<output_directory>/<cell_name>` directory will be created. T
     Contains the same files as the unfiltered directory above but these recombinants have been filtered so that only the two most highly expressed from each locus are retained. This resolves biologically implausible situtations where more than two recombinants are detected for a locus. **This directory contains the final output with high-confidence TCR assignments**.
 
 
-### *Summarise*: Summary and clonotype networks 
-
 #### Usage 
     tracer summarise [options] <input_dir>
 
@@ -340,3 +339,28 @@ For example, if you wanted to run the test analysis, you should clone this GitHu
 If you wish to use `tracer build`, you will need to specify `--output_dir /scratch`, as otherwise the resulting resources will be saved in the default location of the container and subsequently get forgotten about when the build analysis completes, making them unuseable for any actual analyses you may want to perform. This will make the Docker container save the resulting resources in the volume you created, and you can use them for assemble/summarise by running the Dockerised TraCeR from the same directory as the one you used for the build and specifying `--resource_dir /scratch`.
 
 You may need to explicitly tell Docker to increase the memory that it can use. Instructions for [Windows](https://docs.docker.com/docker-for-windows/#advanced) and [Mac](https://docs.docker.com/docker-for-mac/#advanced). Something like 6 or 8 GB is likely to be ok.
+
+## Wrapper
+
+To accelerate the analysis of SmartSeq2 datasets, where each well in a 384 well-plate corresponds to a cell, we have developed a wrapper function, parallelising the `tracer assemble` function.
+
+#### Usage 
+    ./scripts/tracer_SmartSeq2.sh [options] <fastq file directory>
+
+##### Main argument 
+* `<fastq file directory>` : directory containing all the fastq files from a SmartSeq2 experiment
+
+##### Options 
+* `-f` : config file to use. Default: Docker container specific configuration file  
+* `-r`: the directory containing the resources required for alignment. By default this is the `resources` directory in this repository, but can be pointed to a user-built set of resources.
+* `-a` : Species from which the T cells were derived. Options are `Mmus` or `Hsap` for mouse or human data. If you have defined new species using the [`build`](#build-build-combinatorial-recombinomes-for-a-given-species) mode, you should specify the same name here. Default = `Mmus`.
+* `-c` :number of cores    : Number of cores, which TRACER should use. Default = 1.
+* `-i` :identifier in the fastq name, distinguishing Read 1 and Read 2. Default = "_R".
+* `-s` :single end?: use this flag, if single end sequencing strategy is used. Default = false.
+* `-l` :if single end is used: determine fragment length. Default = 75.
+* `-d` :if single end is used: determine fragment standard deviation: Default 2.
+#
+
+#### Output 
+If multiple lanes were used to generate the fastq they will be merged und unzipped. These processed fastq files will be placed to `<outdir>/final`. Final Output is written to `<outdir>/final`. a folder is generated for each cell and the contents are the same as described for the assemble function.
+

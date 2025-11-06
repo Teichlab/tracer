@@ -1,0 +1,29 @@
+------------------
+SS2_20_017_5_P22
+------------------
+TCR_A recombinants: 1/1
+TCR_B recombinants: 0/0
+
+
+#TCR_A#
+##TRINITY_DN0_c0_g1_i1##
+V segment:	TRAV9N-2*01
+J segment:	TRAJ27*01
+ID:	TRAV9N-2_GAGCGGGGCCAAT_TRAJ27
+TPM:	479.182
+Productive:	True
+Stop codon:	False
+In frame:	True
+CDR3aa:	VLSGANTGKLT
+CDR3nt:	GTTTTGAGCGGGGCCAATACAGGCAAATTAACC
+
+Segment	query_id	subject_id	% identity	alignment length	mismatches	gap opens	gaps	q start	q end	s start	s end	e value	bit score
+V	reversed|TRINITY_DN0_c0_g1_i1	TRAV9N-2*01	98.233	283	5	0	0	12	294	1	283	1.75e-121	427
+V	reversed|TRINITY_DN0_c0_g1_i1	TRAV9N-3*01	97.518	282	7	0	0	12	293	1	282	3.88e-119	419
+V	reversed|TRINITY_DN0_c0_g1_i1	TRAV9D-4*01	97.173	283	8	0	0	12	294	1	283	1.14e-118	417
+V	reversed|TRINITY_DN0_c0_g1_i1	TRAV9D-4*04	97.173	283	8	0	0	12	294	1	283	1.14e-118	417
+V	reversed|TRINITY_DN0_c0_g1_i1	TRAV9D-3*02	97.163	282	8	0	0	12	293	1	282	3.36e-118	416
+J	reversed|TRINITY_DN0_c0_g1_i1	TRAJ27*01	100.000	54	0	0	0	298	351	6	59	1.45e-26	107
+
+
+#TCR_B#

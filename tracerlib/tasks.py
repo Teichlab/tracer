@@ -81,15 +81,11 @@ class TracerTask(object):
 
 
     def read_config(self, config_file):
-        # First look for environmental variable
-        if not config_file:
-            config_file = os.environ.get('TRACER_CONF', None)
-            if config_file is not None:
-                config_file = os.path.expanduser(config_file)
-                if not os.path.isfile(config_file):
-                    config_file = None
-        # Then check the default location
-        if not config_file:
+        ###first check if tracer is run within the docker container
+        if os.path.isfile("/tracer/docker_helper_files/docker_tracer.conf") and not config_file:
+            config_file="/tracer/docker_helper_files/docker_tracer.conf"
+            print("Using default configuration file in Docker container...")
+        elif not config_file:
             config_file = os.path.expanduser('~/.tracerrc')
             if not os.path.isfile(config_file):
                 print("Config file not found at ~/.tracerrc."
@@ -98,6 +94,15 @@ class TracerTask(object):
                 config_file = os.path.join(tracer_path, 'tracer.conf')
                 if not os.path.isfile(config_file):
                     config_file = os.path.join(base_dir, 'tracer.conf')
+        # then look for environmental variable
+        elif not config_file and :
+            config_file = os.environ.get('TRACER_CONF', None)
+            if config_file is not None:
+                config_file = os.path.expanduser(config_file)
+                if not os.path.isfile(config_file):
+                    config_file = None
+        # Then check the default location
+        
         tracer_func.check_config_file(config_file)
         config = ConfigParser()
         config.read(config_file)
@@ -197,6 +202,9 @@ class TracerTask(object):
 
     def get_species_root(self, species, root=None, build_mode = False):
         if root is None:
+            if os.path.isfile("/tracer/docker_helper_files/docker_tracer.conf") and tracer_path is None:
+                tracer_path="/tracer"
+            else:
             tracer_path = self.get_tracer_path()
             if tracer_path is not None:
                 resources_root = os.path.join(tracer_path, 'resources', species)

@@ -1,0 +1,9 @@
+{
+	"n_targets": 131101,
+	"n_bootstraps": 0,
+	"n_processed": 303680,
+	"kallisto_version": "0.43.1",
+	"index_version": 10,
+	"start_time": "Thu Nov  6 01:12:12 2025",
+	"call": "/kallisto_linux-v0.43.1/kallisto quant -i /home/frolova/development/tracer/test_data/results/single_end/final/SS2_20_017_5_P22/expression_quantification/kallisto_index/SS2_20_017_5_P22_transcriptome.idx -t 2 --single -l 75 -s 2 -o /home/frolova/development/tracer/test_data/results/single_end/final/SS2_20_017_5_P22/expression_quantification /home/frolova/development/tracer/test_data/results/single_end//merged/SS2_20_017_5_P22_R1_001.fastq"
+}
